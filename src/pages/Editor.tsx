@@ -174,6 +174,29 @@ const Editor = () => {
     navigate('/upload');
   };
 
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const draggedId = e.dataTransfer.getData('text/plain');
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    setSigningElements(prevElements => 
+      prevElements.map(el => 
+        el.id === draggedId 
+          ? { ...el, position: { ...el.position, x, y } }
+          : el
+      )
+    );
+  }, []);
+
   if (!document) {
     return (
       <AppLayout>
@@ -217,7 +240,12 @@ const Editor = () => {
               <p className="text-sm text-muted-foreground">Add fields and send for signing</p>
             </div>
             
-            <div onClick={handleDocumentClick}>
+            <div 
+              onClick={handleDocumentClick}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              className="relative"
+            >
               <DocumentViewer documentUrl={document.url}>
                 {signingElements.map((element) => {
                   const recipient = recipients.find(r => r.id === element.assignedTo);
@@ -237,28 +265,7 @@ const Editor = () => {
                       draggable
                       onDragStart={(e) => {
                         e.stopPropagation();
-                        // Store the element being dragged
                         e.dataTransfer.setData('text/plain', element.id);
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const draggedId = e.dataTransfer.getData('text/plain');
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const y = e.clientY - rect.top;
-                        
-                        setSigningElements(prevElements => 
-                          prevElements.map(el => 
-                            el.id === draggedId 
-                              ? { ...el, position: { ...el.position, x, y } }
-                              : el
-                          )
-                        );
                       }}
                     >
                       <div 
