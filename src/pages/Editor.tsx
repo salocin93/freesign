@@ -61,13 +61,9 @@ const Editor = () => {
     
     // Calculate offset between mouse and element position
     const rect = e.currentTarget.getBoundingClientRect();
-    const canvas = e.currentTarget.closest('.pdf-page')?.querySelector('canvas');
-    if (!canvas) return;
-
-    const canvasRect = canvas.getBoundingClientRect();
     setDragOffset({
-      x: e.clientX - canvasRect.left,
-      y: e.clientY - canvasRect.top
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
     });
   }, []);
 
@@ -79,13 +75,10 @@ const Editor = () => {
     const draggedElement = signingElements.find(el => el.id === draggedId);
     if (!draggedElement || !dragOffset) return;
 
-    const canvas = e.currentTarget.querySelector('.pdf-page canvas');
-    if (!canvas) return;
-
-    const canvasRect = canvas.getBoundingClientRect();
+    const rect = e.currentTarget.getBoundingClientRect();
     // Place exactly where dropped, accounting for the initial offset
-    const x = e.clientX - canvasRect.left - dragOffset.x;
-    const y = e.clientY - canvasRect.top - dragOffset.y;
+    const x = e.clientX - rect.left - dragOffset.x;
+    const y = e.clientY - rect.top - dragOffset.y;
     
     setSigningElements(prevElements => 
       prevElements.map(el => 
