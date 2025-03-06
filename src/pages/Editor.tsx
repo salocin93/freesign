@@ -10,7 +10,7 @@ import SignaturePad from '@/components/SignaturePad';
 import EmailForm from '@/components/EmailForm';
 import { Document, SigningElement, SignatureData, Recipient } from '@/utils/types';
 import { Button } from '@/components/ui/button';
-import { Mail, Pen, ArrowLeft } from 'lucide-react';
+import { Mail, Pen, ArrowLeft, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -219,42 +219,78 @@ const Editor = () => {
             
             <div onClick={handleDocumentClick}>
               <DocumentViewer documentUrl={document.url}>
-                {signingElements.map((element) => (
-                  <div
-                    key={element.id}
-                    className="signing-element"
-                    style={{
-                      left: `${element.position.x}px`,
-                      top: `${element.position.y}px`,
-                      width: `${element.size.width}px`,
-                      height: `${element.size.height}px`,
-                    }}
-                  >
-                    <div className="flex items-center justify-between px-2 py-1 bg-primary/10 border-b border-primary/20">
-                      <span className="text-xs font-medium">{element.type}</span>
-                    </div>
-                    <div className="h-full flex items-center justify-center border-b border-dashed border-gray-300">
-                      {element.type === 'signature' && element.value ? (
-                        <img 
-                          src={element.value as string} 
-                          alt="Signature" 
-                          className="max-h-full max-w-full p-1" 
-                        />
-                      ) : (
-                        <span className="text-muted-foreground text-sm">{element.type}</span>
-                      )}
-                    </div>
-                    <button
-                      className="signing-element-handle"
-                      onClick={(e) => {
+                {signingElements.map((element) => {
+                  const recipient = recipients.find(r => r.id === element.assignedTo);
+                  const recipientColor = recipient ? `hsl(${(recipients.findIndex(r => r.id === recipient.id) * 360) / recipients.length}, 70%, 50%)` : '#666';
+                  
+                  return (
+                    <div
+                      key={element.id}
+                      className="signing-element"
+                      style={{
+                        left: `${element.position.x}px`,
+                        top: `${element.position.y}px`,
+                        width: `${element.size.width}px`,
+                        height: `${element.size.height}px`,
+                        borderColor: recipientColor,
+                      }}
+                      draggable
+                      onDragStart={(e) => {
                         e.stopPropagation();
-                        handleRemoveElement(element.id);
+                        // Store the element being dragged
+                        e.dataTransfer.setData('text/plain', element.id);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const draggedId = e.dataTransfer.getData('text/plain');
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        
+                        setSigningElements(prevElements => 
+                          prevElements.map(el => 
+                            el.id === draggedId 
+                              ? { ...el, position: { ...el.position, x, y } }
+                              : el
+                          )
+                        );
                       }}
                     >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+                      <div 
+                        className="flex items-center justify-between px-2 py-1 border-b"
+                        style={{ backgroundColor: `${recipientColor}20`, borderColor: recipientColor }}
+                      >
+                        <span className="text-xs font-medium">{element.type}</span>
+                        <span className="text-xs text-muted-foreground">{recipient?.name || 'Unassigned'}</span>
+                      </div>
+                      <div className="h-full flex items-center justify-center border-b border-dashed border-gray-300">
+                        {element.type === 'signature' && element.value ? (
+                          <img 
+                            src={element.value as string} 
+                            alt="Signature" 
+                            className="max-h-full max-w-full p-1" 
+                          />
+                        ) : (
+                          <span className="text-muted-foreground text-sm">{element.type}</span>
+                        )}
+                      </div>
+                      <button
+                        className="signing-element-handle"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveElement(element.id);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })}
               </DocumentViewer>
             </div>
           </div>
