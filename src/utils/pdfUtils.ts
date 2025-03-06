@@ -8,15 +8,23 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 export async function loadPdfDocument(url: string) {
   try {
-    // If the URL is a blob URL, fetch it first
     let pdfUrl = url;
+    
+    // If the URL is a blob URL, fetch it first
     if (url.startsWith('blob:')) {
       const response = await fetch(url);
       const blob = await response.blob();
-      pdfUrl = URL.createObjectURL(blob);
+      // Create a new blob URL with the correct MIME type
+      pdfUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
     }
 
-    const loadingTask = pdfjs.getDocument(pdfUrl);
+    // Create loading task with specific options
+    const loadingTask = pdfjs.getDocument({
+      url: pdfUrl,
+      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+      cMapPacked: true,
+    });
+
     const pdf = await loadingTask.promise;
     return pdf;
   } catch (error) {
