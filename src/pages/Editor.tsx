@@ -103,6 +103,8 @@ const Editor = () => {
 
       setSigningElements([...signingElements, newElement]);
       toast.success(`${activeElementType} field added`);
+      // Deselect the field type after placement
+      setActiveElementType(null);
     },
     [activeElementType, document, signingElements, selectedRecipientId]
   );
@@ -254,7 +256,12 @@ const Editor = () => {
               <DocumentViewer documentUrl={document.url}>
                 {signingElements.map((element) => {
                   const recipient = recipients.find(r => r.id === element.assignedTo);
-                  const recipientColor = recipient ? `hsl(${(recipients.findIndex(r => r.id === recipient.id) * 360) / recipients.length}, 70%, 50%)` : '#666';
+                  // Use specific colors for first three recipients, then generate colors for others
+                  const recipientColor = recipient ? 
+                    (recipients.findIndex(r => r.id === recipient.id) === 0 ? '#3b82f6' : // blue
+                     recipients.findIndex(r => r.id === recipient.id) === 1 ? '#22c55e' : // green
+                     recipients.findIndex(r => r.id === recipient.id) === 2 ? '#ef4444' : // red
+                     `hsl(${(recipients.findIndex(r => r.id === recipient.id) * 360) / recipients.length}, 70%, 50%)`) : '#666';
                   
                   return (
                     <div

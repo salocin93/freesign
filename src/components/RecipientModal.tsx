@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +41,13 @@ const RecipientModal: React.FC<RecipientModalProps> = ({ isOpen, onClose, onSave
     onClose();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -60,6 +66,7 @@ const RecipientModal: React.FC<RecipientModalProps> = ({ isOpen, onClose, onSave
               value={name} 
               onChange={(e) => setName(e.target.value)} 
               placeholder="Enter recipient's name"
+              onKeyDown={handleKeyDown}
             />
           </div>
           <div className="space-y-2">
@@ -70,6 +77,7 @@ const RecipientModal: React.FC<RecipientModalProps> = ({ isOpen, onClose, onSave
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
               placeholder="Enter recipient's email address"
+              onKeyDown={handleKeyDown}
             />
           </div>
         </div>
