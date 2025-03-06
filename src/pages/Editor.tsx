@@ -79,7 +79,11 @@ const Editor = () => {
     const draggedElement = signingElements.find(el => el.id === draggedId);
     if (!draggedElement || !dragOffset) return;
 
-    const canvas = e.currentTarget.querySelector('.pdf-page canvas');
+    // Find the canvas in the document container
+    const documentContainer = e.currentTarget.closest('.relative');
+    if (!documentContainer) return;
+
+    const canvas = documentContainer.querySelector('.pdf-page canvas');
     if (!canvas) return;
 
     const canvasRect = canvas.getBoundingClientRect();
