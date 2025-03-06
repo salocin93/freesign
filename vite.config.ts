@@ -20,13 +20,13 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    include: ['pdfjs-dist/build/pdf.worker.entry'],
+    include: ['pdfjs-dist'],
   },
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
-          pdfjs: ['pdfjs-dist/build/pdf.worker.entry'],
+          pdfjs: ['pdfjs-dist'],
         },
       },
     },

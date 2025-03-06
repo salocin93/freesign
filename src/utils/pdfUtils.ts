@@ -1,8 +1,16 @@
 import * as pdfjs from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
 
 // Initialize PDFjs worker
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+if (import.meta.env.DEV) {
+  // In development, use the worker from node_modules
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.js',
+    import.meta.url
+  ).toString();
+} else {
+  // In production, use the CDN version
+  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+}
 
 export async function loadPdfDocument(url: string) {
   try {
