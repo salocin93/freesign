@@ -1,8 +1,10 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Upload, FileText, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -10,12 +12,33 @@ interface AppLayoutProps {
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const { toast } = useToast();
   
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Upload, label: 'Upload', path: '/upload' },
     { icon: FileText, label: 'Documents', path: '/documents' },
   ];
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast({
+        title: "Logout failed",
+        description: "There was a problem logging out",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -54,7 +77,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <User className="h-5 w-5" />
             <span>Profile</span>
           </div>
-          <div className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+          <div 
+            onClick={handleLogout}
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+          >
             <LogOut className="h-5 w-5" />
             <span>Logout</span>
           </div>

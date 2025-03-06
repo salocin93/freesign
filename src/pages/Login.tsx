@@ -1,52 +1,63 @@
 
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FcGoogle } from 'react-icons/fc';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { signInWithGoogle, currentUser } = useAuth();
+  const { toast } = useToast();
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (currentUser) {
+      const from = (location.state as any)?.from?.pathname || '/dashboard';
+      navigate(from);
+    }
+  }, [currentUser, navigate, location]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate authentication
-    setTimeout(() => {
-      // In a real app, you would authenticate with a backend
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('user', JSON.stringify({
-        id: '1',
-        name: 'Demo User',
-        email: email,
-      }));
-      
-      setIsLoading(false);
-      navigate('/dashboard');
-    }, 1500);
+    // For now, we'll only implement Google login
+    // Email/password login would require additional Firebase setup
+    toast({
+      title: "Email login not implemented",
+      description: "Please use Google login instead",
+    });
+    
+    setIsLoading(false);
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
-    
-    // Simulate Google authentication
-    setTimeout(() => {
-      // In a real app, you would authenticate with Google
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('user', JSON.stringify({
-        id: '1',
-        name: 'Google User',
-        email: 'google.user@example.com',
-      }));
-      
-      setIsLoading(false);
+    try {
+      await signInWithGoogle();
+      toast({
+        title: "Successfully logged in",
+        description: "Welcome back!",
+      });
       navigate('/dashboard');
-    }, 1500);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Login failed",
+        description: "There was a problem signing in with Google",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -73,7 +84,7 @@ const Login = () => {
             disabled={isLoading}
           >
             <FcGoogle className="h-5 w-5" />
-            <span>Sign in with Google</span>
+            <span>{isLoading ? 'Signing in...' : 'Sign in with Google'}</span>
           </Button>
           
           <div className="relative my-6">
