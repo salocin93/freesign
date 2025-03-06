@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => ({
           pdfjs: ['pdfjs-dist'],
         },
       },
+      external: ['pdfjs-dist/build/pdf.worker.entry'],
     },
   },
   worker: {
