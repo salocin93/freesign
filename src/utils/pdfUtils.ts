@@ -36,8 +36,8 @@ export async function renderPage(pdf: pdfjs.PDFDocumentProxy, pageNumber: number
     // Get the device pixel ratio (1 for normal displays, 2 for retina, etc.)
     const pixelRatio = window.devicePixelRatio || 1;
     
-    // Create viewport with higher scale for better quality
-    const viewport = page.getViewport({ scale: scale * pixelRatio });
+    // Create viewport with the original scale
+    const viewport = page.getViewport({ scale });
     
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -47,12 +47,12 @@ export async function renderPage(pdf: pdfjs.PDFDocumentProxy, pageNumber: number
     }
     
     // Set canvas dimensions accounting for pixel ratio
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
+    canvas.height = viewport.height * pixelRatio;
+    canvas.width = viewport.width * pixelRatio;
     
-    // Set display size
-    canvas.style.width = (viewport.width / pixelRatio) + 'px';
-    canvas.style.height = (viewport.height / pixelRatio) + 'px';
+    // Set display size to the original viewport dimensions
+    canvas.style.width = viewport.width + 'px';
+    canvas.style.height = viewport.height + 'px';
     
     // Scale the context to ensure proper resolution on high DPI displays
     context.scale(pixelRatio, pixelRatio);
@@ -66,8 +66,8 @@ export async function renderPage(pdf: pdfjs.PDFDocumentProxy, pageNumber: number
     
     return {
       canvas: canvas,
-      width: viewport.width / pixelRatio,
-      height: viewport.height / pixelRatio,
+      width: viewport.width,
+      height: viewport.height,
       scale
     };
   } catch (error) {
