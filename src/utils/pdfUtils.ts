@@ -1,7 +1,7 @@
 import * as pdfjs from 'pdfjs-dist';
 
 // Initialize PDFjs worker
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.js`;
 
 export async function loadPdfDocument(url: string) {
   try {
@@ -18,7 +18,7 @@ export async function loadPdfDocument(url: string) {
     // Create loading task with specific options
     const loadingTask = pdfjs.getDocument({
       url: pdfUrl,
-      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/cmaps/',
       cMapPacked: true,
     });
 
