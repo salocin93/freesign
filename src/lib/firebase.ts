@@ -3,14 +3,13 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCDhoELfecVGX3j5LBFUT1_e51e5YH4Ydo",
+  authDomain: "docufreesign.firebaseapp.com",
+  projectId: "docufreesign",
+  storageBucket: "docufreesign.firebasestorage.app",
+  messagingSenderId: "269027937382",
+  appId: "1:269027937382:web:2920fb0e63b0687760b1a7"
 };
 
 // Initialize Firebase
