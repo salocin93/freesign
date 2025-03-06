@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import { Upload, File } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface DocumentUploaderProps {
   onDocumentSelected: (file: File) => void;
@@ -24,7 +25,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentSelected 
     [onDocumentSelected]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
@@ -34,6 +35,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentSelected 
     onDragLeave: () => setIsDragging(false),
     onDropAccepted: () => setIsDragging(false),
     onDropRejected: () => setIsDragging(false),
+    noClick: true,
   });
 
   return (
@@ -54,9 +56,15 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onDocumentSelected 
         </div>
         <h3 className="text-lg font-medium mb-2">Upload your document</h3>
         <p className="text-muted-foreground mb-4 max-w-md">
-          Drag and drop your PDF file here, or click to browse
+          Drag and drop your PDF file here
         </p>
-        <div className="text-xs text-muted-foreground">
+        <Button
+          onClick={open}
+          className="mt-2"
+        >
+          Select File
+        </Button>
+        <div className="text-xs text-muted-foreground mt-4">
           Supported format: PDF (up to 10MB)
         </div>
       </div>

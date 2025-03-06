@@ -10,7 +10,7 @@ export interface Document {
 
 export interface SigningElement {
   id: string;
-  type: 'signature' | 'date' | 'text' | 'checkbox';
+  type: 'signature' | 'date' | 'name' | 'email' | 'address' | 'title' | 'text' | 'checkbox';
   position: {
     x: number;
     y: number;
@@ -23,7 +23,7 @@ export interface SigningElement {
   value: string | boolean;
   label?: string;
   required: boolean;
-  assignedTo?: string;
+  assignedTo?: string; // recipient id
 }
 
 export interface Recipient {
@@ -36,4 +36,21 @@ export interface Recipient {
 export interface SignatureData {
   dataUrl: string;
   type: 'drawn' | 'typed' | 'uploaded';
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  photoURL?: string;
+}
+
+export interface DocumentActivity {
+  id: string;
+  documentId: string;
+  documentName: string;
+  action: 'viewed' | 'signed' | 'sent' | 'created';
+  timestamp: Date;
+  actorName: string;
+  actorEmail: string;
 }

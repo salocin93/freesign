@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as pdfjs from 'pdfjs-dist';
 import { loadPdfDocument, renderPage } from '@/utils/pdfUtils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -30,9 +30,11 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documentUrl, children }
         const pdfDoc = await loadPdfDocument(documentUrl);
         setPdf(pdfDoc);
         setTotalPages(pdfDoc.numPages);
+        setCurrentPage(1); // Reset to first page when loading a new document
       } catch (error) {
         console.error('Error loading PDF document:', error);
         toast.error('Failed to load document');
+        setPageError(true);
       }
     };
 
@@ -40,7 +42,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documentUrl, children }
 
     return () => {
       if (pdf) {
-        pdf.destroy();
+        pdf.destroy().catch(console.error);
         setPdf(null);
       }
     };
@@ -95,6 +97,14 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documentUrl, children }
     setScale(Math.max(scale - 0.1, 0.5));
   };
 
+  if (!documentUrl) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[500px] border rounded-lg bg-muted/30">
+        <p className="text-muted-foreground">No document selected</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col" ref={containerRef}>
       <div className="flex justify-between items-center mb-4">
@@ -109,7 +119,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documentUrl, children }
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm">
-            Page {currentPage} of {totalPages}
+            Page {currentPage} of {totalPages || '?'}
           </span>
           <Button
             variant="outline"
@@ -126,7 +136,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documentUrl, children }
             variant="outline"
             size="sm"
             onClick={handleZoomOut}
-            disabled={scale <= 0.5}
+            disabled={scale <= 0.5 || pageRendering}
             className="transition-all duration-200"
           >
             -
@@ -136,7 +146,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documentUrl, children }
             variant="outline"
             size="sm"
             onClick={handleZoomIn}
-            disabled={scale >= 2.0}
+            disabled={scale >= 2.0 || pageRendering}
             className="transition-all duration-200"
           >
             +
@@ -147,13 +157,23 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documentUrl, children }
       <div className="relative overflow-auto border rounded-lg bg-white shadow-sm">
         {pageRendering && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-            <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         )}
 
         {pageError && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-            <div className="text-destructive">Error loading page</div>
+            <div className="text-destructive flex flex-col items-center">
+              <p>Error loading page</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={() => window.location.reload()}
+              >
+                Reload page
+              </Button>
+            </div>
           </div>
         )}
 

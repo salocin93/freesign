@@ -4,6 +4,7 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap');
 
 @layer base {
   :root {
@@ -122,10 +123,11 @@
   @apply absolute border-2 border-primary rounded-md bg-white/50 backdrop-blur-sm shadow-sm cursor-move;
   min-width: 100px;
   min-height: 30px;
+  z-index: 10;
 }
 
 .signing-element-handle {
-  @apply absolute -top-4 -right-4 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer shadow-md;
+  @apply absolute -top-3 -right-3 w-6 h-6 bg-destructive text-white rounded-full flex items-center justify-center cursor-pointer shadow-md text-sm font-bold;
 }
 
 .page-transition-enter {
@@ -162,3 +164,17 @@
     opacity: 1;
   }
 }
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+

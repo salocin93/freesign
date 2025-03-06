@@ -27,39 +27,50 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ isOpen, onClose, onSave }) 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [hasDrawn, setHasDrawn] = useState(false);
 
+  // Initialize canvas when component mounts and when dialog opens
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!isOpen || !canvasRef.current) return;
     
     const canvas = canvasRef.current;
-    canvas.width = canvas.offsetWidth * 2;
-    canvas.height = canvas.offsetHeight * 2;
-    canvas.style.width = `${canvas.offsetWidth}px`;
-    canvas.style.height = `${canvas.offsetHeight}px`;
+    const canvasRect = canvas.getBoundingClientRect();
     
-    const context = canvas.getContext('2d');
-    if (context) {
-      context.scale(2, 2);
-      context.lineCap = 'round';
-      context.strokeStyle = 'black';
-      context.lineWidth = 2;
-      contextRef.current = context;
+    canvas.width = canvasRect.width * 2;
+    canvas.height = canvasRect.height * 2;
+    canvas.style.width = `${canvasRect.width}px`;
+    canvas.style.height = `${canvasRect.height}px`;
+    
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.scale(2, 2);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 2;
+      contextRef.current = ctx;
+      
+      // Clear the canvas
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+    
+    setHasDrawn(false);
+    setSignatureData(null);
   }, [isOpen, activeTab]);
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!contextRef.current) return;
+    if (!contextRef.current || !canvasRef.current) return;
     
     setIsDrawing(true);
     
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
     
     let x, y;
     
     if ('touches' in e) {
       // Touch event
-      const rect = canvas.getBoundingClientRect();
       x = e.touches[0].clientX - rect.left;
       y = e.touches[0].clientY - rect.top;
     } else {
@@ -73,16 +84,17 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ isOpen, onClose, onSave }) 
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !contextRef.current) return;
+    if (!isDrawing || !contextRef.current || !canvasRef.current) return;
+    
+    e.preventDefault(); // Prevent scrolling on touch devices
     
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
     
     let x, y;
     
     if ('touches' in e) {
       // Touch event
-      const rect = canvas.getBoundingClientRect();
       x = e.touches[0].clientX - rect.left;
       y = e.touches[0].clientY - rect.top;
     } else {
@@ -93,6 +105,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ isOpen, onClose, onSave }) 
     
     contextRef.current.lineTo(x, y);
     contextRef.current.stroke();
+    setHasDrawn(true);
   };
 
   const finishDrawing = () => {
@@ -101,24 +114,24 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ isOpen, onClose, onSave }) 
     contextRef.current.closePath();
     setIsDrawing(false);
     
-    const dataUrl = canvasRef.current.toDataURL('image/png');
-    setSignatureData({
-      dataUrl,
-      type: 'drawn'
-    });
+    if (hasDrawn) {
+      const dataUrl = canvasRef.current.toDataURL('image/png');
+      setSignatureData({
+        dataUrl,
+        type: 'drawn'
+      });
+    }
   };
 
   const clearCanvas = () => {
     if (!contextRef.current || !canvasRef.current) return;
     
-    contextRef.current.clearRect(
-      0, 
-      0, 
-      canvasRef.current.width, 
-      canvasRef.current.height
-    );
+    const canvas = canvasRef.current;
+    contextRef.current.fillStyle = 'white';
+    contextRef.current.fillRect(0, 0, canvas.width / 2, canvas.height / 2);
     
     setSignatureData(null);
+    setHasDrawn(false);
   };
 
   const generateTypedSignature = () => {
@@ -134,7 +147,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ isOpen, onClose, onSave }) 
     context.fillStyle = 'white';
     context.fillRect(0, 0, canvas.width, canvas.height);
     
-    context.font = '40px "Dancing Script", cursive';
+    context.font = 'italic 40px "Times New Roman", serif';
     context.fillStyle = 'black';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
@@ -196,6 +209,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ isOpen, onClose, onSave }) 
                 onTouchStart={startDrawing}
                 onTouchMove={draw}
                 onTouchEnd={finishDrawing}
+                onContextMenu={(e) => e.preventDefault()}
               />
             </div>
             <Button 
@@ -206,6 +220,17 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ isOpen, onClose, onSave }) 
             >
               Clear
             </Button>
+            
+            {signatureData && (
+              <div className="mt-3 p-2 border rounded-md">
+                <p className="text-xs text-muted-foreground mb-1">Preview:</p>
+                <img 
+                  src={signatureData.dataUrl}
+                  alt="Signature preview"
+                  className="max-h-[60px] mx-auto"
+                />
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="type" className="mt-4">
