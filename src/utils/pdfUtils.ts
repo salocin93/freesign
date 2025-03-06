@@ -1,7 +1,7 @@
 import * as pdfjs from 'pdfjs-dist';
 
 // Initialize PDFjs worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/pdf.worker.min.js`;
 
 export async function loadPdfDocument(url: string) {
   try {
