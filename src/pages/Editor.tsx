@@ -74,6 +74,7 @@ const Editor = () => {
         height = 40;
       }
 
+      // Center both horizontally and vertically
       const x = e.clientX - rect.left - (width / 2);
       const y = e.clientY - rect.top - (height / 2);
 
@@ -188,9 +189,9 @@ const Editor = () => {
     if (!draggedElement) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    // Center the element on the mouse cursor by subtracting half the element's dimensions
-    const x = e.clientX - rect.left - (draggedElement.size.width / 2);
-    const y = e.clientY - rect.top - (draggedElement.size.height / 2);
+    // Place exactly where dropped, without centering
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     
     setSigningElements(prevElements => 
       prevElements.map(el => 
