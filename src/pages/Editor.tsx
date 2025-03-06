@@ -59,16 +59,7 @@ const Editor = () => {
       if (!activeElementType || !document) return;
 
       const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      // If no recipient is selected when trying to place an element, show the recipient modal
-      if (!selectedRecipientId) {
-        setIsRecipientModalOpen(true);
-        // Store click coordinates to use after recipient is added
-        return;
-      }
-
+      // Center the element on the mouse cursor by subtracting half the element's dimensions
       let width = 150;
       let height = 50;
 
@@ -83,13 +74,22 @@ const Editor = () => {
         height = 40;
       }
 
+      const x = e.clientX - rect.left - (width / 2);
+      const y = e.clientY - rect.top - (height / 2);
+
+      // If no recipient is selected when trying to place an element, show the recipient modal
+      if (!selectedRecipientId) {
+        setIsRecipientModalOpen(true);
+        return;
+      }
+
       const newElement: SigningElement = {
         id: uuidv4(),
         type: activeElementType,
         position: {
           x,
           y,
-          pageIndex: 0, // This should be the current page number - 1
+          pageIndex: 0,
         },
         size: {
           width,
@@ -184,9 +184,13 @@ const Editor = () => {
     e.stopPropagation();
     
     const draggedId = e.dataTransfer.getData('text/plain');
+    const draggedElement = signingElements.find(el => el.id === draggedId);
+    if (!draggedElement) return;
+
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Center the element on the mouse cursor by subtracting half the element's dimensions
+    const x = e.clientX - rect.left - (draggedElement.size.width / 2);
+    const y = e.clientY - rect.top - (draggedElement.size.height / 2);
     
     setSigningElements(prevElements => 
       prevElements.map(el => 
@@ -195,7 +199,7 @@ const Editor = () => {
           : el
       )
     );
-  }, []);
+  }, [signingElements]);
 
   if (!document) {
     return (
