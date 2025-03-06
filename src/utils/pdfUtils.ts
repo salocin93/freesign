@@ -33,7 +33,11 @@ export async function loadPdfDocument(url: string) {
 export async function renderPage(pdf: pdfjs.PDFDocumentProxy, pageNumber: number, scale = 1.0) {
   try {
     const page = await pdf.getPage(pageNumber);
-    const viewport = page.getViewport({ scale });
+    // Get the device pixel ratio (1 for normal displays, 2 for retina, etc.)
+    const pixelRatio = window.devicePixelRatio || 1;
+    
+    // Create viewport with higher scale for better quality
+    const viewport = page.getViewport({ scale: scale * pixelRatio });
     
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -42,8 +46,16 @@ export async function renderPage(pdf: pdfjs.PDFDocumentProxy, pageNumber: number
       throw new Error('Could not create canvas context');
     }
     
+    // Set canvas dimensions accounting for pixel ratio
     canvas.height = viewport.height;
     canvas.width = viewport.width;
+    
+    // Set display size
+    canvas.style.width = (viewport.width / pixelRatio) + 'px';
+    canvas.style.height = (viewport.height / pixelRatio) + 'px';
+    
+    // Scale the context to ensure proper resolution on high DPI displays
+    context.scale(pixelRatio, pixelRatio);
     
     const renderContext = {
       canvasContext: context,
@@ -53,9 +65,9 @@ export async function renderPage(pdf: pdfjs.PDFDocumentProxy, pageNumber: number
     await page.render(renderContext).promise;
     
     return {
-      canvas,
-      width: viewport.width,
-      height: viewport.height,
+      canvas: canvas,
+      width: viewport.width / pixelRatio,
+      height: viewport.height / pixelRatio,
       scale
     };
   } catch (error) {
