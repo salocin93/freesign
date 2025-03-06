@@ -260,6 +260,12 @@ const Editor = () => {
           </div>
 
           <div className="space-y-6">
+            <RecipientSelector
+              recipients={recipients}
+              selectedRecipientId={selectedRecipientId}
+              onSelectRecipient={handleSelectRecipient}
+              onAddRecipient={handleAddRecipient}
+            />
             <SigningElementsToolbar 
               activeElementType={activeElementType}
               onSelectElement={handleSelectElement} 
@@ -268,12 +274,6 @@ const Editor = () => {
               signingElements={signingElements}
               recipients={recipients}
               onRemoveElement={handleRemoveElement}
-            />
-            <RecipientSelector
-              recipients={recipients}
-              selectedRecipientId={selectedRecipientId}
-              onSelectRecipient={handleSelectRecipient}
-              onAddRecipient={handleAddRecipient}
             />
           </div>
         </div>
