@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
 import DocumentUploader from '@/components/DocumentUploader';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 
 const Upload = () => {
   const navigate = useNavigate();
@@ -27,6 +27,8 @@ const Upload = () => {
     const documentsString = localStorage.getItem('documents');
     const documents = documentsString ? JSON.parse(documentsString) : [];
     localStorage.setItem('documents', JSON.stringify([...documents, document]));
+    
+    toast.success('Document uploaded successfully');
     
     // Navigate to the editor
     navigate('/editor', { state: { documentId } });

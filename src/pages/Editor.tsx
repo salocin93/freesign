@@ -1,8 +1,6 @@
-
 import React, { useCallback, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import AppLayout from '@/components/AppLayout';
-import DocumentUploader from '@/components/DocumentUploader';
 import DocumentViewer from '@/components/DocumentViewer';
 import SigningElementsToolbar from '@/components/SigningElementsToolbar';
 import SigningFieldList from '@/components/SigningFieldList';
@@ -14,8 +12,11 @@ import { Document, SigningElement, SignatureData, Recipient } from '@/utils/type
 import { Button } from '@/components/ui/button';
 import { Mail, Pen, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Editor = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [document, setDocument] = useState<Document | null>(null);
   const [signingElements, setSigningElements] = useState<SigningElement[]>([]);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -23,10 +24,28 @@ const Editor = () => {
   const [isRecipientModalOpen, setIsRecipientModalOpen] = useState(false);
   const [signature, setSignature] = useState<SignatureData | null>(null);
   const [activeElementType, setActiveElementType] = useState<SigningElement['type'] | null>(null);
-  const [editorView, setEditorView] = useState<'upload' | 'editor'>('upload');
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [selectedRecipientId, setSelectedRecipientId] = useState<string | null>(null);
   
+  // Load document from localStorage when component mounts
+  useEffect(() => {
+    const documentsString = localStorage.getItem('documents');
+    if (documentsString) {
+      const documents = JSON.parse(documentsString);
+      const documentId = location.state?.documentId;
+      const currentDocument = documents.find((doc: Document) => doc.id === documentId);
+      if (currentDocument) {
+        setDocument(currentDocument);
+      } else {
+        toast.error('Document not found');
+        navigate('/upload');
+      }
+    } else {
+      toast.error('No documents found');
+      navigate('/upload');
+    }
+  }, [location.state?.documentId, navigate]);
+
   // Reset recipient selection when changing documents
   useEffect(() => {
     if (!document) {
@@ -34,19 +53,6 @@ const Editor = () => {
       setSelectedRecipientId(null);
     }
   }, [document]);
-
-  const handleDocumentSelected = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setDocument({
-      id: uuidv4(),
-      name: file.name,
-      file,
-      url,
-      dateCreated: new Date(),
-      status: 'draft',
-    });
-    setEditorView('editor');
-  };
 
   const handleDocumentClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -96,11 +102,6 @@ const Editor = () => {
 
       setSigningElements([...signingElements, newElement]);
       toast.success(`${activeElementType} field added`);
-
-      // If signature is being added for the current user, maybe open signature modal
-      if (activeElementType === 'signature') {
-        // Could check if this is the current user's signature
-      }
     },
     [activeElementType, document, signingElements, selectedRecipientId]
   );
@@ -169,155 +170,127 @@ const Editor = () => {
     
     toast.success('Document sent for signing');
     
-    // Reset for a new document
-    setEditorView('upload');
-    setDocument(null);
-    setSigningElements([]);
-    setSignature(null);
-    setRecipients([]);
-    setSelectedRecipientId(null);
+    // Navigate back to upload page
+    navigate('/upload');
   };
 
-  const renderContent = () => {
-    if (editorView === 'upload') {
-      return <DocumentUploader onDocumentSelected={handleDocumentSelected} />;
-    }
-
-    if (document) {
-      return (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                onClick={() => setEditorView('upload')}
-                className="gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </Button>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button 
-                onClick={() => setIsEmailModalOpen(true)}
-                className="gap-2"
-                disabled={signingElements.length === 0 || recipients.length === 0}
-              >
-                <Mail className="h-4 w-4" />
-                Send for Signature
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="md:col-span-3 space-y-4">
-              <div>
-                <h2 className="text-xl font-semibold">Document Preview</h2>
-                <p className="text-sm text-muted-foreground">Add fields and send for signing</p>
-              </div>
-              
-              <div onClick={handleDocumentClick}>
-                <DocumentViewer documentUrl={document.url}>
-                  {signingElements.map((element) => (
-                    <div
-                      key={element.id}
-                      className="signing-element"
-                      style={{
-                        left: `${element.position.x}px`,
-                        top: `${element.position.y}px`,
-                        width: `${element.size.width}px`,
-                        height: `${element.size.height}px`,
-                      }}
-                    >
-                      <div className="flex items-center justify-between px-2 py-1 bg-primary/10 border-b border-primary/20">
-                        <span className="text-xs font-medium">{element.type}</span>
-                      </div>
-                      <div className="h-full flex items-center justify-center border-b border-dashed border-gray-300">
-                        {element.type === 'signature' && element.value ? (
-                          <img 
-                            src={element.value as string} 
-                            alt="Signature" 
-                            className="max-h-full max-w-full p-1" 
-                          />
-                        ) : (
-                          <span className="text-muted-foreground text-sm">{element.type}</span>
-                        )}
-                      </div>
-                      <button
-                        className="signing-element-handle"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveElement(element.id);
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </DocumentViewer>
-              </div>
-            </div>
-            
-            <div className="space-y-6">
-              <div className="bg-white border rounded-lg p-4 shadow-sm space-y-6">
-                <RecipientSelector 
-                  recipients={recipients}
-                  selectedRecipientId={selectedRecipientId}
-                  onSelectRecipient={handleSelectRecipient}
-                  onAddRecipient={handleAddRecipient}
-                />
-                
-                <SigningElementsToolbar 
-                  activeElementType={activeElementType}
-                  onSelectElement={handleSelectElement}
-                />
-              </div>
-              
-              <div className="bg-white border rounded-lg p-4 shadow-sm">
-                <SigningFieldList 
-                  signingElements={signingElements}
-                  recipients={recipients}
-                  onRemoveElement={handleRemoveElement}
-                />
-              </div>
-
-              {activeElementType === 'signature' && (
-                <Button 
-                  variant="outline" 
-                  onClick={handleOpenSignatureModal}
-                  className="w-full gap-2"
-                >
-                  <Pen className="h-4 w-4" />
-                  Create Your Signature
-                </Button>
-              )}
-            </div>
-          </div>
+  if (!document) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      );
-    }
-
-    return null;
-  };
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto">
-        {renderContent()}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/upload')}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button 
+              onClick={() => setIsEmailModalOpen(true)}
+              className="gap-2"
+              disabled={signingElements.length === 0 || recipients.length === 0}
+            >
+              <Mail className="h-4 w-4" />
+              Send for Signature
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="md:col-span-3 space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Document Preview</h2>
+              <p className="text-sm text-muted-foreground">Add fields and send for signing</p>
+            </div>
+            
+            <div onClick={handleDocumentClick}>
+              <DocumentViewer documentUrl={document.url}>
+                {signingElements.map((element) => (
+                  <div
+                    key={element.id}
+                    className="signing-element"
+                    style={{
+                      left: `${element.position.x}px`,
+                      top: `${element.position.y}px`,
+                      width: `${element.size.width}px`,
+                      height: `${element.size.height}px`,
+                    }}
+                  >
+                    <div className="flex items-center justify-between px-2 py-1 bg-primary/10 border-b border-primary/20">
+                      <span className="text-xs font-medium">{element.type}</span>
+                    </div>
+                    <div className="h-full flex items-center justify-center border-b border-dashed border-gray-300">
+                      {element.type === 'signature' && element.value ? (
+                        <img 
+                          src={element.value as string} 
+                          alt="Signature" 
+                          className="max-h-full max-w-full p-1" 
+                        />
+                      ) : (
+                        <span className="text-muted-foreground text-sm">{element.type}</span>
+                      )}
+                    </div>
+                    <button
+                      className="signing-element-handle"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveElement(element.id);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </DocumentViewer>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <SigningElementsToolbar 
+              activeElementType={activeElementType}
+              onSelectElement={handleSelectElement} 
+            />
+            <SigningFieldList
+              signingElements={signingElements}
+              recipients={recipients}
+              onRemoveElement={handleRemoveElement}
+            />
+            <RecipientSelector
+              recipients={recipients}
+              selectedRecipientId={selectedRecipientId}
+              onSelectRecipient={handleSelectRecipient}
+              onAddRecipient={handleAddRecipient}
+            />
+          </div>
+        </div>
       </div>
-      
-      <SignaturePad
-        isOpen={isSignatureModalOpen}
-        onClose={() => setIsSignatureModalOpen(false)}
-        onSave={handleSaveSignature}
-      />
-      
+
       <RecipientModal
         isOpen={isRecipientModalOpen}
         onClose={() => setIsRecipientModalOpen(false)}
         onSave={handleSaveRecipient}
       />
-      
+
+      <SignaturePad
+        isOpen={isSignatureModalOpen}
+        onClose={() => setIsSignatureModalOpen(false)}
+        onSave={handleSaveSignature}
+      />
+
       <EmailForm
         isOpen={isEmailModalOpen}
         onClose={() => setIsEmailModalOpen(false)}
