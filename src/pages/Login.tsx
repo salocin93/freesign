@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -64,7 +63,7 @@ const Login = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 px-4">
       <Link to="/" className="mb-8">
         <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-          Signable
+          FreeSign
         </span>
       </Link>
       

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from "@/lib/utils";
@@ -47,7 +46,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         <div className="flex h-14 items-center border-b px-4">
           <Link to="/" className="flex items-center space-x-2">
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-              Signable
+              FreeSign
             </span>
           </Link>
         </div>
