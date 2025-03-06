@@ -8,30 +8,47 @@ import { toast } from 'sonner';
 const Upload = () => {
   const navigate = useNavigate();
 
-  const handleDocumentSelected = (file: File) => {
-    // Create a document object
-    const documentId = uuidv4();
-    const url = URL.createObjectURL(file);
-    
-    // In a real app, you would upload this file to your backend
-    const document = {
-      id: documentId,
-      name: file.name,
-      file,
-      url,
-      dateCreated: new Date(),
-      status: 'draft',
-    };
-    
-    // Store document data in localStorage or state management
-    const documentsString = localStorage.getItem('documents');
-    const documents = documentsString ? JSON.parse(documentsString) : [];
-    localStorage.setItem('documents', JSON.stringify([...documents, document]));
-    
-    toast.success('Document uploaded successfully');
-    
-    // Navigate to the editor
-    navigate('/editor', { state: { documentId } });
+  const handleDocumentSelected = async (file: File) => {
+    try {
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('File size must be less than 10MB');
+        return;
+      }
+
+      // Validate file type
+      if (file.type !== 'application/pdf') {
+        toast.error('Please upload a valid PDF document');
+        return;
+      }
+
+      // Create a document object
+      const documentId = uuidv4();
+      const url = URL.createObjectURL(file);
+      
+      // In a real app, you would upload this file to your backend
+      const document = {
+        id: documentId,
+        name: file.name,
+        file,
+        url,
+        dateCreated: new Date(),
+        status: 'draft',
+      };
+      
+      // Store document data in localStorage or state management
+      const documentsString = localStorage.getItem('documents');
+      const documents = documentsString ? JSON.parse(documentsString) : [];
+      localStorage.setItem('documents', JSON.stringify([...documents, document]));
+      
+      toast.success('Document uploaded successfully');
+      
+      // Navigate to the editor
+      navigate('/editor', { state: { documentId } });
+    } catch (error) {
+      console.error('Error handling document upload:', error);
+      toast.error('Failed to upload document');
+    }
   };
 
   return (

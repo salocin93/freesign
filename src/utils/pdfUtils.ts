@@ -1,20 +1,19 @@
 import * as pdfjs from 'pdfjs-dist';
 
 // Initialize PDFjs worker
-if (import.meta.env.DEV) {
-  // In development, use the worker from node_modules
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.js',
-    import.meta.url
-  ).toString();
-} else {
-  // In production, use the CDN version
-  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-}
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 export async function loadPdfDocument(url: string) {
   try {
-    const loadingTask = pdfjs.getDocument(url);
+    // If the URL is a blob URL, fetch it first
+    let pdfUrl = url;
+    if (url.startsWith('blob:')) {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      pdfUrl = URL.createObjectURL(blob);
+    }
+
+    const loadingTask = pdfjs.getDocument(pdfUrl);
     const pdf = await loadingTask.promise;
     return pdf;
   } catch (error) {
