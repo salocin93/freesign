@@ -1,10 +1,7 @@
 import * as pdfjs from 'pdfjs-dist';
 
 // Initialize PDFjs worker
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.entry',
-  import.meta.url,
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export async function loadPdfDocument(url: string) {
   try {
