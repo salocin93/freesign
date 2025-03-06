@@ -7,7 +7,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyCDhoELfecVGX3j5LBFUT1_e51e5YH4Ydo",
   authDomain: "docufreesign.firebaseapp.com",
   projectId: "docufreesign",
-  storageBucket: "docufreesign.firebasestorage.app",
+  storageBucket: "docufreesign.appspot.com",
   messagingSenderId: "269027937382",
   appId: "1:269027937382:web:2920fb0e63b0687760b1a7"
 };
