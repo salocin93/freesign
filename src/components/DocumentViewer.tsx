@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import * as pdfjs from 'pdfjs-dist';
 import { loadPdfDocument, renderPage } from '@/utils/pdfUtils';
@@ -27,7 +26,15 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documentUrl, children }
 
     const loadPdf = async () => {
       try {
-        const pdfDoc = await loadPdfDocument(documentUrl);
+        // If the URL is a blob URL, fetch it first
+        let pdfUrl = documentUrl;
+        if (documentUrl.startsWith('blob:')) {
+          const response = await fetch(documentUrl);
+          const blob = await response.blob();
+          pdfUrl = URL.createObjectURL(blob);
+        }
+
+        const pdfDoc = await loadPdfDocument(pdfUrl);
         setPdf(pdfDoc);
         setTotalPages(pdfDoc.numPages);
         setCurrentPage(1); // Reset to first page when loading a new document
@@ -69,6 +76,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documentUrl, children }
       } catch (error) {
         console.error('Error rendering page:', error);
         setPageError(true);
+        toast.error('Failed to render page');
       } finally {
         setPageRendering(false);
       }
