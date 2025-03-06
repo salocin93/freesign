@@ -61,9 +61,13 @@ const Editor = () => {
     
     // Calculate offset between mouse and element position
     const rect = e.currentTarget.getBoundingClientRect();
+    const canvas = e.currentTarget.closest('.pdf-page')?.querySelector('canvas');
+    if (!canvas) return;
+
+    const canvasRect = canvas.getBoundingClientRect();
     setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: e.clientX - canvasRect.left,
+      y: e.clientY - canvasRect.top
     });
   }, []);
 
@@ -75,10 +79,13 @@ const Editor = () => {
     const draggedElement = signingElements.find(el => el.id === draggedId);
     if (!draggedElement || !dragOffset) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
+    const canvas = e.currentTarget.querySelector('.pdf-page canvas');
+    if (!canvas) return;
+
+    const canvasRect = canvas.getBoundingClientRect();
     // Place exactly where dropped, accounting for the initial offset
-    const x = e.clientX - rect.left - dragOffset.x;
-    const y = e.clientY - rect.top - dragOffset.y;
+    const x = e.clientX - canvasRect.left - dragOffset.x;
+    const y = e.clientY - canvasRect.top - dragOffset.y;
     
     setSigningElements(prevElements => 
       prevElements.map(el => 
@@ -95,6 +102,10 @@ const Editor = () => {
       if (!activeElementType || !document) return;
 
       const rect = e.currentTarget.getBoundingClientRect();
+      const canvas = e.currentTarget.querySelector('.pdf-page canvas');
+      if (!canvas) return;
+
+      const canvasRect = canvas.getBoundingClientRect();
       // Center the element on the mouse cursor by subtracting half the element's dimensions
       let width = 150;
       let height = 50;
@@ -110,9 +121,9 @@ const Editor = () => {
         height = 40;
       }
 
-      // Center both horizontally and vertically
-      const x = e.clientX - rect.left - (width / 2);
-      const y = e.clientY - rect.top - (height / 2);
+      // Calculate position relative to the canvas
+      const x = e.clientX - canvasRect.left - (width / 2);
+      const y = e.clientY - canvasRect.top - (height / 2);
 
       // If no recipient is selected when trying to place an element, show the recipient modal
       if (!selectedRecipientId) {
