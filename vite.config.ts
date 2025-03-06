@@ -36,4 +36,5 @@ export default defineConfig(({ mode }) => ({
     format: 'es',
     plugins: () => [react()],
   },
+  assetsInclude: ['**/*.worker.js'],
 }));
