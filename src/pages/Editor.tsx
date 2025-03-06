@@ -26,6 +26,7 @@ const Editor = () => {
   const [activeElementType, setActiveElementType] = useState<SigningElement['type'] | null>(null);
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [selectedRecipientId, setSelectedRecipientId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   
   // Load document from localStorage when component mounts
   useEffect(() => {
@@ -53,6 +54,41 @@ const Editor = () => {
       setSelectedRecipientId(null);
     }
   }, [document]);
+
+  const handleDragStart = useCallback((e: React.DragEvent, element: SigningElement) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('text/plain', element.id);
+    
+    // Calculate offset between mouse and element position
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const draggedId = e.dataTransfer.getData('text/plain');
+    const draggedElement = signingElements.find(el => el.id === draggedId);
+    if (!draggedElement || !dragOffset) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    // Place exactly where dropped, accounting for the initial offset
+    const x = e.clientX - rect.left - dragOffset.x;
+    const y = e.clientY - rect.top - dragOffset.y;
+    
+    setSigningElements(prevElements => 
+      prevElements.map(el => 
+        el.id === draggedId 
+          ? { ...el, position: { ...el.position, x, y } }
+          : el
+      )
+    );
+    setDragOffset(null);
+  }, [signingElements, dragOffset]);
 
   const handleDocumentClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -182,28 +218,6 @@ const Editor = () => {
     e.stopPropagation();
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const draggedId = e.dataTransfer.getData('text/plain');
-    const draggedElement = signingElements.find(el => el.id === draggedId);
-    if (!draggedElement) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    // Place exactly where dropped, without centering
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    setSigningElements(prevElements => 
-      prevElements.map(el => 
-        el.id === draggedId 
-          ? { ...el, position: { ...el.position, x, y } }
-          : el
-      )
-    );
-  }, [signingElements]);
-
   if (!document) {
     return (
       <AppLayout>
@@ -275,10 +289,7 @@ const Editor = () => {
                         borderColor: recipientColor,
                       }}
                       draggable
-                      onDragStart={(e) => {
-                        e.stopPropagation();
-                        e.dataTransfer.setData('text/plain', element.id);
-                      }}
+                      onDragStart={(e) => handleDragStart(e, element)}
                     >
                       <div 
                         className="flex items-center justify-between px-2 py-1 border-b"
