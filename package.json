@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "cp node_modules/pdfjs-dist/build/pdf.worker.min.js public/",
+    "prebuild": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.js",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
