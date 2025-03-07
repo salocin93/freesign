@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -17,7 +17,9 @@ import { supabase } from '@/lib/supabase';
 
 const queryClient = new QueryClient();
 
-const App = () => {
+const AppContent = () => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     // Handle the initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -33,15 +35,58 @@ const App = () => {
         const redirectPath = localStorage.getItem('authRedirectPath') || '/dashboard';
         // Clear stored path
         localStorage.removeItem('authRedirectPath');
-        // Clear the URL hash and redirect
+        // Clear the URL hash and navigate
         window.location.hash = '';
-        window.location.href = redirectPath;
+        navigate(redirectPath);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/login" element={<Login />} />
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/upload" 
+        element={
+          <ProtectedRoute>
+            <Upload />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/documents" 
+        element={
+          <ProtectedRoute>
+            <Documents />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/editor" 
+        element={
+          <ProtectedRoute>
+            <Editor />
+          </ProtectedRoute>
+        } 
+      />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -49,44 +94,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/upload" 
-                element={
-                  <ProtectedRoute>
-                    <Upload />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/documents" 
-                element={
-                  <ProtectedRoute>
-                    <Documents />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/editor" 
-                element={
-                  <ProtectedRoute>
-                    <Editor />
-                  </ProtectedRoute>
-                } 
-              />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AppContent />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

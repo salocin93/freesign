@@ -25,7 +25,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
               Home
             </Link>
             <Link 
-              to="/editor" 
+              to="/documents" 
               className="text-foreground/80 hover:text-foreground transition-colors duration-200"
             >
               Documents
