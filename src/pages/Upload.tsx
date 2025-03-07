@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
 import DocumentUploader from '@/components/DocumentUploader';
@@ -20,7 +20,17 @@ const Upload = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
+  // Check authentication on mount
+  useEffect(() => {
+    if (!currentUser) {
+      toast.error('Please log in to upload documents');
+      navigate('/login', { state: { from: '/upload' } });
+    }
+  }, [currentUser, navigate]);
+
   const handleDocumentSelected = async (file: File) => {
+    let loadingToast: string | number | undefined;
+    
     try {
       // Validate file size (10MB limit)
       if (file.size > 10 * 1024 * 1024) {
@@ -36,8 +46,12 @@ const Upload = () => {
 
       if (!currentUser) {
         toast.error('You must be logged in to upload documents');
+        navigate('/login', { state: { from: '/upload' } });
         return;
       }
+
+      // Show loading toast
+      loadingToast = toast.loading('Uploading document...');
 
       // Create a unique ID and storage path with sanitized filename
       const documentId = uuidv4();
@@ -63,18 +77,46 @@ const Upload = () => {
         });
 
       if (dbError) {
+        // If database insert fails, try to clean up the uploaded file
+        await supabase.storage
+          .from('documents')
+          .remove([storagePath])
+          .catch(console.error);
+          
         throw dbError;
       }
       
+      // Dismiss loading toast and show success
+      if (loadingToast) toast.dismiss(loadingToast);
       toast.success('Document uploaded successfully');
       
       // Navigate to the editor
       navigate('/editor', { state: { documentId } });
-    } catch (error) {
+    } catch (error: any) {
+      // Dismiss loading toast if it exists
+      if (loadingToast) toast.dismiss(loadingToast);
+
       console.error('Error handling document upload:', error);
-      toast.error('Failed to upload document');
+      
+      // Handle specific error cases
+      if (error.message?.includes('not authenticated')) {
+        toast.error('Please log in to upload documents');
+        navigate('/login', { state: { from: '/upload' } });
+      } else if (error.message?.includes('bucket')) {
+        toast.error('Storage system not properly configured. Please contact support.');
+      } else if (error.message?.includes('permission denied')) {
+        toast.error('You do not have permission to upload documents');
+      } else {
+        // Show specific error message if available
+        const errorMessage = error.message || error.error_description || 'Failed to upload document';
+        toast.error(errorMessage);
+      }
     }
   };
+
+  if (!currentUser) {
+    return null; // Let the useEffect handle the redirect
+  }
 
   return (
     <AppLayout>

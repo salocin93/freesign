@@ -19,40 +19,59 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // Storage bucket helpers
 export const STORAGE_BUCKET = 'documents'
 
-// Initialize storage bucket if it doesn't exist
-async function ensureStorageBucket() {
+async function checkAuth() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  if (!session?.user) throw new Error('Not authenticated');
+  return session;
+}
+
+async function verifyBucket() {
   try {
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const bucketExists = buckets?.some(bucket => bucket.name === STORAGE_BUCKET);
-    
-    if (!bucketExists) {
-      const { data, error } = await supabase.storage.createBucket(STORAGE_BUCKET, {
-        public: false,
-        fileSizeLimit: 10485760, // 10MB
-        allowedMimeTypes: ['application/pdf']
-      });
-      
-      if (error) {
-        console.error('Error creating storage bucket:', error);
-        throw error;
-      }
+    const { data: buckets, error } = await supabase.storage.listBuckets();
+    if (error) throw error;
+
+    const bucket = buckets?.find(b => b.name === STORAGE_BUCKET);
+    if (!bucket) {
+      throw new Error(`Storage bucket '${STORAGE_BUCKET}' not found. Please create it in the Supabase dashboard.`);
     }
   } catch (error) {
-    console.error('Error checking/creating storage bucket:', error);
+    console.error('Error verifying bucket:', error);
     throw error;
   }
 }
 
 export async function uploadDocument(file: File, path: string) {
   try {
-    // Ensure bucket exists before upload
-    await ensureStorageBucket();
-    
+    // Ensure user is authenticated and bucket exists
+    const session = await checkAuth();
+    await verifyBucket();
+
+    // First check if file already exists
+    const { data: existingFile } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .list(path.split('/').slice(0, -1).join('/'));
+
+    const fileName = path.split('/').pop();
+    const fileExists = existingFile?.some(f => f.name === fileName);
+
+    // If file exists, try to delete it first
+    if (fileExists) {
+      const { error: deleteError } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .remove([path]);
+      
+      if (deleteError) {
+        console.error('Error deleting existing file:', deleteError);
+      }
+    }
+
+    // Upload the file
     const { data, error } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(path, file, {
         cacheControl: '3600',
-        upsert: false
+        upsert: true // Change to true to handle existing files
       });
 
     if (error) {
@@ -70,17 +89,43 @@ export async function uploadDocument(file: File, path: string) {
 export async function getDocumentUrl(path: string) {
   if (!path) return null;
   
-  const { data } = await supabase.storage
-    .from(STORAGE_BUCKET)
-    .getPublicUrl(path)
-  
-  return data.publicUrl
+  try {
+    // Ensure user is authenticated and bucket exists
+    const session = await checkAuth();
+    await verifyBucket();
+
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(path, 3600); // 1 hour expiry
+
+    if (error) {
+      console.error('Error getting document URL:', error);
+      throw error;
+    }
+
+    return data.signedUrl;
+  } catch (error) {
+    console.error('Error in getDocumentUrl:', error);
+    throw error;
+  }
 }
 
 export async function deleteDocument(path: string) {
-  const { error } = await supabase.storage
-    .from(STORAGE_BUCKET)
-    .remove([path])
+  try {
+    // Ensure user is authenticated and bucket exists
+    const session = await checkAuth();
+    await verifyBucket();
 
-  if (error) throw error
+    const { error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .remove([path]);
+
+    if (error) {
+      console.error('Error deleting document:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in deleteDocument:', error);
+    throw error;
+  }
 } 
