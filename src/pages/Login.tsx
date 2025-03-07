@@ -42,11 +42,6 @@ const Login = () => {
     setIsLoading(true);
     try {
       await signInWithGoogle();
-      toast({
-        title: "Successfully logged in",
-        description: "Welcome back!",
-      });
-      navigate('/dashboard');
     } catch (error) {
       console.error(error);
       toast({

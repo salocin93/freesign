@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { LayoutDashboard, Upload, FileText, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -12,7 +13,7 @@ interface AppLayoutProps {
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, currentUser } = useAuth();
   const { toast } = useToast();
   
   const navItems = [
@@ -100,6 +101,26 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </header>
         
         <main className="flex-1 overflow-y-auto p-6">
+          {/* User profile section */}
+          <div className="flex items-center gap-2">
+            <Avatar>
+              <AvatarImage 
+                src={currentUser?.user_metadata?.avatar_url} 
+                alt={currentUser?.user_metadata?.full_name} 
+              />
+              <AvatarFallback>
+                {currentUser?.user_metadata?.full_name?.[0] || currentUser?.email?.[0]}
+              </AvatarFallback>
+            </Avatar>
+            <div className="hidden md:block">
+              <p className="text-sm font-medium">
+                {currentUser?.user_metadata?.full_name || currentUser?.email}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {currentUser?.email}
+              </p>
+            </div>
+          </div>
           {children}
         </main>
       </div>
