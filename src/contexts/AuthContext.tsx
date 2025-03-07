@@ -1,12 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  GoogleAuthProvider, 
-  onAuthStateChanged, 
-  signInWithPopup, 
-  signOut,
-  User
-} from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 type AuthContextType = {
   currentUser: User | null;
@@ -19,27 +14,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Mock user for development and preview
 const mockUser: User = {
-  uid: 'dev-user-id',
+  id: 'dev-user-id',
   email: 'dev@example.com',
-  displayName: 'Dev User',
-  photoURL: 'https://via.placeholder.com/150',
-  emailVerified: true,
-  isAnonymous: false,
-  metadata: {
-    creationTime: new Date().toISOString(),
-    lastSignInTime: new Date().toISOString(),
+  user_metadata: {
+    full_name: 'Dev User',
+    avatar_url: 'https://via.placeholder.com/150',
   },
-  providerData: [],
-  refreshToken: '',
-  tenantId: null,
-  phoneNumber: null,
-  providerId: 'google.com',
-  delete: async () => {},
-  getIdToken: async () => '',
-  getIdTokenResult: async () => ({ token: '', expirationTime: '', authTime: '', issuedAtTime: '', signInProvider: null, signInSecondFactor: null, claims: {} }),
-  reload: async () => {},
-  toJSON: () => ({}),
-};
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+} as User;
 
 // Check if we're in a development or preview environment
 const isDevOrPreview = import.meta.env.DEV || window.location.hostname.includes('lovable.app');
@@ -64,12 +47,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return unsubscribe;
+    // Set up Supabase auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setCurrentUser(session?.user ?? null);
+      setLoading(false);
+
+      if (event === 'SIGNED_IN') {
+        toast.success('Successfully signed in');
+      } else if (event === 'SIGNED_OUT') {
+        toast.success('Successfully signed out');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async (): Promise<void> => {
@@ -79,20 +77,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
-      // Store user in localStorage for simpler state persistence
-      const userData = {
-        id: result.user.uid,
-        name: result.user.displayName,
-        email: result.user.email,
-        photoURL: result.user.photoURL
-      };
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('isLoggedIn', 'true');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) throw error;
     } catch (error) {
       console.error('Error signing in with Google:', error);
+      toast.error('Failed to sign in with Google');
       throw error;
     }
   };
@@ -105,11 +101,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      await signOut(auth);
-      localStorage.removeItem('user');
-      localStorage.removeItem('isLoggedIn');
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     } catch (error) {
       console.error('Error logging out:', error);
+      toast.error('Failed to sign out');
       throw error;
     }
   };
