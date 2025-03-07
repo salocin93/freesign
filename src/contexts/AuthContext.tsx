@@ -77,6 +77,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      // Store the current path for redirect after login
+      const currentPath = window.location.pathname;
+      localStorage.setItem('authRedirectPath', currentPath);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

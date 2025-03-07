@@ -28,9 +28,14 @@ const App = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && window.location.hash) {
-        // Clear the URL hash after successful sign-in
+      if (event === 'SIGNED_IN') {
+        // Get stored redirect path
+        const redirectPath = localStorage.getItem('authRedirectPath') || '/dashboard';
+        // Clear stored path
+        localStorage.removeItem('authRedirectPath');
+        // Clear the URL hash and redirect
         window.location.hash = '';
+        window.location.href = redirectPath;
       }
     });
 
