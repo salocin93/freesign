@@ -18,7 +18,7 @@ const mockUser: User = {
   email: 'dev@example.com',
   user_metadata: {
     full_name: 'Dev User',
-    avatar_url: 'https://api.dicebear.com/7.x/avatars/svg?seed=dev',
+    avatar_url: null,
   },
   app_metadata: {},
   aud: 'authenticated',
