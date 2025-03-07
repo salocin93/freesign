@@ -4,8 +4,8 @@ import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Upload, Clock, CheckCircle, PenLine } from 'lucide-react';
 import { DocumentActivity } from '@/utils/types';
-import { format, parseISO } from 'date-fns';
-import { listDocuments, getRecentActivity } from '@/lib/supabase';
+import { format } from 'date-fns';
+import { listDocuments } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 
 const Dashboard = () => {
@@ -13,8 +13,38 @@ const Dashboard = () => {
   const [draftCount, setDraftCount] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
-  const [recentActivity, setRecentActivity] = useState<DocumentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Mock activity data
+  const [recentActivity] = useState<DocumentActivity[]>([
+    {
+      id: '1',
+      documentId: '1',
+      documentName: 'Contract.pdf',
+      action: 'sent',
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+      actorName: 'John Doe',
+      actorEmail: 'john@example.com'
+    },
+    {
+      id: '2',
+      documentId: '2',
+      documentName: 'Agreement.pdf',
+      action: 'signed',
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+      actorName: 'Jane Smith',
+      actorEmail: 'jane@example.com'
+    },
+    {
+      id: '3',
+      documentId: '3',
+      documentName: 'NDA.pdf',
+      action: 'viewed',
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 36), // 1.5 days ago
+      actorName: 'Bob Johnson',
+      actorEmail: 'bob@example.com'
+    }
+  ]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -22,29 +52,15 @@ const Dashboard = () => {
         setLoading(true);
         
         // Fetch document counts
-        const [drafts, pending, completed, activity] = await Promise.all([
+        const [drafts, pending, completed] = await Promise.all([
           listDocuments('draft'),
           listDocuments('sent'),
-          listDocuments('completed'),
-          getRecentActivity()
+          listDocuments('completed')
         ]);
 
         setDraftCount(drafts.length);
         setPendingCount(pending.length);
         setCompletedCount(completed.length);
-        
-        // Map the activity data to match our DocumentActivity type
-        const mappedActivity = activity.map(doc => ({
-          id: doc.id,
-          documentId: doc.id,
-          documentName: doc.name,
-          action: doc.status as DocumentActivity['action'],
-          timestamp: parseISO(doc.updated_at),
-          actorName: 'You', // We'll need to enhance this with actual user data
-          actorEmail: '' // We'll need to enhance this with actual user data
-        }));
-        
-        setRecentActivity(mappedActivity);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         toast({
@@ -162,25 +178,20 @@ const Dashboard = () => {
             <h2 className="text-lg font-medium">Recent Activity</h2>
           </div>
           <div className="divide-y">
-            {loading ? (
-              <div className="p-6 text-center text-muted-foreground">
-                Loading...
-              </div>
-            ) : recentActivity.length > 0 ? (
-              recentActivity.map((activity) => (
-                <div key={activity.id} className="p-4 hover:bg-muted/30">
-                  <div className="flex items-center gap-3">
-                    {getActivityIcon(activity.action)}
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{getActivityMessage(activity)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(activity.timestamp, 'PPpp')}
-                      </p>
-                    </div>
+            {recentActivity.map((activity) => (
+              <div key={activity.id} className="p-4 hover:bg-muted/30">
+                <div className="flex items-center gap-3">
+                  {getActivityIcon(activity.action)}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{getActivityMessage(activity)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(activity.timestamp, 'PPpp')}
+                    </p>
                   </div>
                 </div>
-              ))
-            ) : (
+              </div>
+            ))}
+            {recentActivity.length === 0 && (
               <div className="p-6 text-center text-muted-foreground">
                 No recent activity
               </div>
