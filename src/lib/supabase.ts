@@ -32,6 +32,8 @@ export async function uploadDocument(file: File, path: string) {
 }
 
 export async function getDocumentUrl(path: string) {
+  if (!path) return null;
+  
   const { data } = await supabase.storage
     .from(STORAGE_BUCKET)
     .getPublicUrl(path)
