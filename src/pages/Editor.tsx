@@ -31,18 +31,25 @@ const Editor = () => {
   // Load document from localStorage when component mounts
   useEffect(() => {
     const documentsString = localStorage.getItem('documents');
-    if (documentsString) {
-      const documents = JSON.parse(documentsString);
-      const documentId = location.state?.documentId;
-      const currentDocument = documents.find((doc: Document) => doc.id === documentId);
-      if (currentDocument) {
-        setDocument(currentDocument);
+    const documentId = location.state?.documentId;
+
+    // Only show error if we have a documentId but can't find the document
+    if (documentId) {
+      if (documentsString) {
+        const documents = JSON.parse(documentsString);
+        const currentDocument = documents.find((doc: Document) => doc.id === documentId);
+        if (currentDocument) {
+          setDocument(currentDocument);
+        } else {
+          toast.error('Document not found');
+          navigate('/upload');
+        }
       } else {
         toast.error('Document not found');
         navigate('/upload');
       }
     } else {
-      toast.error('No documents found');
+      // If no documentId, just redirect without error
       navigate('/upload');
     }
   }, [location.state?.documentId, navigate]);
