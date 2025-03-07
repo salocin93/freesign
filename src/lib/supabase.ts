@@ -19,16 +19,52 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // Storage bucket helpers
 export const STORAGE_BUCKET = 'documents'
 
-export async function uploadDocument(file: File, path: string) {
-  const { data, error } = await supabase.storage
-    .from(STORAGE_BUCKET)
-    .upload(path, file, {
-      cacheControl: '3600',
-      upsert: false
-    })
+// Initialize storage bucket if it doesn't exist
+async function ensureStorageBucket() {
+  try {
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some(bucket => bucket.name === STORAGE_BUCKET);
+    
+    if (!bucketExists) {
+      const { data, error } = await supabase.storage.createBucket(STORAGE_BUCKET, {
+        public: false,
+        fileSizeLimit: 10485760, // 10MB
+        allowedMimeTypes: ['application/pdf']
+      });
+      
+      if (error) {
+        console.error('Error creating storage bucket:', error);
+        throw error;
+      }
+    }
+  } catch (error) {
+    console.error('Error checking/creating storage bucket:', error);
+    throw error;
+  }
+}
 
-  if (error) throw error
-  return data
+export async function uploadDocument(file: File, path: string) {
+  try {
+    // Ensure bucket exists before upload
+    await ensureStorageBucket();
+    
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Error uploading document:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in uploadDocument:', error);
+    throw error;
+  }
 }
 
 export async function getDocumentUrl(path: string) {
