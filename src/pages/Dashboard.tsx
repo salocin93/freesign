@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Upload, Clock, CheckCircle, PenLine } from 'lucide-react';
 import { DocumentActivity } from '@/utils/types';
 import { format } from 'date-fns';
+import { listDocuments } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 const Dashboard = () => {
-  // In a real app, these would come from an API
-  const [draftCount] = useState(2);
-  const [pendingCount] = useState(3);
-  const [completedCount] = useState(5);
+  const { toast } = useToast();
+  const [draftCount, setDraftCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  
+  // Mock activity data
   const [recentActivity] = useState<DocumentActivity[]>([
     {
       id: '1',
@@ -40,6 +45,36 @@ const Dashboard = () => {
       actorEmail: 'bob@example.com'
     }
   ]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch document counts
+        const [drafts, pending, completed] = await Promise.all([
+          listDocuments('draft'),
+          listDocuments('sent'),
+          listDocuments('completed')
+        ]);
+
+        setDraftCount(drafts.length);
+        setPendingCount(pending.length);
+        setCompletedCount(completed.length);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load dashboard data. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
 
   const getActivityIcon = (action: DocumentActivity['action']) => {
     switch (action) {
@@ -86,7 +121,9 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg border p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium">Draft Documents</h2>
-              <span className="text-2xl font-bold text-yellow-600">{draftCount}</span>
+              <span className="text-2xl font-bold text-yellow-600">
+                {loading ? '...' : draftCount}
+              </span>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               Documents in draft state
@@ -102,7 +139,9 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg border p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium">Pending Signatures</h2>
-              <span className="text-2xl font-bold text-primary">{pendingCount}</span>
+              <span className="text-2xl font-bold text-primary">
+                {loading ? '...' : pendingCount}
+              </span>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               Documents waiting for signatures
@@ -118,7 +157,9 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg border p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium">Completed Documents</h2>
-              <span className="text-2xl font-bold text-green-600">{completedCount}</span>
+              <span className="text-2xl font-bold text-green-600">
+                {loading ? '...' : completedCount}
+              </span>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               Documents with all signatures collected

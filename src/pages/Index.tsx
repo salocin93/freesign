@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -24,7 +23,7 @@ const Index = () => {
               size="lg"
               className="text-md px-8 py-6 transition-all duration-300 animate-slide-in"
               style={{ animationDelay: '200ms' }}
-              onClick={() => navigate('/editor')}
+              onClick={() => navigate('/upload')}
             >
               <FileUp className="mr-2 h-5 w-5" />
               Upload a Document

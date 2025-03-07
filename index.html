@@ -2,11 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FreeSign</title>
     <meta name="description" content="Lovable Generated Project" />
     <meta name="author" content="Lovable" />
     <meta property="og:image" content="/og-image.png" />
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https: data:;
+      img-src 'self' data: https: blob:;
+      frame-src 'self' https: data:;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https: data:;
+      font-src 'self' https://fonts.gstatic.com https: data:;
+      object-src 'none';
+    " />
   </head>
 
   <body>

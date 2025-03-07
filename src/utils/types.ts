@@ -1,16 +1,19 @@
-
 export interface Document {
   id: string;
   name: string;
-  file: File | null;
-  url: string;
-  dateCreated: Date;
+  storage_path: string | null;
+  url: string | null;
   status: 'draft' | 'sent' | 'completed';
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  metadata: any;
+  recipients?: Recipient[];
 }
 
 export interface SigningElement {
   id: string;
-  type: 'signature' | 'date' | 'name' | 'email' | 'address' | 'title' | 'text' | 'checkbox';
+  type: 'signature' | 'date' | 'text' | 'checkbox';
   position: {
     x: number;
     y: number;
@@ -20,10 +23,9 @@ export interface SigningElement {
     width: number;
     height: number;
   };
-  value: string | boolean;
-  label?: string;
+  value: string | boolean | null;
   required: boolean;
-  assignedTo?: string; // recipient id
+  assignedTo: string | null;
 }
 
 export interface Recipient {
@@ -31,6 +33,34 @@ export interface Recipient {
   name: string;
   email: string;
   status: 'pending' | 'completed';
+}
+
+export interface Signature {
+  id: string;
+  userId: string;
+  type: 'draw' | 'type' | 'upload';
+  value: string;
+  name: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SignatureField {
+  id: string;
+  documentId: string;
+  recipientId: string;
+  signatureId: string | null;
+  pageNumber: number;
+  position: {
+    x: number;
+    y: number;
+  };
+  size: {
+    width: number;
+    height: number;
+  };
+  required: boolean;
+  signedAt: string | null;
 }
 
 export interface SignatureData {

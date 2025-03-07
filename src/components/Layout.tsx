@@ -22,6 +22,16 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
+  const getInitials = (name?: string, email?: string) => {
+    if (name) {
+      return name.charAt(0).toUpperCase();
+    }
+    if (email) {
+      return email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -47,11 +57,14 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
                   <Button variant="ghost" className="rounded-full h-8 w-8 p-0">
                     <Avatar>
                       <AvatarImage 
-                        src={currentUser.user_metadata?.avatar_url} 
-                        alt={currentUser.user_metadata?.full_name} 
+                        src={currentUser?.user_metadata?.avatar_url} 
+                        alt={currentUser?.user_metadata?.full_name} 
                       />
-                      <AvatarFallback>
-                        {currentUser.user_metadata?.full_name?.[0] || currentUser.email?.[0]}
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {getInitials(
+                          currentUser?.user_metadata?.full_name,
+                          currentUser?.email
+                        )}
                       </AvatarFallback>
                     </Avatar>
                   </Button>

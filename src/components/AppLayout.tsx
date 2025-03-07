@@ -41,6 +41,16 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     }
   };
 
+  const getInitials = (name?: string, email?: string) => {
+    if (name) {
+      return name.charAt(0).toUpperCase();
+    }
+    if (email) {
+      return email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
@@ -81,8 +91,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 src={currentUser?.user_metadata?.avatar_url} 
                 alt={currentUser?.user_metadata?.full_name} 
               />
-              <AvatarFallback>
-                {currentUser?.user_metadata?.full_name?.[0] || currentUser?.email?.[0]}
+              <AvatarFallback className="bg-primary/10 text-primary">
+                {getInitials(
+                  currentUser?.user_metadata?.full_name,
+                  currentUser?.email
+                )}
               </AvatarFallback>
             </Avatar>
             <span className="text-sm font-medium truncate flex-1">

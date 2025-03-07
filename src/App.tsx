@@ -33,7 +33,11 @@ const AppContent = () => {
   useEffect(() => {
     // Handle the initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      // Handle session if needed
+      // Don't automatically navigate on initial session check
+      if (!session?.user) {
+        // If no session, store the current path for after login
+        localStorage.setItem('authRedirectPath', window.location.pathname);
+      }
     });
 
     // Handle auth callback
@@ -42,12 +46,18 @@ const AppContent = () => {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
         // Get stored redirect path
-        const redirectPath = localStorage.getItem('authRedirectPath') || '/dashboard';
-        // Clear stored path
-        localStorage.removeItem('authRedirectPath');
-        // Clear the URL hash and navigate
-        window.location.hash = '';
-        navigate(redirectPath);
+        const redirectPath = localStorage.getItem('authRedirectPath');
+        // Only redirect if there's a stored path
+        if (redirectPath) {
+          // Clear stored path
+          localStorage.removeItem('authRedirectPath');
+          // Navigate to the stored path
+          navigate(redirectPath);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        // Store current path when signing out
+        localStorage.setItem('authRedirectPath', window.location.pathname);
+        navigate('/login');
       }
     });
 
@@ -87,7 +97,7 @@ const AppContent = () => {
           </Suspense>
         </ProtectedRoute>
       } />
-      <Route path="/editor" element={
+      <Route path="/editor/:id" element={
         <ProtectedRoute>
           <Suspense fallback={<PageLoader />}>
             <Editor />
