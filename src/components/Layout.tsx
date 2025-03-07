@@ -1,6 +1,17 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { cn } from "@/lib/utils";
+import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { LogOut, User, FileText } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -8,6 +19,18 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, className }) => {
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex flex-col">
       <header className="sticky top-0 z-10 backdrop-blur-md bg-background/80 border-b border-border shadow-sm">
@@ -17,20 +40,48 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
               FreeSign
             </span>
           </Link>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link 
-              to="/" 
-              className="text-foreground/80 hover:text-foreground transition-colors duration-200"
-            >
-              Home
-            </Link>
-            <Link 
-              to="/documents" 
-              className="text-foreground/80 hover:text-foreground transition-colors duration-200"
-            >
-              Documents
-            </Link>
-          </nav>
+          <div className="flex items-center">
+            {currentUser ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="rounded-full h-8 w-8 p-0">
+                    <Avatar>
+                      <AvatarImage 
+                        src={currentUser.user_metadata?.avatar_url} 
+                        alt={currentUser.user_metadata?.full_name} 
+                      />
+                      <AvatarFallback>
+                        {currentUser.user_metadata?.full_name?.[0] || currentUser.email?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link to="/documents" className="flex items-center">
+                      <FileText className="h-4 w-4 mr-2" />
+                      My Documents
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center text-red-600">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild>
+                <Link to="/login">Log in</Link>
+              </Button>
+            )}
+          </div>
         </div>
       </header>
       <main className={cn("flex-1 container mx-auto px-4 py-8", className)}>

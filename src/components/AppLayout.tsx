@@ -5,6 +5,7 @@ import { LayoutDashboard, Upload, FileText, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -72,38 +73,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </nav>
         </div>
         
+        {/* User Profile Section */}
         <div className="border-t p-4">
-          <div className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
-            <User className="h-5 w-5" />
-            <span>Profile</span>
-          </div>
-          <div 
-            onClick={handleLogout}
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-          >
-            <LogOut className="h-5 w-5" />
-            <span>Logout</span>
-          </div>
-        </div>
-      </div>
-      
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 border-b flex items-center px-6">
-          <div className="flex-1">
-            <h1 className="text-lg font-medium">
-              {location.pathname === '/dashboard' && 'Dashboard'}
-              {location.pathname === '/upload' && 'Upload Document'}
-              {location.pathname === '/documents' && 'All Documents'}
-              {location.pathname === '/editor' && 'Document Editor'}
-            </h1>
-          </div>
-        </header>
-        
-        <main className="flex-1 overflow-y-auto p-6">
-          {/* User profile section */}
-          <div className="flex items-center gap-2">
-            <Avatar>
+          <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
+            <Avatar className="h-9 w-9">
               <AvatarImage 
                 src={currentUser?.user_metadata?.avatar_url} 
                 alt={currentUser?.user_metadata?.full_name} 
@@ -112,15 +85,33 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 {currentUser?.user_metadata?.full_name?.[0] || currentUser?.email?.[0]}
               </AvatarFallback>
             </Avatar>
-            <div className="hidden md:block">
-              <p className="text-sm font-medium">
-                {currentUser?.user_metadata?.full_name || currentUser?.email}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {currentUser?.email}
-              </p>
-            </div>
+            <span className="text-sm font-medium truncate flex-1">
+              {currentUser?.user_metadata?.full_name || currentUser?.email}
+            </span>
           </div>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start mt-2 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4 mr-2.5" />
+            Logout
+          </Button>
+        </div>
+      </div>
+      
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <header className="h-14 border-b flex items-center justify-between px-6">
+          <h1 className="text-lg font-medium">
+            {location.pathname === '/dashboard' && 'Dashboard'}
+            {location.pathname === '/upload' && 'Upload Document'}
+            {location.pathname === '/documents' && 'All Documents'}
+            {location.pathname === '/editor' && 'Document Editor'}
+          </h1>
+        </header>
+        
+        <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>
       </div>
