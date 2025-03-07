@@ -26,52 +26,41 @@ async function checkAuth() {
   return session;
 }
 
-async function verifyBucket() {
+async function verifyBucketAccess() {
   try {
-    const { data: buckets, error } = await supabase.storage.listBuckets();
-    if (error) throw error;
+    // Try to list files in the bucket root to verify access
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .list('');
 
-    const bucket = buckets?.find(b => b.name === STORAGE_BUCKET);
-    if (!bucket) {
-      throw new Error(`Storage bucket '${STORAGE_BUCKET}' not found. Please create it in the Supabase dashboard.`);
+    if (error) {
+      if (error.message.includes('does not exist')) {
+        throw new Error(`Storage bucket '${STORAGE_BUCKET}' not found. Please create it in the Supabase dashboard.`);
+      } else if (error.message.includes('permission denied')) {
+        throw new Error(`Permission denied to access storage bucket '${STORAGE_BUCKET}'. Please check your RLS policies.`);
+      }
+      throw error;
     }
+
+    return true;
   } catch (error) {
-    console.error('Error verifying bucket:', error);
+    console.error('Error verifying bucket access:', error);
     throw error;
   }
 }
 
 export async function uploadDocument(file: File, path: string) {
   try {
-    // Ensure user is authenticated and bucket exists
+    // Ensure user is authenticated and has bucket access
     const session = await checkAuth();
-    await verifyBucket();
+    await verifyBucketAccess();
 
-    // First check if file already exists
-    const { data: existingFile } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .list(path.split('/').slice(0, -1).join('/'));
-
-    const fileName = path.split('/').pop();
-    const fileExists = existingFile?.some(f => f.name === fileName);
-
-    // If file exists, try to delete it first
-    if (fileExists) {
-      const { error: deleteError } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .remove([path]);
-      
-      if (deleteError) {
-        console.error('Error deleting existing file:', deleteError);
-      }
-    }
-
-    // Upload the file
+    // Upload the file directly with upsert
     const { data, error } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(path, file, {
         cacheControl: '3600',
-        upsert: true // Change to true to handle existing files
+        upsert: true
       });
 
     if (error) {
@@ -90,9 +79,9 @@ export async function getDocumentUrl(path: string) {
   if (!path) return null;
   
   try {
-    // Ensure user is authenticated and bucket exists
+    // Ensure user is authenticated and has bucket access
     const session = await checkAuth();
-    await verifyBucket();
+    await verifyBucketAccess();
 
     const { data, error } = await supabase.storage
       .from(STORAGE_BUCKET)
@@ -112,9 +101,9 @@ export async function getDocumentUrl(path: string) {
 
 export async function deleteDocument(path: string) {
   try {
-    // Ensure user is authenticated and bucket exists
+    // Ensure user is authenticated and has bucket access
     const session = await checkAuth();
-    await verifyBucket();
+    await verifyBucketAccess();
 
     const { error } = await supabase.storage
       .from(STORAGE_BUCKET)
