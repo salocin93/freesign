@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,13 +14,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   useEffect(() => {
     if (!loading && !currentUser) {
+      // Store the current path for redirect after login
+      localStorage.setItem('authRedirectPath', location.pathname);
+      
       toast({
         title: "Authentication required",
         description: "Please log in to view this page",
         variant: "destructive",
       });
     }
-  }, [currentUser, loading, toast]);
+  }, [currentUser, loading, location.pathname, toast]);
 
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
