@@ -4,7 +4,7 @@ import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Upload, Clock, CheckCircle, PenLine } from 'lucide-react';
 import { DocumentActivity } from '@/utils/types';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { listDocuments, getRecentActivity } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -32,7 +32,19 @@ const Dashboard = () => {
         setDraftCount(drafts.length);
         setPendingCount(pending.length);
         setCompletedCount(completed.length);
-        setRecentActivity(activity);
+        
+        // Map the activity data to match our DocumentActivity type
+        const mappedActivity = activity.map(doc => ({
+          id: doc.id,
+          documentId: doc.id,
+          documentName: doc.name,
+          action: doc.status as DocumentActivity['action'],
+          timestamp: parseISO(doc.updated_at),
+          actorName: 'You', // We'll need to enhance this with actual user data
+          actorEmail: '' // We'll need to enhance this with actual user data
+        }));
+        
+        setRecentActivity(mappedActivity);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         toast({
@@ -93,7 +105,9 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg border p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium">Draft Documents</h2>
-              <span className="text-2xl font-bold text-yellow-600">{draftCount}</span>
+              <span className="text-2xl font-bold text-yellow-600">
+                {loading ? '...' : draftCount}
+              </span>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               Documents in draft state
@@ -109,7 +123,9 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg border p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium">Pending Signatures</h2>
-              <span className="text-2xl font-bold text-primary">{pendingCount}</span>
+              <span className="text-2xl font-bold text-primary">
+                {loading ? '...' : pendingCount}
+              </span>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               Documents waiting for signatures
@@ -125,7 +141,9 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg border p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium">Completed Documents</h2>
-              <span className="text-2xl font-bold text-green-600">{completedCount}</span>
+              <span className="text-2xl font-bold text-green-600">
+                {loading ? '...' : completedCount}
+              </span>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               Documents with all signatures collected
@@ -144,20 +162,25 @@ const Dashboard = () => {
             <h2 className="text-lg font-medium">Recent Activity</h2>
           </div>
           <div className="divide-y">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="p-4 hover:bg-muted/30">
-                <div className="flex items-center gap-3">
-                  {getActivityIcon(activity.action)}
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{getActivityMessage(activity)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(activity.timestamp, 'PPpp')}
-                    </p>
+            {loading ? (
+              <div className="p-6 text-center text-muted-foreground">
+                Loading...
+              </div>
+            ) : recentActivity.length > 0 ? (
+              recentActivity.map((activity) => (
+                <div key={activity.id} className="p-4 hover:bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    {getActivityIcon(activity.action)}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{getActivityMessage(activity)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(activity.timestamp, 'PPpp')}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            {recentActivity.length === 0 && (
+              ))
+            ) : (
               <div className="p-6 text-center text-muted-foreground">
                 No recent activity
               </div>

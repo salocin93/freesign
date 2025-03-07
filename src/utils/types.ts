@@ -1,11 +1,14 @@
-
 export interface Document {
   id: string;
   name: string;
-  file: File | null;
-  url: string;
-  dateCreated: Date;
+  storage_path: string | null;
+  url: string | null;
   status: 'draft' | 'sent' | 'completed';
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  metadata: any;
+  recipients?: Recipient[];
 }
 
 export interface SigningElement {

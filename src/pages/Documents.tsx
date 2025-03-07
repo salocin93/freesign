@@ -19,7 +19,7 @@ import {
   Search,
   Upload
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { listDocuments } from '@/lib/supabase';
@@ -175,7 +175,13 @@ const Documents = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDocuments.length > 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                      Loading...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredDocuments.length > 0 ? (
                   filteredDocuments.map((doc) => (
                     <TableRow key={doc.id}>
                       <TableCell>
@@ -185,7 +191,7 @@ const Documents = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {format(doc.dateCreated, 'MMM d, yyyy')}
+                        {format(parseISO(doc.created_at), 'MMM d, yyyy')}
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(doc.status)}
