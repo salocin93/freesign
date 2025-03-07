@@ -2,6 +2,7 @@
 
 ## Project info
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/911a1613-4586-4e9f-b2b7-bbb1d475d923/deploy-status)](https://app.netlify.com/sites/free-sign/deploys)
 **URL**: https://lovable.dev/projects/c16c3d7e-d345-466b-ad13-1ccb13df0584
 
 ## How can I edit this code?
