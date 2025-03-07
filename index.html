@@ -11,12 +11,13 @@
     <!-- Content Security Policy -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://accounts.google.com https://apis.google.com https://cdn.gpteng.co https://*.gstatic.com;
-      style-src 'self' 'unsafe-inline' https://accounts.google.com https://*.gstatic.com;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-*' 'strict-dynamic' https: http:;
+      style-src 'self' 'unsafe-inline' https: data:;
       img-src 'self' data: https: blob:;
-      frame-src 'self' https://accounts.google.com https://*.google.com;
-      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://apis.google.com https://*.gstatic.com;
-      font-src 'self' https://*.gstatic.com data:;
+      frame-src 'self' https: data:;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https: data:;
+      font-src 'self' https: data:;
+      object-src 'none';
     " />
   </head>
 
