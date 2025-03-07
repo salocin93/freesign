@@ -32,11 +32,19 @@ const Editor = () => {
   const [selectedRecipientId, setSelectedRecipientId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   
+  // Redirect to upload if no document ID is provided
+  useEffect(() => {
+    if (!id) {
+      toast.error('No document selected');
+      navigate('/upload');
+      return;
+    }
+  }, [id, navigate]);
+
   // Load document from Supabase when component mounts
   useEffect(() => {
     if (!id || !currentUser) {
-      navigate('/upload');
-      return;
+      return; // Let the first useEffect handle the redirect
     }
 
     const loadDocument = async () => {
