@@ -1,0 +1,9 @@
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://cdn.gpteng.co; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: https: blob:; frame-src 'self' https://accounts.google.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://apis.google.com;"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200 
