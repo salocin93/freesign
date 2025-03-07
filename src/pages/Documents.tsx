@@ -22,41 +22,41 @@ import {
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { listDocuments } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 const Documents = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialFilter = searchParams.get('filter') || 'all';
+  const { toast } = useToast();
   
-  // In a real app, these would come from an API
-  const [documents] = useState<Document[]>([
-    {
-      id: '1',
-      name: 'Contract.pdf',
-      file: null,
-      url: '',
-      dateCreated: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-      status: 'draft'
-    },
-    {
-      id: '2',
-      name: 'NDA.pdf',
-      file: null,
-      url: '',
-      dateCreated: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5), // 5 days ago
-      status: 'sent'
-    },
-    {
-      id: '3',
-      name: 'Agreement.pdf',
-      file: null,
-      url: '',
-      dateCreated: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10), // 10 days ago
-      status: 'completed'
-    }
-  ]);
-  
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch documents when filter changes
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        setLoading(true);
+        const status = filter === 'all' ? undefined : filter as 'draft' | 'sent' | 'completed';
+        const docs = await listDocuments(status);
+        setDocuments(docs);
+      } catch (error) {
+        console.error('Error fetching documents:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load documents. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDocuments();
+  }, [filter, toast]);
 
   // Update URL when filter changes
   useEffect(() => {
@@ -69,9 +69,8 @@ const Documents = () => {
   }, [filter, searchParams, setSearchParams]);
 
   const filteredDocuments = documents.filter(doc => {
-    const matchesFilter = filter === 'all' || doc.status === filter;
     const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+    return matchesSearch;
   });
 
   const getStatusBadge = (status: Document['status']) => {

@@ -1,6 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/supabase'
 
+// Add Vite env type definition
+interface ImportMetaEnv {
+  VITE_SUPABASE_URL: string
+  VITE_SUPABASE_ANON_KEY: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
+
 // Get these values from your Supabase project settings -> API
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -115,6 +125,128 @@ export async function deleteDocument(path: string) {
     }
   } catch (error) {
     console.error('Error in deleteDocument:', error);
+    throw error;
+  }
+}
+
+// Document management functions
+export async function createDocument(name: string, storagePath: string | null = null) {
+  try {
+    const session = await checkAuth();
+    
+    const { data, error } = await supabase
+      .from('documents')
+      .insert({
+        name,
+        storage_path: storagePath,
+        status: 'draft',
+        created_by: session.user.id,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating document:', error);
+    throw error;
+  }
+}
+
+export async function updateDocument(id: string, updates: {
+  name?: string;
+  status?: 'draft' | 'sent' | 'completed';
+  storage_path?: string | null;
+  metadata?: any;
+}) {
+  try {
+    await checkAuth();
+    
+    const { data, error } = await supabase
+      .from('documents')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating document:', error);
+    throw error;
+  }
+}
+
+export async function getDocument(id: string) {
+  try {
+    await checkAuth();
+    
+    const { data, error } = await supabase
+      .from('documents')
+      .select(`
+        *,
+        recipients (*),
+        signing_elements (*)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error getting document:', error);
+    throw error;
+  }
+}
+
+export async function listDocuments(status?: 'draft' | 'sent' | 'completed') {
+  try {
+    const session = await checkAuth();
+    
+    let query = supabase
+      .from('documents')
+      .select(`
+        *,
+        recipients (*)
+      `)
+      .eq('created_by', session.user.id)
+      .order('created_at', { ascending: false });
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error listing documents:', error);
+    throw error;
+  }
+}
+
+export async function getRecentActivity() {
+  try {
+    const session = await checkAuth();
+    
+    const { data, error } = await supabase
+      .from('documents')
+      .select(`
+        *,
+        recipients (*)
+      `)
+      .eq('created_by', session.user.id)
+      .order('updated_at', { ascending: false })
+      .limit(5);
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error getting recent activity:', error);
     throw error;
   }
 } 

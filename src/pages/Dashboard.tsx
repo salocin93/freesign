@@ -1,45 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Upload, Clock, CheckCircle, PenLine } from 'lucide-react';
 import { DocumentActivity } from '@/utils/types';
 import { format } from 'date-fns';
+import { listDocuments, getRecentActivity } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 const Dashboard = () => {
-  // In a real app, these would come from an API
-  const [draftCount] = useState(2);
-  const [pendingCount] = useState(3);
-  const [completedCount] = useState(5);
-  const [recentActivity] = useState<DocumentActivity[]>([
-    {
-      id: '1',
-      documentId: '1',
-      documentName: 'Contract.pdf',
-      action: 'sent',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-      actorName: 'John Doe',
-      actorEmail: 'john@example.com'
-    },
-    {
-      id: '2',
-      documentId: '2',
-      documentName: 'Agreement.pdf',
-      action: 'signed',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-      actorName: 'Jane Smith',
-      actorEmail: 'jane@example.com'
-    },
-    {
-      id: '3',
-      documentId: '3',
-      documentName: 'NDA.pdf',
-      action: 'viewed',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 36), // 1.5 days ago
-      actorName: 'Bob Johnson',
-      actorEmail: 'bob@example.com'
-    }
-  ]);
+  const { toast } = useToast();
+  const [draftCount, setDraftCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [recentActivity, setRecentActivity] = useState<DocumentActivity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch document counts
+        const [drafts, pending, completed, activity] = await Promise.all([
+          listDocuments('draft'),
+          listDocuments('sent'),
+          listDocuments('completed'),
+          getRecentActivity()
+        ]);
+
+        setDraftCount(drafts.length);
+        setPendingCount(pending.length);
+        setCompletedCount(completed.length);
+        setRecentActivity(activity);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load dashboard data. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
 
   const getActivityIcon = (action: DocumentActivity['action']) => {
     switch (action) {
