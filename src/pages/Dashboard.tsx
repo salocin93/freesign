@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
@@ -92,7 +91,7 @@ const Dashboard = () => {
               Documents waiting for signatures
             </p>
             <Button variant="outline" asChild className="mt-4 w-full">
-              <Link to="/documents">View Pending</Link>
+              <Link to="/documents?filter=sent">View Pending</Link>
             </Button>
           </div>
 
@@ -105,7 +104,7 @@ const Dashboard = () => {
               Documents with all signatures collected
             </p>
             <Button variant="outline" asChild className="mt-4 w-full">
-              <Link to="/documents">View Completed</Link>
+              <Link to="/documents?filter=completed">View Completed</Link>
             </Button>
           </div>
         </div>

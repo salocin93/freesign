@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { 
@@ -25,6 +24,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
 const Documents = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialFilter = searchParams.get('filter') || 'all';
+  
   // In a real app, these would come from an API
   const [documents] = useState<Document[]>([
     {
@@ -53,8 +55,18 @@ const Documents = () => {
     }
   ]);
   
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Update URL when filter changes
+  useEffect(() => {
+    if (filter === 'all') {
+      searchParams.delete('filter');
+    } else {
+      searchParams.set('filter', filter);
+    }
+    setSearchParams(searchParams);
+  }, [filter, searchParams, setSearchParams]);
 
   const filteredDocuments = documents.filter(doc => {
     const matchesFilter = filter === 'all' || doc.status === filter;
