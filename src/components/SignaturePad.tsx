@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import SignaturePad from 'signature_pad';
 import { Button } from '@/components/ui/button';
 import { Eraser, Undo2 } from 'lucide-react';
+import { SignatureData } from '@/utils/types';
 
 interface SignaturePadProps {
-  onSave: (dataUrl: string) => void;
+  onSave: (signatureData: SignatureData) => void;
   onCancel: () => void;
   width?: number;
   height?: number;
@@ -42,7 +43,7 @@ export const SignaturePadComponent: React.FC<SignaturePadProps> = ({
 
     // Initialize SignaturePad
     signaturePadRef.current = new SignaturePad(canvas, {
-      backgroundColor: 'rgb(255, 255, 255)',
+      backgroundColor: 'rgba(255, 255, 255, 0)',
       penColor: 'rgb(0, 0, 0)',
     });
 
@@ -74,8 +75,11 @@ export const SignaturePadComponent: React.FC<SignaturePadProps> = ({
 
   const handleSave = () => {
     if (signaturePadRef.current && !signaturePadRef.current.isEmpty()) {
-      const signatureData = signaturePadRef.current.toDataURL();
-      onSave(signatureData);
+      const dataUrl = signaturePadRef.current.toDataURL('image/png');
+      onSave({
+        dataUrl,
+        type: 'drawn'
+      });
     }
   };
 

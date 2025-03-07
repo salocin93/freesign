@@ -94,7 +94,7 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
     canvas.height = 100;
 
     // Set font and style
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'black';
     ctx.font = '48px "Dancing Script", cursive';
