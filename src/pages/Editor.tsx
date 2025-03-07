@@ -12,12 +12,12 @@ import { Document, SigningElement, SignatureData, Recipient } from '@/utils/type
 import { Button } from '@/components/ui/button';
 import { Mail, Pen, ArrowLeft, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase, getDocumentUrl } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Editor = () => {
-  const location = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [document, setDocument] = useState<Document | null>(null);
@@ -34,9 +34,7 @@ const Editor = () => {
   
   // Load document from Supabase when component mounts
   useEffect(() => {
-    const documentId = location.state?.documentId;
-
-    if (!documentId || !currentUser) {
+    if (!id || !currentUser) {
       navigate('/upload');
       return;
     }
@@ -47,7 +45,7 @@ const Editor = () => {
         const { data: documentData, error: documentError } = await supabase
           .from('documents')
           .select('*')
-          .eq('id', documentId)
+          .eq('id', id)
           .eq('created_by', currentUser.id)
           .single();
 
@@ -61,21 +59,14 @@ const Editor = () => {
           throw new Error('Document URL not found');
         }
 
-        setDocument({
-          id: documentData.id,
-          name: documentData.name,
-          file: null,
-          url,
-          dateCreated: new Date(documentData.created_at),
-          status: documentData.status,
-        });
+        setDocument(documentData);
         setDocumentUrl(url);
 
         // Load signing elements
         const { data: elementsData, error: elementsError } = await supabase
           .from('signing_elements')
           .select('*')
-          .eq('document_id', documentId);
+          .eq('document_id', id);
 
         if (elementsError) {
           throw elementsError;
@@ -97,7 +88,7 @@ const Editor = () => {
         const { data: recipientsData, error: recipientsError } = await supabase
           .from('recipients')
           .select('*')
-          .eq('document_id', documentId);
+          .eq('document_id', id);
 
         if (recipientsError) {
           throw recipientsError;
@@ -114,12 +105,12 @@ const Editor = () => {
       } catch (error) {
         console.error('Error loading document:', error);
         toast.error('Failed to load document');
-        navigate('/upload');
+        navigate('/documents');
       }
     };
 
     loadDocument();
-  }, [location.state?.documentId, navigate, currentUser]);
+  }, [id, navigate, currentUser]);
 
   // Reset recipient selection when changing documents
   useEffect(() => {

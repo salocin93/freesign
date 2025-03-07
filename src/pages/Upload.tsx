@@ -90,8 +90,8 @@ const Upload = () => {
       if (loadingToast) toast.dismiss(loadingToast);
       toast.success('Document uploaded successfully');
       
-      // Navigate to the editor
-      navigate('/editor', { state: { documentId } });
+      // Navigate to the editor with the document ID in the URL
+      navigate(`/editor/${documentId}`);
     } catch (error: any) {
       // Dismiss loading toast if it exists
       if (loadingToast) toast.dismiss(loadingToast);
