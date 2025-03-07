@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 type AuthContextType = {
   currentUser: User | null;
@@ -12,9 +13,9 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user for development
+// Mock user for development with a valid UUID
 const mockUser: User = {
-  id: 'dev-user-id',
+  id: '123e4567-e89b-12d3-a456-426614174000', // Valid UUID for development
   email: 'dev@example.com',
   user_metadata: {
     full_name: 'Dev User',

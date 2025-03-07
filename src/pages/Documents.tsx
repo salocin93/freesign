@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { 
@@ -10,6 +10,18 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Document } from '@/utils/types';
 import { 
   FileText, 
@@ -17,15 +29,23 @@ import {
   CheckCircle, 
   Clock, 
   Search,
-  Upload
+  Upload,
+  MoreVertical,
+  Mail,
+  Trash2
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { listDocuments } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase, initializeAuth } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Documents = () => {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialFilter = searchParams.get('filter') || 'all';
   const { toast } = useToast();
@@ -35,11 +55,12 @@ const Documents = () => {
   const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch documents when filter changes
+  // Initialize auth and fetch documents
   useEffect(() => {
-    const fetchDocuments = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
+        await initializeAuth(); // Wait for auth to initialize
         const status = filter === 'all' ? undefined : filter as 'draft' | 'sent' | 'completed';
         const docs = await listDocuments(status);
         setDocuments(docs);
@@ -55,7 +76,7 @@ const Documents = () => {
       }
     };
 
-    fetchDocuments();
+    loadData();
   }, [filter, toast]);
 
   // Update URL when filter changes
@@ -99,6 +120,110 @@ const Documents = () => {
     }
   };
 
+  const handleDeleteDocument = async (documentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', documentId);
+
+      if (error) throw error;
+
+      setDocuments(documents.filter(doc => doc.id !== documentId));
+      toast({
+        title: 'Success',
+        description: 'Document deleted successfully',
+      });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete document',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSeedTestData = async () => {
+    try {
+      // Use mock development user ID when in development mode
+      const userId = process.env.NODE_ENV === 'development' 
+        ? '00000000-0000-0000-0000-000000000000'
+        : currentUser?.id;
+
+      console.log('Development mode:', process.env.NODE_ENV === 'development');
+      console.log('Using user ID:', userId);
+
+      if (!userId) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to add test documents',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const testDocuments = [
+        {
+          id: uuidv4(),
+          name: 'Employment Contract.pdf',
+          status: 'draft',
+          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          created_by: userId,
+          storage_path: 'test/employment-contract.pdf'
+        },
+        {
+          id: uuidv4(),
+          name: 'Rental Agreement.pdf',
+          status: 'sent',
+          created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          created_by: userId,
+          storage_path: 'test/rental-agreement.pdf'
+        },
+        {
+          id: uuidv4(),
+          name: 'NDA Document.pdf',
+          status: 'completed',
+          created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+          created_by: userId,
+          storage_path: 'test/nda-document.pdf'
+        }
+      ];
+
+      console.log('Attempting to insert test document:', testDocuments[0]);
+
+      const { data, error } = await supabase
+        .from('documents')
+        .insert(testDocuments[0])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error inserting document:', error);
+        throw error;
+      }
+
+      console.log('Successfully inserted document:', data);
+
+      toast({
+        title: 'Success',
+        description: 'Test document added successfully',
+      });
+
+      // Refresh the documents list
+      const status = filter === 'all' ? undefined : filter as 'draft' | 'sent' | 'completed';
+      const docs = await listDocuments(status);
+      setDocuments(docs);
+    } catch (error) {
+      console.error('Error seeding test data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add test documents. Please make sure you are logged in.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto">
@@ -110,12 +235,24 @@ const Documents = () => {
             </p>
           </div>
           
-          <Button asChild>
-            <Link to="/upload" className="gap-2">
-              <Upload className="h-4 w-4" />
-              Upload Document
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            {process.env.NODE_ENV === 'development' && (
+              <Button
+                variant="outline"
+                onClick={handleSeedTestData}
+                className="gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Seed Test Data
+              </Button>
+            )}
+            <Button asChild>
+              <Link to="/upload" className="gap-2">
+                <Upload className="h-4 w-4" />
+                Upload Document
+              </Link>
+            </Button>
+          </div>
         </div>
         
         <div className="bg-white rounded-lg border shadow-sm">
@@ -197,15 +334,76 @@ const Documents = () => {
                         {getStatusBadge(doc.status)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          asChild
-                        >
-                          <Link to={`/editor/${doc.id}`}>
-                            View
-                          </Link>
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                          >
+                            <Link to={`/editor/${doc.id}`}>
+                              View
+                            </Link>
+                          </Button>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div>
+                                      <DropdownMenuItem
+                                        onClick={() => doc.status === 'draft' && navigate(`/editor/${doc.id}`)}
+                                        className="gap-2"
+                                        disabled={doc.status !== 'draft'}
+                                      >
+                                        <Mail className="h-4 w-4" />
+                                        Send for signature
+                                      </DropdownMenuItem>
+                                    </div>
+                                  </TooltipTrigger>
+                                  {doc.status !== 'draft' && (
+                                    <TooltipContent>
+                                      <p>Only draft documents can be sent for signature</p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div>
+                                      <DropdownMenuItem
+                                        onClick={() => doc.status === 'draft' && handleDeleteDocument(doc.id)}
+                                        className="gap-2 text-red-600 data-[disabled]:text-red-300"
+                                        disabled={doc.status !== 'draft'}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </div>
+                                  </TooltipTrigger>
+                                  {doc.status !== 'draft' && (
+                                    <TooltipContent>
+                                      <p>Only draft documents can be deleted</p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+
+                                <DropdownMenuItem
+                                  onClick={() => navigate(`/editor/${doc.id}`)}
+                                  className="gap-2"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  View details
+                                </DropdownMenuItem>
+                              </TooltipProvider>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
