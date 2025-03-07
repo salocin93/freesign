@@ -202,7 +202,7 @@ const Documents = () => {
                           size="sm"
                           asChild
                         >
-                          <Link to={`/editor?id=${doc.id}`}>
+                          <Link to={`/editor/${doc.id}`}>
                             View
                           </Link>
                         </Button>

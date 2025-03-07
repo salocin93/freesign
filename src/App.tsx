@@ -87,7 +87,7 @@ const AppContent = () => {
           </Suspense>
         </ProtectedRoute>
       } />
-      <Route path="/editor" element={
+      <Route path="/editor/:id" element={
         <ProtectedRoute>
           <Suspense fallback={<PageLoader />}>
             <Editor />
