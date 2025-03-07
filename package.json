@@ -8,6 +8,9 @@
     "prebuild": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.js",
     "build": "vite build && cp public/_redirects dist/_redirects",
     "build:dev": "vite build --mode development",
+    "start": "npm run build && npm run dev",
+    "clean": "rm -rf dist node_modules",
+    "clean:start": "npm run clean && npm install && npm run start",
     "lint": "eslint .",
     "preview": "vite preview"
   },
