@@ -5,17 +5,27 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
-import Editor from "./pages/Editor";
-import Dashboard from "./pages/Dashboard";
-import Upload from "./pages/Upload";
-import Documents from "./pages/Documents";
-import Login from "./pages/Login";
-import NotFound from "./pages/NotFound";
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Loader2 } from 'lucide-react';
+
+// Lazy load route components
+const Index = lazy(() => import("./pages/Index"));
+const Editor = lazy(() => import("./pages/Editor"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Upload = lazy(() => import("./pages/Upload"));
+const Documents = lazy(() => import("./pages/Documents"));
+const Login = lazy(() => import("./pages/Login"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
+
+// Loading component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
 
 const AppContent = () => {
   const navigate = useNavigate();
@@ -46,42 +56,50 @@ const AppContent = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login />} />
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute>
+      <Route path="/" element={
+        <Suspense fallback={<PageLoader />}>
+          <Index />
+        </Suspense>
+      } />
+      <Route path="/login" element={
+        <Suspense fallback={<PageLoader />}>
+          <Login />
+        </Suspense>
+      } />
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageLoader />}>
             <Dashboard />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/upload" 
-        element={
-          <ProtectedRoute>
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      <Route path="/upload" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageLoader />}>
             <Upload />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/documents" 
-        element={
-          <ProtectedRoute>
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      <Route path="/documents" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageLoader />}>
             <Documents />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/editor" 
-        element={
-          <ProtectedRoute>
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      <Route path="/editor" element={
+        <ProtectedRoute>
+          <Suspense fallback={<PageLoader />}>
             <Editor />
-          </ProtectedRoute>
-        } 
-      />
+          </Suspense>
+        </ProtectedRoute>
+      } />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-      <Route path="*" element={<NotFound />} />
+      <Route path="*" element={
+        <Suspense fallback={<PageLoader />}>
+          <NotFound />
+        </Suspense>
+      } />
     </Routes>
   );
 };

@@ -59,15 +59,11 @@ const Editor = () => {
     e.stopPropagation();
     e.dataTransfer.setData('text/plain', element.id);
     
-    // Calculate offset between mouse and element position
+    // Calculate offset between mouse and element's top-left corner
     const rect = e.currentTarget.getBoundingClientRect();
-    const canvas = e.currentTarget.closest('.pdf-page')?.querySelector('canvas');
-    if (!canvas) return;
-
-    const canvasRect = canvas.getBoundingClientRect();
     setDragOffset({
-      x: e.clientX - canvasRect.left,
-      y: e.clientY - canvasRect.top
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
     });
   }, []);
 
@@ -83,14 +79,26 @@ const Editor = () => {
     if (!canvas) return;
 
     const canvasRect = canvas.getBoundingClientRect();
-    // Place exactly where dropped, accounting for the initial offset
+    
+    // Calculate new position by subtracting the drag offset from the drop coordinates
     const x = e.clientX - canvasRect.left - dragOffset.x;
     const y = e.clientY - canvasRect.top - dragOffset.y;
+    
+    // Ensure the element stays within the canvas bounds
+    const boundedX = Math.max(0, Math.min(x, canvasRect.width - draggedElement.size.width));
+    const boundedY = Math.max(0, Math.min(y, canvasRect.height - draggedElement.size.height));
     
     setSigningElements(prevElements => 
       prevElements.map(el => 
         el.id === draggedId 
-          ? { ...el, position: { ...el.position, x, y } }
+          ? { 
+              ...el, 
+              position: { 
+                ...el.position, 
+                x: boundedX, 
+                y: boundedY 
+              } 
+            }
           : el
       )
     );
