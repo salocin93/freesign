@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Upload, Clock, CheckCircle } from 'lucide-react';
+import { Upload, Clock, CheckCircle, PenLine } from 'lucide-react';
 import { DocumentActivity } from '@/utils/types';
 import { format } from 'date-fns';
 
 const Dashboard = () => {
   // In a real app, these would come from an API
+  const [draftCount] = useState(2);
   const [pendingCount] = useState(3);
   const [completedCount] = useState(5);
   const [recentActivity] = useState<DocumentActivity[]>([
@@ -81,7 +82,23 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-lg border p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-medium">Draft Documents</h2>
+              <span className="text-2xl font-bold text-yellow-600">{draftCount}</span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Documents in draft state
+            </p>
+            <Button variant="outline" asChild className="mt-4 w-full">
+              <Link to="/documents?filter=draft">
+                <PenLine className="h-4 w-4 mr-2" />
+                View Drafts
+              </Link>
+            </Button>
+          </div>
+
           <div className="bg-white rounded-lg border p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium">Pending Signatures</h2>
@@ -91,7 +108,10 @@ const Dashboard = () => {
               Documents waiting for signatures
             </p>
             <Button variant="outline" asChild className="mt-4 w-full">
-              <Link to="/documents?filter=sent">View Pending</Link>
+              <Link to="/documents?filter=sent">
+                <Clock className="h-4 w-4 mr-2" />
+                View Pending
+              </Link>
             </Button>
           </div>
 
@@ -104,7 +124,10 @@ const Dashboard = () => {
               Documents with all signatures collected
             </p>
             <Button variant="outline" asChild className="mt-4 w-full">
-              <Link to="/documents?filter=completed">View Completed</Link>
+              <Link to="/documents?filter=completed">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                View Completed
+              </Link>
             </Button>
           </div>
         </div>
