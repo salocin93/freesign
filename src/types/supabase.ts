@@ -44,6 +44,76 @@ export interface Database {
           metadata?: Json
         }
       }
+      signatures: {
+        Row: {
+          id: string
+          user_id: string
+          type: 'draw' | 'type' | 'upload'
+          value: string
+          name: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: 'draw' | 'type' | 'upload'
+          value: string
+          name?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: 'draw' | 'type' | 'upload'
+          value?: string
+          name?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      signature_fields: {
+        Row: {
+          id: string
+          document_id: string
+          recipient_id: string
+          signature_id: string | null
+          page_number: number
+          position: Json
+          size: Json
+          required: boolean
+          signed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          document_id: string
+          recipient_id: string
+          signature_id?: string | null
+          page_number: number
+          position: Json
+          size: Json
+          required?: boolean
+          signed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          document_id?: string
+          recipient_id?: string
+          signature_id?: string | null
+          page_number?: number
+          position?: Json
+          size?: Json
+          required?: boolean
+          signed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       recipients: {
         Row: {
           id: string

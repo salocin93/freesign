@@ -15,6 +15,26 @@ import { toast } from 'sonner';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase, getDocumentUrl } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { SignatureDialog } from '@/components/SignatureDialog';
+import { SignatureField } from '@/components/SignatureField';
+import { cn } from '@/lib/utils';
+
+interface SigningElement {
+  id: string;
+  type: 'signature' | 'date' | 'text' | 'checkbox';
+  position: {
+    x: number;
+    y: number;
+    pageIndex: number;
+  };
+  size: {
+    width: number;
+    height: number;
+  };
+  value: string | boolean | null;
+  required: boolean;
+  assignedTo: string | null;
+}
 
 const Editor = () => {
   const { id } = useParams();
@@ -31,6 +51,8 @@ const Editor = () => {
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [selectedRecipientId, setSelectedRecipientId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
+  const [selectedSignatureFieldId, setSelectedSignatureFieldId] = useState<string | null>(null);
   
   // Redirect to upload if no document ID is provided
   useEffect(() => {
@@ -413,6 +435,54 @@ const Editor = () => {
     e.stopPropagation();
   }, []);
 
+  const handleSignatureFieldClick = (fieldId: string) => {
+    setSelectedSignatureFieldId(fieldId);
+    setIsSignatureDialogOpen(true);
+  };
+
+  const handleSignatureSelected = async (signatureId: string) => {
+    if (!selectedSignatureFieldId) return;
+
+    try {
+      // Update the signature field with the selected signature
+      const { error } = await supabase
+        .from('signature_fields')
+        .update({
+          signature_id: signatureId,
+          signed_at: new Date().toISOString(),
+        })
+        .eq('id', selectedSignatureFieldId);
+
+      if (error) throw error;
+
+      // Get the signature data
+      const { data: signatureData, error: signatureError } = await supabase
+        .from('signatures')
+        .select('value')
+        .eq('id', signatureId)
+        .single();
+
+      if (signatureError) throw signatureError;
+
+      // Update the UI
+      setSigningElements(elements => 
+        elements.map(el => 
+          el.id === selectedSignatureFieldId
+            ? { ...el, value: signatureData.value }
+            : el
+        )
+      );
+
+      toast.success('Signature added successfully');
+    } catch (error) {
+      console.error('Error adding signature:', error);
+      toast.error('Failed to add signature');
+    }
+
+    setSelectedSignatureFieldId(null);
+    setIsSignatureDialogOpen(false);
+  };
+
   if (!document || !documentUrl) {
     return (
       <AppLayout>
@@ -464,6 +534,24 @@ const Editor = () => {
             >
               <DocumentViewer documentUrl={documentUrl}>
                 {signingElements.map((element) => {
+                  const isSignature = element.type === 'signature';
+                  if (isSignature) {
+                    return (
+                      <SignatureField
+                        key={element.id}
+                        position={element.position}
+                        size={element.size}
+                        signatureUrl={element.value as string}
+                        isPlaceholder={!element.value}
+                        onClick={() => handleSignatureFieldClick(element.id)}
+                        className={cn(
+                          'border-2',
+                          element.value ? 'border-transparent' : 'border-dashed border-gray-400'
+                        )}
+                      />
+                    );
+                  }
+
                   const recipient = recipients.find(r => r.id === element.assignedTo);
                   // Use specific colors for first three recipients, then generate colors for others
                   const recipientColor = recipient ? 
@@ -556,6 +644,15 @@ const Editor = () => {
         isOpen={isEmailModalOpen}
         onClose={() => setIsEmailModalOpen(false)}
         onSend={handleSendDocument}
+      />
+
+      <SignatureDialog
+        isOpen={isSignatureDialogOpen}
+        onClose={() => {
+          setIsSignatureDialogOpen(false);
+          setSelectedSignatureFieldId(null);
+        }}
+        onSignatureSelected={handleSignatureSelected}
       />
     </AppLayout>
   );
