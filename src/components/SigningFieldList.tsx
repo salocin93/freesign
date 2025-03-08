@@ -26,12 +26,12 @@ const SigningFieldList: React.FC<SigningFieldListProps> = ({
     const typeMap: Record<SigningElement['type'], string> = {
       signature: 'Signature',
       date: 'Date',
+      text: 'Text',
+      checkbox: 'Checkbox',
       name: 'Name',
       email: 'Email',
       address: 'Address',
-      title: 'Title',
-      text: 'Text',
-      checkbox: 'Checkbox'
+      title: 'Title'
     };
     return typeMap[type] || type;
   };
