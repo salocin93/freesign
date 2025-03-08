@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { SignatureData } from '@/utils/types';
 import { SignatureVerification } from '@/utils/signatureVerification';
+import { getClientInfo } from '@/utils/clientInfo';
 
 interface SignatureDialogProps {
   isOpen: boolean;
@@ -43,9 +44,12 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
     }
 
     try {
+      // Get client information
+      const clientInfo = await getClientInfo();
+      
       // Add verification metadata
-      const timestamp = new Date().toISOString();
-      const verificationHash = SignatureVerification.createSignatureHash(
+      const timestamp = clientInfo.timestamp;
+      const verificationHash = await SignatureVerification.createSignatureHash(
         signatureData.dataUrl,
         currentUser.id,
         timestamp,
@@ -62,12 +66,12 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
           name: typedName || null,
           verification_hash: verificationHash,
           metadata: {
-            userAgent: navigator.userAgent,
+            userAgent: clientInfo.userAgent,
             timestamp,
-            deviceId: await getDeviceId(), // Implement this function to get a unique device identifier
+            geolocation: clientInfo.geolocation,
           },
-          ip_address: await getClientIP(), // You'll need to implement this, possibly via an API endpoint
-          user_agent: navigator.userAgent,
+          ip_address: clientInfo.ip,
+          user_agent: clientInfo.userAgent,
         })
         .select()
         .single();
@@ -83,8 +87,9 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
           type: activeTab,
           metadata: data.metadata,
         },
-        ip_address: data.ip_address,
-        user_agent: data.user_agent,
+        ip_address: clientInfo.ip,
+        user_agent: clientInfo.userAgent,
+        geolocation: clientInfo.geolocation,
       });
 
       if (data) {
