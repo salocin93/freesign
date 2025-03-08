@@ -1,34 +1,52 @@
-import { supabase } from '@/lib/supabase';
 
-interface ClientInfo {
-  ip: string;
-  userAgent: string;
-  geolocation: {
-    city?: string;
-    country?: string;
-    region?: string;
-    latitude?: number;
-    longitude?: number;
-  };
-  timestamp: string;
-}
-
-export async function getClientInfo(): Promise<ClientInfo> {
+/**
+ * Gets client information for audit and verification purposes
+ */
+export const getClientInfo = async () => {
+  const timestamp = new Date().toISOString();
+  const userAgent = navigator.userAgent;
+  
+  // Default to empty IP when it can't be determined
+  let ip = '';
+  
+  // Try to get client IP from an API (won't work on localhost)
   try {
-    const { data, error } = await supabase.functions.invoke('get-client-info', {
-      method: 'GET',
-    });
-
-    if (error) throw error;
-
-    return data as ClientInfo;
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    ip = data.ip;
   } catch (error) {
-    console.error('Error getting client info:', error);
-    return {
-      ip: 'unknown',
-      userAgent: navigator.userAgent,
-      geolocation: {},
-      timestamp: new Date().toISOString(),
-    };
+    console.warn('Could not determine client IP address', error);
   }
-} 
+
+  // Default geolocation
+  const geolocation = {
+    latitude: null,
+    longitude: null,
+    accuracy: null
+  };
+
+  // Try to get geolocation if available in browser
+  if (navigator.geolocation) {
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          timeout: 5000,
+          maximumAge: 60000
+        });
+      });
+
+      geolocation.latitude = position.coords.latitude;
+      geolocation.longitude = position.coords.longitude;
+      geolocation.accuracy = position.coords.accuracy;
+    } catch (error) {
+      console.warn('Geolocation permission denied or unavailable', error);
+    }
+  }
+
+  return {
+    timestamp,
+    userAgent,
+    ip,
+    geolocation
+  };
+};

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import SignaturePad from 'signature_pad';
 import { Button } from '@/components/ui/button';
@@ -76,9 +77,14 @@ export const SignaturePadComponent: React.FC<SignaturePadProps> = ({
   const handleSave = () => {
     if (signaturePadRef.current && !signaturePadRef.current.isEmpty()) {
       const dataUrl = signaturePadRef.current.toDataURL('image/png');
+      const timestamp = new Date().toISOString();
       onSave({
         dataUrl,
-        type: 'drawn'
+        type: 'drawn',
+        timestamp,
+        metadata: {
+          userAgent: navigator.userAgent
+        }
       });
     }
   };

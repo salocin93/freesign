@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -21,12 +22,14 @@ interface SignatureDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSignatureSelected: (signatureId: string) => void;
+  documentId?: string;
 }
 
 export const SignatureDialog: React.FC<SignatureDialogProps> = ({
   isOpen,
   onClose,
   onSignatureSelected,
+  documentId,
 }) => {
   const [activeTab, setActiveTab] = useState<'draw' | 'type' | 'upload'>('draw');
   const [typedName, setTypedName] = useState('');
@@ -49,12 +52,16 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
       
       // Add verification metadata
       const timestamp = clientInfo.timestamp;
-      const verificationHash = await SignatureVerification.createSignatureHash(
-        signatureData.dataUrl,
-        currentUser.id,
-        timestamp,
-        document.id
-      );
+      
+      let verificationHash = '';
+      if (documentId) {
+        verificationHash = await SignatureVerification.createSignatureHash(
+          signatureData.dataUrl,
+          currentUser.id,
+          timestamp,
+          documentId
+        );
+      }
 
       // Save the signature to the database
       const { data, error } = await supabase
@@ -64,7 +71,7 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
           type: activeTab,
           value: signatureData.dataUrl,
           name: typedName || null,
-          verification_hash: verificationHash,
+          verification_hash: verificationHash || null,
           metadata: {
             userAgent: clientInfo.userAgent,
             timestamp,
@@ -78,19 +85,21 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
 
       if (error) throw error;
 
-      // Log the signature event
-      await supabase.from('signature_audit_logs').insert({
-        signature_id: data.id,
-        document_id: document.id,
-        event_type: 'signature_created',
-        event_data: {
-          type: activeTab,
-          metadata: data.metadata,
-        },
-        ip_address: clientInfo.ip,
-        user_agent: clientInfo.userAgent,
-        geolocation: clientInfo.geolocation,
-      });
+      // Log the signature event if document ID is provided
+      if (documentId) {
+        await supabase.from('signature_audit_logs').insert({
+          signature_id: data.id,
+          document_id: documentId,
+          event_type: 'signature_created',
+          event_data: {
+            type: activeTab,
+            metadata: data.metadata,
+          },
+          ip_address: clientInfo.ip,
+          user_agent: clientInfo.userAgent,
+          geolocation: clientInfo.geolocation,
+        });
+      }
 
       if (data) {
         onSignatureSelected(data.id);
@@ -141,9 +150,27 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
     ctx.fillText(typedName, canvas.width / 2, canvas.height / 2);
 
     // Convert to base64
+    const timestamp = new Date().toISOString();
     const signatureData: SignatureData = {
       dataUrl: canvas.toDataURL('image/png'),
-      type: 'typed'
+      type: 'typed',
+      timestamp,
+      metadata: {
+        userAgent: navigator.userAgent
+      }
+    };
+    handleSaveSignature(signatureData);
+  };
+
+  const handleUploadSignature = (dataUrl: string) => {
+    const timestamp = new Date().toISOString();
+    const signatureData: SignatureData = {
+      dataUrl,
+      type: 'uploaded',
+      timestamp,
+      metadata: {
+        userAgent: navigator.userAgent
+      }
     };
     handleSaveSignature(signatureData);
   };
@@ -167,7 +194,7 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
 
           <TabsContent value="draw">
             <SignaturePadComponent
-              onSave={(dataUrl) => handleSaveSignature({ dataUrl, type: 'drawn' })}
+              onSave={handleSaveSignature}
               onCancel={onClose}
             />
           </TabsContent>
@@ -203,10 +230,7 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
                   const reader = new FileReader();
                   reader.onload = (event) => {
                     if (typeof event.target?.result === 'string') {
-                      handleSaveSignature({
-                        dataUrl: event.target.result,
-                        type: 'uploaded'
-                      });
+                      handleUploadSignature(event.target.result);
                     }
                   };
                   reader.readAsDataURL(file);
@@ -223,4 +247,4 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
       </DialogContent>
     </Dialog>
   );
-}; 
+};

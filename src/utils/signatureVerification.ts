@@ -1,14 +1,16 @@
+
 import crypto from 'crypto';
-import { SignatureData } from './types';
+import { supabase } from '@/lib/supabase';
+import { SignatureData, SignatureVerification } from './types';
 
 export class SignatureVerification {
   // Create a hash of the signature data and metadata
-  static createSignatureHash(
+  static async createSignatureHash(
     signatureData: string,
     userId: string,
     timestamp: string,
     documentId: string
-  ): string {
+  ): Promise<string> {
     const data = `${signatureData}${userId}${timestamp}${documentId}`;
     return crypto
       .createHash('sha256')
@@ -41,7 +43,7 @@ export class SignatureVerification {
       }
 
       // Recreate the hash with the stored data
-      const verificationHash = this.createSignatureHash(
+      const verificationHash = await this.createSignatureHash(
         signature.value,
         signature.user_id,
         signature.created_at,
@@ -97,4 +99,4 @@ export class SignatureVerification {
       throw error;
     }
   }
-} 
+}

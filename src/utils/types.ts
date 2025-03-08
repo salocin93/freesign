@@ -68,10 +68,10 @@ export interface SignatureField {
 export interface SignatureData {
   dataUrl: string;
   type: 'drawn' | 'typed' | 'uploaded';
-  timestamp: string;
-  signatureHash: string;
-  metadata: {
-    userAgent: string;
+  timestamp?: string;
+  signatureHash?: string;
+  metadata?: {
+    userAgent?: string;
     ipAddress?: string;
     deviceId?: string;
   };

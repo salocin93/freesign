@@ -7,7 +7,7 @@ import SigningFieldList from '@/components/SigningFieldList';
 import RecipientSelector from '@/components/RecipientSelector';
 import RecipientModal from '@/components/RecipientModal';
 import EmailForm from '@/components/EmailForm';
-import { Document, SigningElement, SignatureData, Recipient } from '@/utils/types';
+import { Document, Recipient } from '@/utils/types';
 import { Button } from '@/components/ui/button';
 import { Mail, Pen, ArrowLeft, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,6 +17,24 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SignatureDialog } from '@/components/SignatureDialog';
 import { SignatureField } from '@/components/SignatureField';
 import { cn } from '@/lib/utils';
+
+interface SigningElement {
+  id: string;
+  type: 'signature' | 'date' | 'text' | 'checkbox' | 'name' | 'email' | 'address' | 'title';
+  position: {
+    x: number;
+    y: number;
+    pageIndex: number;
+  };
+  size: {
+    width: number;
+    height: number;
+  };
+  value: string | boolean | null;
+  required: boolean;
+  assignedTo: string | null;
+  label?: string;
+}
 
 const Editor = () => {
   const { id } = useParams();
@@ -35,8 +53,7 @@ const Editor = () => {
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
   const [selectedSignatureFieldId, setSelectedSignatureFieldId] = useState<string | null>(null);
-  
-  // Redirect to upload if no document ID is provided
+
   useEffect(() => {
     if (!id) {
       toast.error('No document selected');
@@ -45,15 +62,13 @@ const Editor = () => {
     }
   }, [id, navigate]);
 
-  // Load document from Supabase when component mounts
   useEffect(() => {
     if (!id || !currentUser) {
-      return; // Let the first useEffect handle the redirect
+      return;
     }
 
     const loadDocument = async () => {
       try {
-        // Get document from database
         const { data: documentData, error: documentError } = await supabase
           .from('documents')
           .select('*')
@@ -65,7 +80,6 @@ const Editor = () => {
           throw new Error('Document not found');
         }
 
-        // Get document URL from storage
         const url = await getDocumentUrl(documentData.storage_path);
         if (!url) {
           throw new Error('Document URL not found');
@@ -74,7 +88,6 @@ const Editor = () => {
         setDocument(documentData);
         setDocumentUrl(url);
 
-        // Load signing elements
         const { data: elementsData, error: elementsError } = await supabase
           .from('signing_elements')
           .select('*')
@@ -96,7 +109,6 @@ const Editor = () => {
           })));
         }
 
-        // Load recipients
         const { data: recipientsData, error: recipientsError } = await supabase
           .from('recipients')
           .select('*')
@@ -124,7 +136,6 @@ const Editor = () => {
     loadDocument();
   }, [id, navigate, currentUser]);
 
-  // Reset recipient selection when changing documents
   useEffect(() => {
     if (!document) {
       setRecipients([]);
@@ -136,7 +147,6 @@ const Editor = () => {
     e.stopPropagation();
     e.dataTransfer.setData('text/plain', element.id);
     
-    // Calculate offset between mouse and element's top-left corner
     const rect = e.currentTarget.getBoundingClientRect();
     setDragOffset({
       x: e.clientX - rect.left,
@@ -157,11 +167,9 @@ const Editor = () => {
 
     const canvasRect = canvas.getBoundingClientRect();
     
-    // Calculate new position by subtracting the drag offset from the drop coordinates
     const x = e.clientX - canvasRect.left - dragOffset.x;
     const y = e.clientY - canvasRect.top - dragOffset.y;
     
-    // Ensure the element stays within the canvas bounds
     const boundedX = Math.max(0, Math.min(x, canvasRect.width - draggedElement.size.width));
     const boundedY = Math.max(0, Math.min(y, canvasRect.height - draggedElement.size.height));
     
@@ -181,7 +189,6 @@ const Editor = () => {
     setSigningElements(updatedElements);
     setDragOffset(null);
 
-    // Update element position in database
     supabase
       .from('signing_elements')
       .update({
@@ -205,7 +212,6 @@ const Editor = () => {
       if (!canvas) return;
 
       const canvasRect = canvas.getBoundingClientRect();
-      // Center the element on the mouse cursor by subtracting half the element's dimensions
       let width = 150;
       let height = 50;
 
@@ -220,11 +226,9 @@ const Editor = () => {
         height = 40;
       }
 
-      // Calculate position relative to the canvas
       const x = e.clientX - canvasRect.left - (width / 2);
       const y = e.clientY - canvasRect.top - (height / 2);
 
-      // If no recipient is selected when trying to place an element, show the recipient modal
       if (!selectedRecipientId) {
         setIsRecipientModalOpen(true);
         return;
@@ -248,7 +252,6 @@ const Editor = () => {
         assignedTo: selectedRecipientId,
       };
 
-      // Add element to database
       const { error } = await supabase
         .from('signing_elements')
         .insert({
@@ -269,7 +272,6 @@ const Editor = () => {
 
       setSigningElements([...signingElements, newElement]);
       toast.success(`${activeElementType} field added`);
-      // Deselect the field type after placement
       setActiveElementType(null);
     },
     [activeElementType, document, signingElements, selectedRecipientId]
@@ -281,7 +283,6 @@ const Editor = () => {
   };
 
   const handleRemoveElement = async (id: string) => {
-    // Remove element from database
     const { error } = await supabase
       .from('signing_elements')
       .delete()
@@ -310,7 +311,6 @@ const Editor = () => {
       status: 'pending',
     };
 
-    // Add recipient to database
     const { error } = await supabase
       .from('recipients')
       .insert({
@@ -330,7 +330,6 @@ const Editor = () => {
     const updatedRecipients = [...recipients, newRecipient];
     setRecipients(updatedRecipients);
     
-    // Auto-select the newly added recipient
     setSelectedRecipientId(newRecipient.id);
     
     toast.success(`Recipient ${recipientData.name} added`);
@@ -347,7 +346,6 @@ const Editor = () => {
   const handleSaveSignature = async (signatureData: SignatureData) => {
     setSignature(signatureData);
     
-    // Find all signature elements assigned to the current user and update them
     const updatedElements = signingElements.map(element => {
       if (element.type === 'signature') {
         return {
@@ -358,7 +356,6 @@ const Editor = () => {
       return element;
     });
     
-    // Update signature elements in database
     for (const element of updatedElements) {
       if (element.type === 'signature') {
         const { error } = await supabase
@@ -382,7 +379,6 @@ const Editor = () => {
     if (!document) return;
 
     try {
-      // Update document status
       const { error: documentError } = await supabase
         .from('documents')
         .update({ status: 'sent' })
@@ -392,7 +388,6 @@ const Editor = () => {
         throw documentError;
       }
 
-      // Update recipients in database
       for (const recipient of emailRecipients) {
         const { error: recipientError } = await supabase
           .from('recipients')
@@ -426,7 +421,6 @@ const Editor = () => {
     if (!selectedSignatureFieldId) return;
 
     try {
-      // Update the signature field with the selected signature
       const { error } = await supabase
         .from('signature_fields')
         .update({
@@ -437,7 +431,6 @@ const Editor = () => {
 
       if (error) throw error;
 
-      // Get the signature data
       const { data: signatureData, error: signatureError } = await supabase
         .from('signatures')
         .select('value')
@@ -446,7 +439,6 @@ const Editor = () => {
 
       if (signatureError) throw signatureError;
 
-      // Update the UI
       setSigningElements(elements => 
         elements.map(el => 
           el.id === selectedSignatureFieldId
@@ -517,11 +509,10 @@ const Editor = () => {
               <DocumentViewer documentUrl={documentUrl}>
                 {signingElements.map((element) => {
                   const recipient = recipients.find(r => r.id === element.assignedTo);
-                  // Use specific colors for first three recipients, then generate colors for others
                   const recipientColor = recipient ? 
-                    (recipients.findIndex(r => r.id === recipient.id) === 0 ? '#3b82f6' : // blue
-                     recipients.findIndex(r => r.id === recipient.id) === 1 ? '#22c55e' : // green
-                     recipients.findIndex(r => r.id === recipient.id) === 2 ? '#ef4444' : // red
+                    (recipients.findIndex(r => r.id === recipient.id) === 0 ? '#3b82f6' : 
+                     recipients.findIndex(r => r.id === recipient.id) === 1 ? '#22c55e' : 
+                     recipients.findIndex(r => r.id === recipient.id) === 2 ? '#ef4444' : 
                      `hsl(${(recipients.findIndex(r => r.id === recipient.id) * 360) / recipients.length}, 70%, 50%)`) : '#666';
                   
                   return (
@@ -612,6 +603,7 @@ const Editor = () => {
         isOpen={isSignatureModalOpen}
         onClose={() => setIsSignatureModalOpen(false)}
         onSignatureSelected={handleSignatureSelected}
+        documentId={document.id}
       />
 
       <EmailForm
@@ -627,6 +619,7 @@ const Editor = () => {
           setSelectedSignatureFieldId(null);
         }}
         onSignatureSelected={handleSignatureSelected}
+        documentId={document.id}
       />
     </AppLayout>
   );
