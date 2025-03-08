@@ -6,7 +6,6 @@ import SigningElementsToolbar from '@/components/SigningElementsToolbar';
 import SigningFieldList from '@/components/SigningFieldList';
 import RecipientSelector from '@/components/RecipientSelector';
 import RecipientModal from '@/components/RecipientModal';
-import SignaturePad from '@/components/SignaturePad';
 import EmailForm from '@/components/EmailForm';
 import { Document, SigningElement, SignatureData, Recipient } from '@/utils/types';
 import { Button } from '@/components/ui/button';
@@ -18,23 +17,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SignatureDialog } from '@/components/SignatureDialog';
 import { SignatureField } from '@/components/SignatureField';
 import { cn } from '@/lib/utils';
-
-interface SigningElement {
-  id: string;
-  type: 'signature' | 'date' | 'text' | 'checkbox';
-  position: {
-    x: number;
-    y: number;
-    pageIndex: number;
-  };
-  size: {
-    width: number;
-    height: number;
-  };
-  value: string | boolean | null;
-  required: boolean;
-  assignedTo: string | null;
-}
 
 const Editor = () => {
   const { id } = useParams();
@@ -534,24 +516,6 @@ const Editor = () => {
             >
               <DocumentViewer documentUrl={documentUrl}>
                 {signingElements.map((element) => {
-                  const isSignature = element.type === 'signature';
-                  if (isSignature) {
-                    return (
-                      <SignatureField
-                        key={element.id}
-                        position={element.position}
-                        size={element.size}
-                        signatureUrl={element.value as string}
-                        isPlaceholder={!element.value}
-                        onClick={() => handleSignatureFieldClick(element.id)}
-                        className={cn(
-                          'border-2',
-                          element.value ? 'border-transparent' : 'border-dashed border-gray-400'
-                        )}
-                      />
-                    );
-                  }
-
                   const recipient = recipients.find(r => r.id === element.assignedTo);
                   // Use specific colors for first three recipients, then generate colors for others
                   const recipientColor = recipient ? 
@@ -563,7 +527,7 @@ const Editor = () => {
                   return (
                     <div
                       key={element.id}
-                      className="signing-element"
+                      className="signing-element absolute"
                       style={{
                         left: `${element.position.x}px`,
                         top: `${element.position.y}px`,
@@ -581,19 +545,29 @@ const Editor = () => {
                         <span className="text-xs font-medium">{element.type}</span>
                         <span className="text-xs text-muted-foreground">{recipient?.name || 'Unassigned'}</span>
                       </div>
-                      <div className="h-full flex items-center justify-center border-b border-dashed border-gray-300">
-                        {element.type === 'signature' && element.value ? (
-                          <img 
-                            src={element.value as string} 
-                            alt="Signature" 
-                            className="max-h-full max-w-full p-1" 
-                          />
+                      <div 
+                        className="h-full flex items-center justify-center border-b border-dashed border-gray-300"
+                        onClick={() => element.type === 'signature' && handleSignatureFieldClick(element.id)}
+                      >
+                        {element.type === 'signature' ? (
+                          element.value ? (
+                            <img 
+                              src={element.value as string} 
+                              alt="Signature" 
+                              className="max-h-[calc(100%-10px)] max-w-[calc(100%-10px)] object-contain" 
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center text-gray-500">
+                              <Pen className="w-6 h-6 mb-1" />
+                              <span className="text-sm">Click to sign</span>
+                            </div>
+                          )
                         ) : (
                           <span className="text-muted-foreground text-sm">{element.type}</span>
                         )}
                       </div>
                       <button
-                        className="signing-element-handle"
+                        className="signing-element-handle absolute top-1 right-1 p-1 rounded-full hover:bg-gray-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRemoveElement(element.id);
@@ -634,10 +608,10 @@ const Editor = () => {
         onSave={handleSaveRecipient}
       />
 
-      <SignaturePad
+      <SignatureDialog
         isOpen={isSignatureModalOpen}
         onClose={() => setIsSignatureModalOpen(false)}
-        onSave={handleSaveSignature}
+        onSignatureSelected={handleSignatureSelected}
       />
 
       <EmailForm

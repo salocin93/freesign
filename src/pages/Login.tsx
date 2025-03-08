@@ -29,7 +29,6 @@ const Login = () => {
     setIsLoading(true);
     
     // For now, we'll only implement Google login
-    // Email/password login would require additional Firebase setup
     toast({
       title: "Email login not implemented",
       description: "Please use Google login instead",

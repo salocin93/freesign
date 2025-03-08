@@ -1,0 +1,13 @@
+.signing-element {
+  @apply border-2 rounded bg-white;
+  position: absolute;
+  cursor: move;
+}
+
+.signing-element-handle {
+  @apply opacity-0 transition-opacity duration-200;
+}
+
+.signing-element:hover .signing-element-handle {
+  @apply opacity-100;
+} 

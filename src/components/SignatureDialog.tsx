@@ -14,6 +14,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { SignatureData } from '@/utils/types';
+import { SignatureVerification } from '@/utils/signatureVerification';
+import { getClientInfo } from '@/utils/clientInfo';
 
 interface SignatureDialogProps {
   isOpen: boolean;
@@ -42,6 +44,18 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
     }
 
     try {
+      // Get client information
+      const clientInfo = await getClientInfo();
+      
+      // Add verification metadata
+      const timestamp = clientInfo.timestamp;
+      const verificationHash = await SignatureVerification.createSignatureHash(
+        signatureData.dataUrl,
+        currentUser.id,
+        timestamp,
+        document.id
+      );
+
       // Save the signature to the database
       const { data, error } = await supabase
         .from('signatures')
@@ -50,11 +64,33 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
           type: activeTab,
           value: signatureData.dataUrl,
           name: typedName || null,
+          verification_hash: verificationHash,
+          metadata: {
+            userAgent: clientInfo.userAgent,
+            timestamp,
+            geolocation: clientInfo.geolocation,
+          },
+          ip_address: clientInfo.ip,
+          user_agent: clientInfo.userAgent,
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Log the signature event
+      await supabase.from('signature_audit_logs').insert({
+        signature_id: data.id,
+        document_id: document.id,
+        event_type: 'signature_created',
+        event_data: {
+          type: activeTab,
+          metadata: data.metadata,
+        },
+        ip_address: clientInfo.ip,
+        user_agent: clientInfo.userAgent,
+        geolocation: clientInfo.geolocation,
+      });
 
       if (data) {
         onSignatureSelected(data.id);
@@ -94,7 +130,7 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
     canvas.height = 100;
 
     // Set font and style
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'black';
     ctx.font = '48px "Dancing Script", cursive';

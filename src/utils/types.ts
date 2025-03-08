@@ -66,13 +66,32 @@ export interface SignatureField {
 export interface SignatureData {
   dataUrl: string;
   type: 'drawn' | 'typed' | 'uploaded';
+  timestamp: string;
+  signatureHash: string;
+  metadata: {
+    userAgent: string;
+    ipAddress?: string;
+    deviceId?: string;
+  };
+}
+
+export interface SignatureVerification {
+  isValid: boolean;
+  timestamp: string;
+  signedBy: {
+    name: string;
+    email: string;
+    userId: string;
+  };
+  documentId: string;
+  verificationHash: string;
 }
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  photoURL?: string;
+  avatar_url?: string;
 }
 
 export interface DocumentActivity {
