@@ -91,7 +91,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  photoURL?: string;
+  avatar_url?: string;
 }
 
 export interface DocumentActivity {
