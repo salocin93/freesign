@@ -1,9 +1,9 @@
 
 import crypto from 'crypto';
 import { supabase } from '@/lib/supabase';
-import { SignatureData, SignatureVerification } from './types';
+import { SignatureVerification as SignatureVerificationType } from './types';
 
-export class SignatureVerification {
+export class SignatureVerificationUtil {
   // Create a hash of the signature data and metadata
   static async createSignatureHash(
     signatureData: string,
@@ -62,7 +62,7 @@ export class SignatureVerification {
   static async getVerificationInfo(
     signatureId: string,
     documentId: string
-  ): Promise<SignatureVerification> {
+  ): Promise<SignatureVerificationType> {
     try {
       const { data: signature, error } = await supabase
         .from('signatures')
@@ -100,3 +100,4 @@ export class SignatureVerification {
     }
   }
 }
+
