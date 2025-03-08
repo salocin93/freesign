@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { SignatureData } from '@/utils/types';
+import { SignatureVerification } from '@/utils/signatureVerification';
 
 interface SignatureDialogProps {
   isOpen: boolean;
@@ -42,6 +43,15 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
     }
 
     try {
+      // Add verification metadata
+      const timestamp = new Date().toISOString();
+      const verificationHash = SignatureVerification.createSignatureHash(
+        signatureData.dataUrl,
+        currentUser.id,
+        timestamp,
+        document.id
+      );
+
       // Save the signature to the database
       const { data, error } = await supabase
         .from('signatures')
@@ -50,11 +60,32 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
           type: activeTab,
           value: signatureData.dataUrl,
           name: typedName || null,
+          verification_hash: verificationHash,
+          metadata: {
+            userAgent: navigator.userAgent,
+            timestamp,
+            deviceId: await getDeviceId(), // Implement this function to get a unique device identifier
+          },
+          ip_address: await getClientIP(), // You'll need to implement this, possibly via an API endpoint
+          user_agent: navigator.userAgent,
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Log the signature event
+      await supabase.from('signature_audit_logs').insert({
+        signature_id: data.id,
+        document_id: document.id,
+        event_type: 'signature_created',
+        event_data: {
+          type: activeTab,
+          metadata: data.metadata,
+        },
+        ip_address: data.ip_address,
+        user_agent: data.user_agent,
+      });
 
       if (data) {
         onSignatureSelected(data.id);
