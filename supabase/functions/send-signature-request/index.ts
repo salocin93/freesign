@@ -71,7 +71,7 @@ serve(async (req) => {
     }
 
     // Get sender details
-    const { data: user, error: userError } = await supabase.auth.admin.getUserById(document.created_by);
+    const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
     
     if (userError || !user) {
       console.error('User fetch error:', userError);
@@ -79,8 +79,8 @@ serve(async (req) => {
     }
 
     const sender = {
-      email: user.user.email!,
-      full_name: user.user.user_metadata?.full_name || user.user.email?.split('@')[0] || '',
+      email: user.email!,
+      full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
     };
 
     if (!sender.email) {
@@ -108,6 +108,7 @@ serve(async (req) => {
         personalizations: [
           {
             to: [{ email: recipient.email, name: recipient.name }],
+            subject: `${sender.full_name} has sent you a document to sign: ${document.name}`,
             dynamic_template_data: {
               sender_name: sender.full_name,
               document_name: document.name,
@@ -121,7 +122,22 @@ serve(async (req) => {
           email: sender.email,
           name: sender.full_name,
         },
-        template_id: Deno.env.get('SENDGRID_TEMPLATE_ID'),
+        template_id: Deno.env.get('SENDGRID_TEMPLATE_ID') || '',
+        subject: `${sender.full_name} has sent you a document to sign: ${document.name}`,
+        content: [
+          {
+            type: 'text/plain',
+            value: `${sender.full_name} has sent you a document to sign: ${document.name}\n\n` +
+                   `${message ? `Message: ${message}\n\n` : ''}` +
+                   `Click here to sign: ${signingUrl}`
+          },
+          {
+            type: 'text/html',
+            value: `<p>${sender.full_name} has sent you a document to sign: ${document.name}</p>` +
+                   `${message ? `<p>Message: ${message}</p>` : ''}` +
+                   `<p><a href="${signingUrl}">Click here to sign</a></p>`
+          }
+        ]
       }),
     })
 
