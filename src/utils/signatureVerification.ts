@@ -1,5 +1,3 @@
-
-import crypto from 'crypto';
 import { supabase } from '@/lib/supabase';
 import { SignatureVerification as SignatureVerificationType } from './types';
 
@@ -12,10 +10,19 @@ export class SignatureVerificationUtil {
     documentId: string
   ): Promise<string> {
     const data = `${signatureData}${userId}${timestamp}${documentId}`;
-    return crypto
-      .createHash('sha256')
-      .update(data)
-      .digest('hex');
+    
+    // Convert the string to bytes
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    
+    // Create SHA-256 hash using Web Crypto API
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    
+    // Convert hash to hex string
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    return hashHex;
   }
 
   // Verify the signature hasn't been tampered with

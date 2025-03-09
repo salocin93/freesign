@@ -106,4 +106,46 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
 GRANT ALL ON SEQUENCES TO authenticated;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
-GRANT ALL ON FUNCTIONS TO authenticated; 
+GRANT ALL ON FUNCTIONS TO authenticated;
+
+-- Drop existing signing_elements policies if they exist
+DROP POLICY IF EXISTS "Enable insert for document owners" ON public.signing_elements;
+DROP POLICY IF EXISTS "Enable update for document owners" ON public.signing_elements;
+DROP POLICY IF EXISTS "Enable delete for document owners" ON public.signing_elements;
+
+-- Create policies for signing_elements table
+CREATE POLICY "Enable insert for document owners" ON public.signing_elements
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.documents
+      WHERE id = signing_elements.document_id
+      AND created_by = auth.uid()
+    )
+  );
+
+CREATE POLICY "Enable update for document owners" ON public.signing_elements
+  FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.documents
+      WHERE id = signing_elements.document_id
+      AND created_by = auth.uid()
+    )
+  );
+
+CREATE POLICY "Enable delete for document owners" ON public.signing_elements
+  FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.documents
+      WHERE id = signing_elements.document_id
+      AND created_by = auth.uid()
+    )
+  );
+
+-- Grant permissions again to ensure they're set
+GRANT ALL ON TABLE public.signing_elements TO authenticated; 
