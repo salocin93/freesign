@@ -24,7 +24,11 @@ export async function sendDocumentForSignature(
 
       if (recipientError) throw recipientError;
 
-      // Call email sending edge function
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No authenticated session');
+
+      // Call email sending edge function with auth token
       const { error: emailError } = await supabase.functions.invoke('send-signature-request', {
         body: {
           documentId,
@@ -33,6 +37,9 @@ export async function sendDocumentForSignature(
             email: recipient.email
           },
           message
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 

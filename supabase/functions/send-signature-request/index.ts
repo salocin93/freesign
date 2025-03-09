@@ -22,6 +22,12 @@ serve(async (req) => {
   }
 
   try {
+    // Check for authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('Missing authorization header')
+    }
+
     const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY')
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
@@ -31,11 +37,18 @@ serve(async (req) => {
       throw new Error('Missing required environment variables')
     }
 
-    // Create Supabase client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    // Create Supabase client with auth context
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: {
+          Authorization: authHeader
+        }
+      }
+    })
 
     // Get request body
     const { documentId, recipient, message } = await req.json()
+    console.log('Request payload:', { documentId, recipient, message })
 
     if (!documentId || !recipient || !recipient.email || !recipient.name) {
       throw new Error('Missing required fields')
@@ -48,7 +61,12 @@ serve(async (req) => {
       .eq('id', documentId)
       .single()
 
-    if (documentError || !document) {
+    if (documentError) {
+      console.error('Document fetch error:', documentError)
+      throw new Error('Document not found')
+    }
+
+    if (!document) {
       throw new Error('Document not found')
     }
 
@@ -59,12 +77,24 @@ serve(async (req) => {
       .eq('id', document.created_by)
       .single()
 
-    if (senderError || !sender) {
+    if (senderError) {
+      console.error('Sender fetch error:', senderError)
       throw new Error('Sender not found')
+    }
+
+    if (!sender || !sender.full_name || !sender.email) {
+      throw new Error('Sender profile incomplete')
     }
 
     // Generate signing URL
     const signingUrl = `${APP_URL}/sign/${documentId}?recipient=${encodeURIComponent(recipient.email)}`
+
+    console.log('Sending email with data:', {
+      to: recipient.email,
+      from: sender.email,
+      documentName: document.name,
+      signingUrl
+    })
 
     // Send email using SendGrid
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -81,7 +111,7 @@ serve(async (req) => {
               sender_name: sender.full_name,
               document_name: document.name,
               recipient_name: recipient.name,
-              message: message,
+              message: message || '',
               signing_url: signingUrl,
             },
           },
@@ -95,8 +125,9 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(`SendGrid API error: ${JSON.stringify(error)}`)
+      const errorData = await response.json()
+      console.error('SendGrid API error:', errorData)
+      throw new Error(`SendGrid API error: ${JSON.stringify(errorData)}`)
     }
 
     return new Response(
@@ -112,7 +143,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Function error:', error.message)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.toString()
+      }),
       {
         headers: {
           ...corsHeaders,
