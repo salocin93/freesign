@@ -40,7 +40,15 @@ export const useEditorState = (documentId: string | undefined, currentUserId: st
       try {
         const { data: documentData, error: documentError } = await supabase
           .from('documents')
-          .select('*')
+          .select(`
+            *,
+            recipients (
+              id,
+              name,
+              email,
+              status
+            )
+          `)
           .eq('id', documentId)
           .eq('created_by', currentUserId)
           .single();
@@ -56,6 +64,7 @@ export const useEditorState = (documentId: string | undefined, currentUserId: st
 
         setDocument(documentData);
         setDocumentUrl(url);
+        setRecipients(documentData.recipients || []);
 
         const { data: elementsData, error: elementsError } = await supabase
           .from('signing_elements')
@@ -75,24 +84,6 @@ export const useEditorState = (documentId: string | undefined, currentUserId: st
             value: element.value,
             required: true,
             assignedTo: element.recipient_id,
-          })));
-        }
-
-        const { data: recipientsData, error: recipientsError } = await supabase
-          .from('recipients')
-          .select('*')
-          .eq('document_id', documentId);
-
-        if (recipientsError) {
-          throw recipientsError;
-        }
-
-        if (recipientsData) {
-          setRecipients(recipientsData.map(recipient => ({
-            id: recipient.id,
-            name: recipient.name || '',
-            email: recipient.email,
-            status: recipient.status,
           })));
         }
       } catch (error) {
