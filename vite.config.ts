@@ -45,16 +45,12 @@ export default defineConfig(({ mode }) => ({
             return 'vendor-pdf';
           }
         }
-      },
-      external: [
-        /pdf\.worker\.min\.mjs$/
-      ]
+      }
     },
     chunkSizeWarningLimit: 1000,
   },
   optimizeDeps: {
-    include: ['pdfjs-dist'],
-    exclude: ['pdfjs-dist/build/pdf.worker.min.mjs']
+    include: ['pdfjs-dist']
   },
   worker: {
     format: 'es',
