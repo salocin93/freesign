@@ -1,6 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { SignatureVerification } from '@/utils/types';
 import { Shield, ShieldAlert, Clock } from 'lucide-react';
+import { SignatureVerificationUtil } from '@/utils/signatureVerification';
 
 interface SignatureVerificationProps {
   signatureId: string;
@@ -17,7 +19,7 @@ export const SignatureVerificationDisplay: React.FC<SignatureVerificationProps> 
   useEffect(() => {
     const verifySignature = async () => {
       try {
-        const verificationInfo = await SignatureVerification.getVerificationInfo(
+        const verificationInfo = await SignatureVerificationUtil.getVerificationInfo(
           signatureId,
           documentId
         );
@@ -70,4 +72,4 @@ export const SignatureVerificationDisplay: React.FC<SignatureVerificationProps> 
       </div>
     </div>
   );
-}; 
+};

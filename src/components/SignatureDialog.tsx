@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -15,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { SignatureData } from '@/utils/types';
-import { SignatureVerification } from '@/utils/signatureVerification';
+import { SignatureVerificationUtil } from '@/utils/signatureVerification';
 import { getClientInfo } from '@/utils/clientInfo';
 
 interface SignatureDialogProps {
@@ -55,7 +54,7 @@ export const SignatureDialog: React.FC<SignatureDialogProps> = ({
       
       let verificationHash = '';
       if (documentId) {
-        verificationHash = await SignatureVerification.createSignatureHash(
+        verificationHash = await SignatureVerificationUtil.createSignatureHash(
           signatureData.dataUrl,
           currentUser.id,
           timestamp,
