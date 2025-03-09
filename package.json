@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "mkdir -p public && cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.js",
     "build": "vite build && cp public/_redirects dist/_redirects",
     "build:dev": "vite build --mode development",
     "start": "npm run build && npm run dev",

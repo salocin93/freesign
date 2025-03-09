@@ -1,9 +1,19 @@
 import * as pdfjs from 'pdfjs-dist';
 
-// Initialize PDFjs worker using local file
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+// Initialize PDFjs worker
+let workerSrcInitialized = false;
+
+async function initializeWorkerSrc() {
+  if (!workerSrcInitialized) {
+    const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.min.mjs');
+    pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
+    workerSrcInitialized = true;
+  }
+}
 
 export async function loadPdfDocument(url: string) {
+  await initializeWorkerSrc();
+  
   try {
     let pdfUrl = url;
     
