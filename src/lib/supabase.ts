@@ -314,4 +314,11 @@ export async function getRecentActivity() {
     console.error('Error getting recent activity:', error);
     throw error;
   }
+}
+
+export async function clearSupabaseCache() {
+  // Clear all local storage data from Supabase
+  localStorage.removeItem('supabase.auth.token');
+  // Force refresh the client
+  await supabase.auth.refreshSession();
 } 

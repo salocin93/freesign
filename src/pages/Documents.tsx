@@ -39,7 +39,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { listDocuments } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase, initializeAuth } from '@/lib/supabase';
+import { supabase, initializeAuth, clearSupabaseCache } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -60,6 +60,7 @@ const Documents = () => {
     const loadData = async () => {
       try {
         setLoading(true);
+        await clearSupabaseCache(); // Add this line
         await initializeAuth(); // Wait for auth to initialize
         const status = filter === 'all' ? undefined : filter as 'draft' | 'sent' | 'completed';
         const docs = await listDocuments(status);
