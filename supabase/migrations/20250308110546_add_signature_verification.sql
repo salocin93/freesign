@@ -5,6 +5,7 @@ DROP SCHEMA public CASCADE;
 CREATE SCHEMA public;
 
 -- 3. Grant necessary privileges
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
@@ -89,6 +90,19 @@ CREATE POLICY "Enable read access for document owners" ON documents
   FOR SELECT
   USING (created_by = auth.uid());
 
+CREATE POLICY "Enable insert for authenticated users" ON documents
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "Enable update for document owners" ON documents
+  FOR UPDATE
+  USING (created_by = auth.uid());
+
+CREATE POLICY "Enable delete for document owners" ON documents
+  FOR DELETE
+  USING (created_by = auth.uid());
+
 -- Recipients
 CREATE POLICY "Enable read access for document owners and recipients" ON recipients
   FOR SELECT
@@ -133,4 +147,14 @@ CREATE POLICY "Enable read access for document owners and signers" ON signature_
         AND r.email = auth.email()
       ))
     )
-  ); 
+  );
+
+-- 8. Set default privileges for future objects
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+GRANT ALL ON TABLES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+GRANT ALL ON SEQUENCES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+GRANT ALL ON FUNCTIONS TO authenticated; 
