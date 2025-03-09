@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Document, Recipient } from '@/utils/types';
@@ -348,31 +347,44 @@ export const useEditorState = (documentId: string | undefined, currentUserId: st
     if (!document) return;
 
     try {
-      const { error: documentError } = await supabase
-        .from('documents')
-        .update({ status: 'sent' })
-        .eq('id', document.id);
-
-      if (documentError) {
-        throw documentError;
-      }
-
+      // First update existing recipients or create new ones
       for (const recipient of emailRecipients) {
-        const { error: recipientError } = await supabase
-          .from('recipients')
-          .update({ status: 'pending' })
-          .eq('id', recipient.id);
+        if (recipients.find(r => r.id === recipient.id)) {
+          // Update existing recipient
+          const { error: recipientError } = await supabase
+            .from('recipients')
+            .update({
+              name: recipient.name,
+              email: recipient.email,
+              status: 'pending'
+            })
+            .eq('id', recipient.id);
 
-        if (recipientError) {
-          throw recipientError;
+          if (recipientError) throw recipientError;
+        } else {
+          // Create new recipient
+          const { error: recipientError } = await supabase
+            .from('recipients')
+            .insert({
+              id: recipient.id,
+              document_id: document.id,
+              name: recipient.name,
+              email: recipient.email,
+              status: 'pending'
+            });
+
+          if (recipientError) throw recipientError;
         }
       }
-      
+
+      // Send document using email service
+      await sendDocumentForSignature(document.id, emailRecipients, message);
       toast.success('Document sent for signing');
       navigate('/documents');
     } catch (error) {
       console.error('Error sending document:', error);
       toast.error('Failed to send document');
+      setIsEmailModalOpen(false);
     }
   };
 

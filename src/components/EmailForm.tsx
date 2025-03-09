@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,24 +14,28 @@ import { Label } from '@/components/ui/label';
 import { Recipient } from '@/utils/types';
 import { Plus, X, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 interface EmailFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSend: (recipients: Recipient[], message: string) => void;
+  existingRecipients: Recipient[];
 }
 
-const EmailForm: React.FC<EmailFormProps> = ({ isOpen, onClose, onSend }) => {
-  const [recipients, setRecipients] = useState<Recipient[]>([
-    { id: '1', name: '', email: '', status: 'pending' }
-  ]);
+const EmailForm: React.FC<EmailFormProps> = ({ isOpen, onClose, onSend, existingRecipients }) => {
+  const [recipients, setRecipients] = useState<Recipient[]>(() => 
+    existingRecipients.length > 0 
+      ? existingRecipients 
+      : [{ id: uuidv4(), name: '', email: '', status: 'pending' }]
+  );
   const [message, setMessage] = useState('Please review and sign this document.');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAddRecipient = () => {
     setRecipients([
       ...recipients,
-      { id: Date.now().toString(), name: '', email: '', status: 'pending' }
+      { id: uuidv4(), name: '', email: '', status: 'pending' }
     ]);
   };
 
@@ -64,14 +67,7 @@ const EmailForm: React.FC<EmailFormProps> = ({ isOpen, onClose, onSend }) => {
     }
 
     setIsLoading(true);
-    
-    // Simulate sending process
-    setTimeout(() => {
-      setIsLoading(false);
-      onSend(recipients, message);
-      toast.success('Document sent successfully');
-      onClose();
-    }, 1500);
+    onSend(recipients, message);
   };
 
   return (
