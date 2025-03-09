@@ -1,8 +1,19 @@
--- Grant necessary schema permissions
+-- First, ensure we have the right schema permissions
 GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT USAGE ON SCHEMA storage TO authenticated;
+
+-- Grant permissions on existing tables
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA storage TO authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA storage TO authenticated;
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA storage TO authenticated;
+
+-- Explicitly grant permissions on the documents table
+GRANT ALL ON TABLE public.documents TO authenticated;
+GRANT ALL ON TABLE storage.objects TO authenticated;
+GRANT ALL ON TABLE storage.buckets TO authenticated;
 
 -- Drop all existing policies
 DROP POLICY IF EXISTS "Enable read for users who created documents" ON storage.objects;
@@ -50,6 +61,7 @@ CREATE POLICY "Enable delete for users who created documents" ON storage.objects
 -- Ensure RLS is enabled
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE storage.buckets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
 
 -- Grant default privileges for future tables
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
@@ -59,4 +71,21 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
 GRANT ALL ON SEQUENCES TO authenticated;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-GRANT ALL ON FUNCTIONS TO authenticated; 
+GRANT ALL ON FUNCTIONS TO authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
+GRANT ALL ON TABLES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
+GRANT ALL ON SEQUENCES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage
+GRANT ALL ON FUNCTIONS TO authenticated;
+
+-- Grant all privileges on all objects to postgres
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA storage TO postgres;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO postgres;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA storage TO postgres;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO postgres;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA storage TO postgres; 
