@@ -1,4 +1,3 @@
-
 export interface Document {
   id: string;
   name: string;
@@ -14,7 +13,7 @@ export interface Document {
 
 export interface SigningElement {
   id: string;
-  type: 'signature' | 'date' | 'text' | 'checkbox' | 'name' | 'email' | 'address' | 'title';
+  type: 'signature' | 'text' | 'date' | 'checkbox';
   position: {
     x: number;
     y: number;
@@ -26,8 +25,7 @@ export interface SigningElement {
   };
   value: string | boolean | null;
   required: boolean;
-  assignedTo: string | null;
-  label?: string;
+  assignedTo?: string;
 }
 
 export interface Recipient {

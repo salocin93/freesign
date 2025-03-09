@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Ready for Signature</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .logo {
+      max-width: 150px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #0284c7;
+      font-size: 24px;
+      margin-bottom: 30px;
+    }
+    .message-box {
+      background-color: #f3f4f6;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .button {
+      background-color: #0284c7;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 500;
+      text-align: center;
+      margin: 30px 0;
+    }
+    .button:hover {
+      background-color: #0369a1;
+    }
+    .link {
+      color: #666;
+      word-break: break-all;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 14px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="{{logo_url}}" alt="FreeSign" class="logo">
+      <h1>Document Ready for Signature</h1>
+    </div>
+
+    <p>Hello {{recipient_name}},</p>
+
+    <p>{{sender_name}} has sent you a document to sign: <strong>{{document_name}}</strong></p>
+
+    {{#if message}}
+    <div class="message-box">
+      <p style="margin-top: 0;">Message from sender:</p>
+      <blockquote style="margin: 0; font-style: italic;">{{message}}</blockquote>
+    </div>
+    {{/if}}
+
+    <p>Click the button below to review and sign the document:</p>
+
+    <div style="text-align: center;">
+      <a href="{{signing_url}}" class="button">Review & Sign Document</a>
+    </div>
+
+    <p>Or copy and paste this link into your browser:</p>
+    <p class="link">{{signing_url}}</p>
+
+    <div class="footer">
+      <p>This email was sent via FreeSign. If you did not expect to receive this email, please ignore it or contact support.</p>
+    </div>
+  </div>
+</body>
+</html> 

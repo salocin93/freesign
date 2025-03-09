@@ -291,6 +291,7 @@ export const useEditorState = (documentId: string | undefined, currentUserId: st
       // Update local state with new recipient
       setRecipients(prevRecipients => [...prevRecipients, newRecipient]);
       setSelectedRecipientId(newRecipient.id);
+      setIsRecipientModalOpen(false);
       toast.success(`Recipient ${recipientData.name} added`);
     } catch (error) {
       console.error('Error adding recipient:', error);

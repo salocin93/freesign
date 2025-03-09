@@ -8,14 +8,16 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { Suspense, lazy, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
+import Login from './pages/Login';
+import Documents from './pages/Documents';
+import Upload from './pages/Upload';
+import Editor from './pages/Editor';
+import SignDocument from './pages/SignDocument';
+import PrivateRoute from './components/PrivateRoute';
 
 // Lazy load route components
 const Index = lazy(() => import("./pages/Index"));
-const Editor = lazy(() => import("./pages/Editor"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Upload = lazy(() => import("./pages/Upload"));
-const Documents = lazy(() => import("./pages/Documents"));
-const Login = lazy(() => import("./pages/Login"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -104,6 +106,7 @@ const AppContent = () => {
           </Suspense>
         </ProtectedRoute>
       } />
+      <Route path="/sign/:documentId" element={<SignDocument />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={
         <Suspense fallback={<PageLoader />}>

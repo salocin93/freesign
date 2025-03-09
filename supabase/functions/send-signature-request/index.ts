@@ -109,33 +109,113 @@ serve(async (req) => {
           {
             to: [{ email: recipient.email, name: recipient.name }],
             subject: `${sender.full_name} has sent you a document to sign: ${document.name}`,
-            dynamic_template_data: {
-              sender_name: sender.full_name,
-              document_name: document.name,
-              recipient_name: recipient.name,
-              message: message || '',
-              signing_url: signingUrl,
-            },
           },
         ],
         from: {
           email: sender.email,
           name: sender.full_name,
         },
-        template_id: Deno.env.get('SENDGRID_TEMPLATE_ID') || '',
         subject: `${sender.full_name} has sent you a document to sign: ${document.name}`,
         content: [
           {
-            type: 'text/plain',
-            value: `${sender.full_name} has sent you a document to sign: ${document.name}\n\n` +
-                   `${message ? `Message: ${message}\n\n` : ''}` +
-                   `Click here to sign: ${signingUrl}`
-          },
-          {
             type: 'text/html',
-            value: `<p>${sender.full_name} has sent you a document to sign: ${document.name}</p>` +
-                   `${message ? `<p>Message: ${message}</p>` : ''}` +
-                   `<p><a href="${signingUrl}">Click here to sign</a></p>`
+            value: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Ready for Signature</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .logo {
+      max-width: 150px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #0284c7;
+      font-size: 24px;
+      margin-bottom: 30px;
+    }
+    .message-box {
+      background-color: #f3f4f6;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .button {
+      background-color: #0284c7;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 6px;
+      display: inline-block;
+      font-weight: 500;
+      text-align: center;
+      margin: 30px 0;
+    }
+    .button:hover {
+      background-color: #0369a1;
+    }
+    .link {
+      color: #666;
+      word-break: break-all;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 14px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Document Ready for Signature</h1>
+    </div>
+
+    <p>Hello ${recipient.name},</p>
+
+    <p>${sender.full_name} has sent you a document to sign: <strong>${document.name}</strong></p>
+
+    ${message ? `
+    <div class="message-box">
+      <p style="margin-top: 0;">Message from sender:</p>
+      <blockquote style="margin: 0; font-style: italic;">${message}</blockquote>
+    </div>
+    ` : ''}
+
+    <p>Click the button below to review and sign the document:</p>
+
+    <div style="text-align: center;">
+      <a href="${signingUrl}" class="button" style="color: white; text-decoration: none;">Review & Sign Document</a>
+    </div>
+
+    <p>Or copy and paste this link into your browser:</p>
+    <p class="link">${signingUrl}</p>
+
+    <div class="footer">
+      <p>This email was sent via FreeSign. If you did not expect to receive this email, please ignore it or contact support.</p>
+    </div>
+  </div>
+</body>
+</html>`
           }
         ]
       }),
