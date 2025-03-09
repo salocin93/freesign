@@ -1,8 +1,14 @@
 import { useState } from 'react';
-import { Document, Page } from 'react-pdf';
+import { Document, Page, pdfjs } from 'react-pdf';
 import { SigningElement } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url,
+).toString();
 
 interface PDFViewerProps {
   url: string;
