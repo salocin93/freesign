@@ -109,6 +109,7 @@ const AppContent = () => {
       } />
       <Route path="/sign/:documentId" element={<SignDocument />} />
       <Route path="/thank-you" element={<ThankYou />} />
+      <Route path="/test-sign" element={<SignDocument />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={
         <Suspense fallback={<PageLoader />}>
