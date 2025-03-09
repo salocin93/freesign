@@ -71,19 +71,20 @@ serve(async (req) => {
     }
 
     // Get sender details
-    const { data: sender, error: senderError } = await supabase
-      .from('profiles')
-      .select('full_name, email')
-      .eq('id', document.created_by)
-      .single()
-
-    if (senderError) {
-      console.error('Sender fetch error:', senderError)
-      throw new Error('Sender not found')
+    const { data: user, error: userError } = await supabase.auth.admin.getUserById(document.created_by);
+    
+    if (userError || !user) {
+      console.error('User fetch error:', userError);
+      throw new Error('Sender not found');
     }
 
-    if (!sender || !sender.full_name || !sender.email) {
-      throw new Error('Sender profile incomplete')
+    const sender = {
+      email: user.user.email!,
+      full_name: user.user.user_metadata?.full_name || user.user.email?.split('@')[0] || '',
+    };
+
+    if (!sender.email) {
+      throw new Error('Sender email not found');
     }
 
     // Generate signing URL

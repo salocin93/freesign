@@ -271,28 +271,31 @@ export const useEditorState = (documentId: string | undefined, currentUserId: st
       status: 'pending',
     };
 
-    const { error } = await supabase
-      .from('recipients')
-      .insert({
-        id: recipientId,
-        document_id: document.id,
-        email: recipientData.email,
-        name: recipientData.name,
-        status: 'pending',
-      });
+    try {
+      const { error } = await supabase
+        .from('recipients')
+        .insert({
+          id: recipientId,
+          document_id: document.id,
+          email: recipientData.email,
+          name: recipientData.name,
+          status: 'pending',
+        });
 
-    if (error) {
+      if (error) {
+        console.error('Error adding recipient:', error);
+        toast.error('Failed to add recipient');
+        return;
+      }
+      
+      // Update local state with new recipient
+      setRecipients(prevRecipients => [...prevRecipients, newRecipient]);
+      setSelectedRecipientId(newRecipient.id);
+      toast.success(`Recipient ${recipientData.name} added`);
+    } catch (error) {
       console.error('Error adding recipient:', error);
       toast.error('Failed to add recipient');
-      return;
     }
-    
-    const updatedRecipients = [...recipients, newRecipient];
-    setRecipients(updatedRecipients);
-    
-    setSelectedRecipientId(newRecipient.id);
-    
-    toast.success(`Recipient ${recipientData.name} added`);
   };
 
   const handleSelectRecipient = (recipientId: string) => {
