@@ -23,9 +23,9 @@ interface EmailFormProps {
   existingRecipients: Recipient[];
 }
 
-const EmailForm: React.FC<EmailFormProps> = ({ isOpen, onClose, onSend, existingRecipients }) => {
+const EmailForm: React.FC<EmailFormProps> = ({ isOpen, onClose, onSend, existingRecipients = [] }) => {
   const [recipients, setRecipients] = useState<Recipient[]>(() => 
-    existingRecipients.length > 0 
+    existingRecipients?.length > 0 
       ? existingRecipients 
       : [{ id: uuidv4(), name: '', email: '', status: 'pending' }]
   );

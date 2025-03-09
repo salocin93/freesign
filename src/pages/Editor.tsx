@@ -1,4 +1,3 @@
-
 import React from 'react';
 import AppLayout from '@/components/AppLayout';
 import DocumentViewer from '@/components/DocumentViewer';
@@ -150,6 +149,7 @@ const Editor = () => {
         isOpen={isEmailModalOpen}
         onClose={() => setIsEmailModalOpen(false)}
         onSend={handleSendDocument}
+        existingRecipients={recipients || []}
       />
 
       <SignatureDialog

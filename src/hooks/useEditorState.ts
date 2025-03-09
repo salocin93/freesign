@@ -5,6 +5,7 @@ import { SigningElement, SignatureData } from '@/components/editor/EditorTypes';
 import { supabase, getDocumentUrl } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { sendDocumentForSignature } from '@/lib/emailService';
 
 export const useEditorState = (documentId: string | undefined, currentUserId: string | undefined) => {
   const navigate = useNavigate();
