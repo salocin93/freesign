@@ -4,11 +4,11 @@ DROP SCHEMA public CASCADE;
 -- 2. Recreate the public schema
 CREATE SCHEMA public;
 
--- 3. Grant necessary privileges
+-- 3. Set up schema ownership and permissions
+ALTER SCHEMA public OWNER TO postgres;
 GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO authenticated;
 
 -- 4. Create your base tables
 CREATE TABLE documents (
@@ -77,14 +77,19 @@ CREATE INDEX idx_signature_audit_logs_signature_id ON signature_audit_logs(signa
 CREATE INDEX idx_signature_audit_logs_document_id ON signature_audit_logs(document_id);
 CREATE INDEX idx_signatures_verification_hash ON signatures(verification_hash);
 
--- 6. Enable RLS
+-- 6. Grant table permissions
+GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+
+-- 7. Enable RLS
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recipients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE signatures ENABLE ROW LEVEL SECURITY;
 ALTER TABLE signing_elements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE signature_audit_logs ENABLE ROW LEVEL SECURITY;
 
--- 7. Create RLS policies
+-- 8. Create RLS policies
 -- Documents
 CREATE POLICY "Enable read access for document owners" ON documents
   FOR SELECT
@@ -149,7 +154,7 @@ CREATE POLICY "Enable read access for document owners and signers" ON signature_
     )
   );
 
--- 8. Set default privileges for future objects
+-- 9. Set default privileges for future objects
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
 GRANT ALL ON TABLES TO authenticated;
 
