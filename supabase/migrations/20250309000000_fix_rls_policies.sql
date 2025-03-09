@@ -1,3 +1,9 @@
+-- Grant necessary schema permissions
+GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+
 -- Drop all existing policies
 DROP POLICY IF EXISTS "Enable read for users who created documents" ON storage.objects;
 DROP POLICY IF EXISTS "Enable insert for authenticated users" ON storage.objects;
@@ -43,4 +49,14 @@ CREATE POLICY "Enable delete for users who created documents" ON storage.objects
 
 -- Ensure RLS is enabled
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE storage.buckets ENABLE ROW LEVEL SECURITY; 
+ALTER TABLE storage.buckets ENABLE ROW LEVEL SECURITY;
+
+-- Grant default privileges for future tables
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+GRANT ALL ON TABLES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+GRANT ALL ON SEQUENCES TO authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+GRANT ALL ON FUNCTIONS TO authenticated; 
