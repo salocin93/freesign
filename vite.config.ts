@@ -9,6 +9,13 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     allowedHosts: ["c16c3d7e-d345-466b-ad13-1ccb13df0584.lovableproject.com"],
+    proxy: {
+      '/api/send-signature-request': {
+        target: process.env.SUPABASE_URL,
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/send-signature-request/, '/functions/v1/send-signature-request'),
+      },
+    },
   },
   plugins: [
     react(),

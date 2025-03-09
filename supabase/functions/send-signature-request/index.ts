@@ -4,16 +4,19 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+// @deno-types="https://deno.land/std@0.168.0/http/server.ts"
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// @deno-types="https://esm.sh/@supabase/supabase-js@2.38.4"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import { corsHeaders } from '../_shared/cors.ts'
+import { generateSignatureRequestEmail } from '../_shared/emailTemplates.ts'
+
+const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY') || ''
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+const APP_URL = Deno.env.get('APP_URL') || ''
 
 console.log("Hello from Functions!")
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -22,236 +25,139 @@ serve(async (req) => {
   }
 
   try {
-    // Check for authorization header
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+    // Get the authorization header from the request
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      throw new Error('Missing authorization header')
+      throw new Error('No authorization header')
     }
 
-    const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY')
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
-    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
-    const APP_URL = Deno.env.get('APP_URL')
+    // Get the JWT token from the authorization header
+    const token = authHeader.replace('Bearer ', '')
 
-    if (!SENDGRID_API_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY || !APP_URL) {
-      throw new Error('Missing required environment variables')
+    // Get the user from the token
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    if (userError || !user) {
+      throw new Error('Invalid authorization token')
     }
 
-    // Create Supabase client with auth context
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: {
-        headers: {
-          Authorization: authHeader
-        }
-      }
-    })
-
-    // Get request body
-    const { documentId, recipient, message } = await req.json()
-    console.log('Request payload:', { documentId, recipient, message })
-
-    if (!documentId || !recipient || !recipient.email || !recipient.name) {
-      throw new Error('Missing required fields')
+    // Get the request body
+    const { documentId, recipients } = await req.json()
+    if (!documentId || !recipients || !Array.isArray(recipients)) {
+      throw new Error('Invalid request body')
     }
 
-    // Get document details
+    // Get the document details
     const { data: document, error: documentError } = await supabase
       .from('documents')
-      .select('name, created_by')
+      .select('name, user_id')
       .eq('id', documentId)
       .single()
 
-    if (documentError) {
-      console.error('Document fetch error:', documentError)
+    if (documentError || !document) {
       throw new Error('Document not found')
     }
 
-    if (!document) {
-      throw new Error('Document not found')
+    // Get the sender's name
+    const { data: sender, error: senderError } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', document.user_id)
+      .single()
+
+    if (senderError || !sender) {
+      throw new Error('Sender not found')
     }
 
-    // Get sender details
-    const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    
-    if (userError || !user) {
-      console.error('User fetch error:', userError);
-      throw new Error('Sender not found');
+    // Update document status
+    const { error: updateError } = await supabase
+      .from('documents')
+      .update({ status: 'sent' })
+      .eq('id', documentId)
+
+    if (updateError) {
+      throw new Error('Failed to update document status')
     }
 
-    const sender = {
-      email: user.email!,
-      full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
-    };
+    // Create recipients in the database and send emails
+    const recipientPromises = recipients.map(async (recipient: { name: string; email: string }) => {
+      // Create recipient in the database
+      const { data: recipientData, error: recipientError } = await supabase
+        .from('recipients')
+        .insert({
+          document_id: documentId,
+          name: recipient.name,
+          email: recipient.email,
+          status: 'pending'
+        })
+        .select()
+        .single()
 
-    if (!sender.email) {
-      throw new Error('Sender email not found');
-    }
+      if (recipientError) {
+        throw new Error(`Failed to create recipient: ${recipientError.message}`)
+      }
 
-    // Generate signing URL
-    const signingUrl = `${APP_URL}/sign/${documentId}?recipient=${encodeURIComponent(recipient.email)}`
+      // Generate and send email
+      const emailContent = generateSignatureRequestEmail(
+        recipient.name,
+        sender.full_name,
+        document.name,
+        documentId,
+        recipient.email
+      )
 
-    console.log('Sending email with data:', {
-      to: recipient.email,
-      from: sender.email,
-      documentName: document.name,
-      signingUrl
-    })
-
-    // Send email using SendGrid
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        personalizations: [
-          {
-            to: [{ email: recipient.email, name: recipient.name }],
-            subject: `${sender.full_name} has sent you a document to sign: ${document.name}`,
+      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          personalizations: [
+            {
+              to: [{ email: recipient.email, name: recipient.name }],
+            },
+          ],
+          from: {
+            email: 'noreply@freesign.app',
+            name: 'FreeSign',
           },
-        ],
-        from: {
-          email: sender.email,
-          name: sender.full_name,
-        },
-        subject: `${sender.full_name} has sent you a document to sign: ${document.name}`,
-        content: [
-          {
-            type: 'text/html',
-            value: `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document Ready for Signature</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #1f2937;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-    .logo {
-      max-width: 150px;
-      margin-bottom: 20px;
-    }
-    h1 {
-      color: #0284c7;
-      font-size: 24px;
-      margin-bottom: 30px;
-    }
-    .message-box {
-      background-color: #f3f4f6;
-      border-radius: 8px;
-      padding: 20px;
-      margin: 20px 0;
-    }
-    .button {
-      background-color: #0284c7;
-      color: white;
-      padding: 12px 24px;
-      text-decoration: none;
-      border-radius: 6px;
-      display: inline-block;
-      font-weight: 500;
-      text-align: center;
-      margin: 30px 0;
-    }
-    .button:hover {
-      background-color: #0369a1;
-    }
-    .link {
-      color: #666;
-      word-break: break-all;
-    }
-    .footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #e5e7eb;
-      font-size: 14px;
-      color: #6b7280;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Document Ready for Signature</h1>
-    </div>
+          subject: emailContent.subject,
+          content: [
+            {
+              type: 'text/plain',
+              value: emailContent.text,
+            },
+            {
+              type: 'text/html',
+              value: emailContent.html,
+            },
+          ],
+        }),
+      })
 
-    <p>Hello ${recipient.name},</p>
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('SendGrid API error:', errorText)
+        throw new Error(`Failed to send email to ${recipient.email}`)
+      }
 
-    <p>${sender.full_name} has sent you a document to sign: <strong>${document.name}</strong></p>
-
-    ${message ? `
-    <div class="message-box">
-      <p style="margin-top: 0;">Message from sender:</p>
-      <blockquote style="margin: 0; font-style: italic;">${message}</blockquote>
-    </div>
-    ` : ''}
-
-    <p>Click the button below to review and sign the document:</p>
-
-    <div style="text-align: center;">
-      <a href="${signingUrl}" class="button" style="color: white; text-decoration: none;">Review & Sign Document</a>
-    </div>
-
-    <p>Or copy and paste this link into your browser:</p>
-    <p class="link">${signingUrl}</p>
-
-    <div class="footer">
-      <p>This email was sent via FreeSign. If you did not expect to receive this email, please ignore it or contact support.</p>
-    </div>
-  </div>
-</body>
-</html>`
-          }
-        ]
-      }),
+      return response
     })
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      console.error('SendGrid API error:', errorData)
-      throw new Error(`SendGrid API error: ${JSON.stringify(errorData)}`)
-    }
+    await Promise.all(recipientPromises)
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-        status: 200,
-      }
-    )
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    })
   } catch (error) {
-    console.error('Function error:', error.message)
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: error.toString()
-      }),
-      {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-        status: 400,
-      }
-    )
+    console.error('Error:', error.message)
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 400,
+    })
   }
 })
 

@@ -49,7 +49,7 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
                   <span className="text-sm text-blue-500">Click to sign</span>
                 )}
                 {element.type === 'signature' && element.value && (
-                  <img src={element.value} alt="Signature" className="w-full h-full object-contain" />
+                  <img src={element.value as string} alt="Signature" className="w-full h-full object-contain" />
                 )}
                 {element.type === 'date' && (
                   <span className="text-sm text-blue-500">
@@ -64,7 +64,7 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
                 {element.type === 'checkbox' && (
                   <input
                     type="checkbox"
-                    checked={element.value === 'true' || element.value === true}
+                    checked={element.value === true}
                     readOnly
                     className="w-6 h-6"
                   />
