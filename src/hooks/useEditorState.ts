@@ -78,8 +78,16 @@ export function useEditorState(documentId: string | undefined, userId: string | 
         throw new Error('Could not generate document URL');
       }
 
-      setDocument({ ...documentData, url: signUrl.signedUrl });
-      setRecipients(documentData.recipients || []);
+      const newDocument = { ...documentData, url: signUrl.signedUrl };
+      const newRecipients = documentData.recipients || [];
+
+      // Only update state if the data has changed
+      if (JSON.stringify(document) !== JSON.stringify(newDocument)) {
+        setDocument(newDocument);
+      }
+      if (JSON.stringify(recipients) !== JSON.stringify(newRecipients)) {
+        setRecipients(newRecipients);
+      }
 
       const { data: elementsData, error: elementsError } = await supabase
         .from('signing_elements')
@@ -93,7 +101,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
       }
 
       if (elementsData) {
-        setSigningElements(elementsData.map(element => ({
+        const newElements = elementsData.map(element => ({
           id: element.id,
           type: element.type as SigningElement['type'],
           position: element.position,
@@ -101,7 +109,12 @@ export function useEditorState(documentId: string | undefined, userId: string | 
           value: element.value,
           required: true,
           assignedTo: element.recipient_id,
-        })));
+        }));
+        
+        // Only update if elements have changed
+        if (JSON.stringify(signingElements) !== JSON.stringify(newElements)) {
+          setSigningElements(newElements);
+        }
       }
     } catch (error) {
       console.error('Detailed error loading document:', error);
@@ -110,7 +123,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
     } finally {
       setIsLoading(false);
     }
-  }, [documentId, userId, navigate]);
+  }, [documentId, userId, navigate, document, recipients, signingElements]);
 
   useEffect(() => {
     loadDocument();
@@ -130,8 +143,13 @@ export function useEditorState(documentId: string | undefined, userId: string | 
           table: 'recipients',
           filter: `document_id=eq.${documentId}`,
         },
-        () => {
-          loadDocument();
+        (payload) => {
+          // Only reload if there's an actual change in the data
+          const newData = payload.new as Recipient;
+          const oldData = payload.old as Recipient;
+          if (JSON.stringify(newData) !== JSON.stringify(oldData)) {
+            loadDocument();
+          }
         }
       )
       .subscribe();
@@ -144,8 +162,6 @@ export function useEditorState(documentId: string | undefined, userId: string | 
   const handleSelectElement = useCallback((elementId: string) => {
     const element = signingElements.find(el => el.id === elementId);
     if (!element) return;
-
-    // Handle element selection logic
   }, [signingElements]);
 
   return {
