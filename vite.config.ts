@@ -33,35 +33,38 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules/react/') || 
-              id.includes('node_modules/react-dom/') || 
-              id.includes('node_modules/react-router-dom/')) {
-            return 'vendor-react';
-          }
-          if (id.includes('node_modules/@radix-ui/') || 
-              id.includes('node_modules/class-variance-authority/') ||
-              id.includes('node_modules/clsx/') ||
-              id.includes('node_modules/tailwind-merge/')) {
-            return 'vendor-ui';
-          }
-          if (id.includes('node_modules/lucide-react/')) {
-            return 'vendor-icons';
-          }
-          if (id.includes('node_modules/pdfjs-dist/')) {
-            return 'vendor-pdf';
-          }
+        manualChunks: {
+          'vendor-react': [
+            'react',
+            'react-dom',
+            'react-router-dom'
+          ],
+          'vendor-ui': [
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-label',
+            '@radix-ui/react-slot',
+            'class-variance-authority',
+            'clsx',
+            'tailwind-merge'
+          ],
+          'vendor-icons': ['lucide-react'],
+          'pdfjs': ['pdfjs-dist', 'react-pdf'],
+          'pdf.worker': ['pdfjs-dist/build/pdf.worker.min.js']
         }
-      },
-      external: [
-        // Exclude PDF.js worker from bundle
-        /pdf\.worker\.js$/,
-      ],
+      }
     },
     chunkSizeWarningLimit: 1000,
   },
   optimizeDeps: {
-    include: ['pdfjs-dist', 'react-pdf']
+    include: [
+      'pdfjs-dist',
+      'react-pdf',
+      'pdfjs-dist/build/pdf.worker.min.js'
+    ],
+    exclude: [
+      'pdfjs-dist/web/pdf_viewer.js'
+    ]
   },
   worker: {
     format: 'es',

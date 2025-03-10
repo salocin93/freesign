@@ -5,7 +5,12 @@ let workerSrcInitialized = false;
 
 async function initializeWorkerSrc() {
   if (!workerSrcInitialized) {
-    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    // Use bundled worker
+    const workerUrl = new URL(
+      'pdfjs-dist/build/pdf.worker.min.js',
+      import.meta.url
+    );
+    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl.href;
     workerSrcInitialized = true;
   }
 }
