@@ -1,71 +1,92 @@
-# Welcome to your Lovable project
-
-## Project info
+# FreeSign - Free Document Signing Platform
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/911a1613-4586-4e9f-b2b7-bbb1d475d923/deploy-status)](https://app.netlify.com/sites/free-sign/deploys)
 
-**URL**: https://lovable.dev/projects/c16c3d7e-d345-466b-ad13-1ccb13df0584
+FreeSign is an open-source document signing platform that allows users to securely sign and manage documents online. Built with modern web technologies and a focus on user privacy and security.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- 📝 Upload and manage PDF documents
+- ✍️ Draw, type, or upload signatures
+- 👥 Add multiple recipients for document signing
+- 📱 Responsive design for mobile and desktop
+- 🔒 Secure document storage with Supabase
+- 🔑 User authentication and authorization
+- 📊 Document status tracking
+- 📨 Email notifications for signing requests
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c16c3d7e-d345-466b-ad13-1ccb13df0584) and start prompting.
+- **Frontend**: React, TypeScript, Vite
+- **UI Components**: shadcn/ui, Tailwind CSS
+- **Backend/Storage**: Supabase (PostgreSQL, Storage)
+- **Authentication**: Supabase Auth
+- **PDF Handling**: PDF.js
+- **Deployment**: Netlify
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/freesign.git
+cd freesign
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+2. Install dependencies:
+```bash
+npm install
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+Edit `.env` with your Supabase credentials.
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+4. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Project Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `/src/components` - Reusable React components
+- `/src/pages` - Page components and routes
+- `/src/hooks` - Custom React hooks
+- `/src/lib` - Utility functions and API clients
+- `/src/contexts` - React context providers
+- `/supabase` - Database migrations and types
 
-**Use GitHub Codespaces**
+## Contributing
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## What technologies are used for this project?
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-This project is built with .
+## License
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+MIT License
 
-## How can I deploy this project?
+Copyright (c) 2024 Nicolas Rosen
 
-Simply open [Lovable](https://lovable.dev/projects/c16c3d7e-d345-466b-ad13-1ccb13df0584) and click on Share -> Publish.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-## I want to use a custom domain - is that possible?
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
