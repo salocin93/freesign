@@ -23,6 +23,7 @@ import Editor from './pages/Editor';
 import SignDocument from '@/pages/SignDocument';
 import PrivateRoute from '@/components/PrivateRoute';
 import ThankYou from '@/pages/ThankYou';
+import CodeOfConduct from '@/pages/CodeOfConduct';
 
 // Lazy load route components
 const Index = lazy(() => import("./pages/Index"));
@@ -76,55 +77,62 @@ const AppContent = () => {
   }, [navigate]);
 
   return (
-    <Routes>
-      <Route path="/" element={
-        <Suspense fallback={<PageLoader />}>
-          <Index />
-        </Suspense>
-      } />
-      <Route path="/login" element={
-        <Suspense fallback={<PageLoader />}>
-          <Login />
-        </Suspense>
-      } />
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
+    <div className="min-h-screen flex flex-col">
+      <Routes>
+        <Route path="/" element={
           <Suspense fallback={<PageLoader />}>
-            <Dashboard />
+            <Index />
           </Suspense>
-        </ProtectedRoute>
-      } />
-      <Route path="/upload" element={
-        <ProtectedRoute>
+        } />
+        <Route path="/login" element={
           <Suspense fallback={<PageLoader />}>
-            <Upload />
+            <Login />
           </Suspense>
-        </ProtectedRoute>
-      } />
-      <Route path="/documents" element={
-        <ProtectedRoute>
+        } />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoader />}>
+              <Dashboard />
+            </Suspense>
+          </ProtectedRoute>
+        } />
+        <Route path="/upload" element={
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoader />}>
+              <Upload />
+            </Suspense>
+          </ProtectedRoute>
+        } />
+        <Route path="/documents" element={
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoader />}>
+              <Documents />
+            </Suspense>
+          </ProtectedRoute>
+        } />
+        <Route path="/editor/:id" element={
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoader />}>
+              <Editor />
+            </Suspense>
+          </ProtectedRoute>
+        } />
+        <Route path="/sign/:documentId" element={<SignDocument />} />
+        <Route path="/thank-you" element={<ThankYou />} />
+        <Route path="/test-sign" element={<SignDocument />} />
+        <Route path="/code-of-conduct" element={
           <Suspense fallback={<PageLoader />}>
-            <Documents />
+            <CodeOfConduct />
           </Suspense>
-        </ProtectedRoute>
-      } />
-      <Route path="/editor/:id" element={
-        <ProtectedRoute>
+        } />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={
           <Suspense fallback={<PageLoader />}>
-            <Editor />
+            <NotFound />
           </Suspense>
-        </ProtectedRoute>
-      } />
-      <Route path="/sign/:documentId" element={<SignDocument />} />
-      <Route path="/thank-you" element={<ThankYou />} />
-      <Route path="/test-sign" element={<SignDocument />} />
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-      <Route path="*" element={
-        <Suspense fallback={<PageLoader />}>
-          <NotFound />
-        </Suspense>
-      } />
-    </Routes>
+        } />
+      </Routes>
+    </div>
   );
 };
 

@@ -103,8 +103,20 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
         </div>
       </main>
       <footer className="py-6 border-t border-border">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} FreeSign. All rights reserved.</p>
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center text-sm text-muted-foreground">
+            <Link to="/code-of-conduct" className="hover:text-foreground transition-colors">
+              Code of Conduct
+            </Link>
+            <span>© 2025 FreeSign - Open Source under MIT License</span>
+            <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer" className="h-5">
+              <img 
+                src="https://www.netlify.com/v3/img/components/netlify-color-bg.svg" 
+                alt="Deploys by Netlify" 
+                className="h-full"
+              />
+            </a>
+          </div>
         </div>
       </footer>
     </div>
