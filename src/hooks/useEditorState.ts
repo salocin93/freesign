@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Document, Recipient, SigningElement } from '@/utils/types';
@@ -13,17 +13,27 @@ export function useEditorState(documentId: string | undefined, userId: string | 
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [selectedRecipientId, setSelectedRecipientId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const initialLoadRef = useRef(false);
+  const loadingRef = useRef(false);
 
-  const loadDocument = useCallback(async () => {
+  const loadDocument = useCallback(async (force = false) => {
     if (!documentId || !userId) {
       console.log('Missing required params:', { documentId, userId });
       setIsLoading(false);
       return;
     }
 
+    // Prevent concurrent loads and unnecessary reloads
+    if (loadingRef.current || (!force && initialLoadRef.current)) {
+      console.log('Skipping load - already loading or already loaded:', 
+        { loading: loadingRef.current, initialLoaded: initialLoadRef.current });
+      return;
+    }
+
+    loadingRef.current = true;
+    console.log('Starting document load:', { documentId, userId, force });
+
     try {
-      console.log('Attempting to load document:', { documentId, userId });
-      
       const { data: documentData, error: documentError } = await supabase
         .from('documents')
         .select(`
@@ -105,24 +115,28 @@ export function useEditorState(documentId: string | undefined, userId: string | 
         }));
         setSigningElements(newElements);
       }
+
+      initialLoadRef.current = true;
     } catch (error) {
       console.error('Detailed error loading document:', error);
       toast.error('Failed to load document');
       navigate('/documents');
     } finally {
+      loadingRef.current = false;
       setIsLoading(false);
     }
   }, [documentId, userId, navigate]);
 
+  // Initial load
   useEffect(() => {
-    loadDocument();
+    loadDocument(true);
   }, [loadDocument]);
 
   // Subscribe to changes in the recipients table
   useEffect(() => {
     if (!documentId) return;
 
-    let isSubscribed = true; // Add flag to prevent updates after unmount
+    let isSubscribed = true;
 
     const subscription = supabase
       .channel(`recipients:${documentId}`)
@@ -135,12 +149,13 @@ export function useEditorState(documentId: string | undefined, userId: string | 
           filter: `document_id=eq.${documentId}`,
         },
         (payload) => {
-          if (!isSubscribed) return; // Check if still subscribed
+          if (!isSubscribed) return;
           // Only reload if there's an actual change in the data
           const newData = payload.new as Recipient;
           const oldData = payload.old as Recipient;
           if (JSON.stringify(newData) !== JSON.stringify(oldData)) {
-            loadDocument();
+            console.log('Recipient change detected, forcing reload');
+            loadDocument(true);
           }
         }
       )
