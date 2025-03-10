@@ -6,26 +6,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FreeSign</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
+    <meta name="description" content="Free and open source document signing platform" />
+    <meta name="author" content="FreeSign" />
     <meta property="og:image" content="/og-image.png" />
     <!-- Content Security Policy -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:;
-      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https: data:;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       img-src 'self' data: https: blob:;
       frame-src 'self' https: data:;
-      connect-src 'self' https://*.supabase.co wss://*.supabase.co https: data: https://api.ipify.org;
-      font-src 'self' https://fonts.gstatic.com https: data:;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.ipify.org;
+      font-src 'self' https://fonts.gstatic.com;
       object-src 'none';
+      worker-src 'self' blob:;
     " />
   </head>
 
   <body>
     <div id="root"></div>
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.lovable.dev/lovable.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

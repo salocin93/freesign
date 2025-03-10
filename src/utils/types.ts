@@ -1,11 +1,12 @@
 export interface Document {
   id: string;
   name: string;
-  file_path: string;
-  user_id: string;
-  status: string;
+  storage_path: string | null;
+  status: 'draft' | 'sent' | 'completed';
   created_at: string;
   updated_at: string;
+  created_by: string;
+  metadata?: any;
   url?: string;
 }
 

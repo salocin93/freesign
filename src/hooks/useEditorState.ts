@@ -52,41 +52,87 @@ export function useEditorState(documentId: string | undefined, userId: string | 
         .eq('created_by', userId)
         .single();
 
-      console.log('Document query result:', { 
-        documentData, 
-        documentError,
-        file_path: documentData?.file_path,
-        storage_path: documentData?.storage_path 
+      if (documentError) {
+        console.error('Error fetching document:', documentError);
+        throw new Error(`Document not found: ${documentError.message}`);
+      }
+
+      if (!documentData) {
+        console.error('No document data returned');
+        throw new Error('Document not found: No data returned');
+      }
+
+      // Log document data for debugging
+      console.log('Document data:', {
+        id: documentData.id,
+        name: documentData.name,
+        storage_path: documentData.storage_path,
+        status: documentData.status
       });
 
-      if (documentError || !documentData) {
-        throw new Error('Document not found');
-      }
-
       // Get document URL
-      const storagePath = documentData.storage_path || documentData.file_path;
-      if (!storagePath) {
-        throw new Error('No storage path found for document');
+      if (!documentData.storage_path) {
+        console.error('Storage path missing:', {
+          document_id: documentId,
+          name: documentData.name
+        });
+        throw new Error('Document storage path is missing');
       }
 
-      console.log('Attempting to get signed URL for path:', storagePath);
+      console.log('Attempting to get signed URL for path:', documentData.storage_path);
 
-      // First check if the file exists
-      const { data: fileExists } = await supabase.storage
+      // First check if the file exists in storage
+      const { data: fileExists, error: fileExistsError } = await supabase.storage
         .from(STORAGE_BUCKET)
-        .list(storagePath.split('/').slice(0, -1).join('/'));
+        .list(documentData.storage_path.split('/').slice(0, -1).join('/'));
 
-      console.log('File exists check:', fileExists);
+      if (fileExistsError) {
+        console.error('Error checking file existence:', fileExistsError);
+        throw new Error(`Failed to check file existence: ${fileExistsError.message}`);
+      }
+
+      const fileName = documentData.storage_path.split('/').pop();
+      const fileExistsInStorage = fileExists?.some(file => file.name === fileName);
+
+      if (!fileExistsInStorage) {
+        console.error('File not found in storage:', {
+          storage_path: documentData.storage_path,
+          available_files: fileExists?.map(f => f.name)
+        });
+        throw new Error('Document file not found in storage');
+      }
+
+      console.log('File exists in storage:', {
+        storage_path: documentData.storage_path,
+        fileName
+      });
       
       const { data: signUrl, error: signUrlError } = await supabase.storage
         .from(STORAGE_BUCKET)
-        .createSignedUrl(storagePath, 3600);
+        .createSignedUrl(documentData.storage_path, 3600);
 
-      console.log('Storage URL result:', { signUrl, signUrlError, storagePath });
+      if (signUrlError) {
+        console.error('Error generating signed URL:', {
+          error: signUrlError,
+          storage_path: documentData.storage_path,
+          bucket: STORAGE_BUCKET
+        });
+        throw new Error(`Failed to generate signed URL: ${signUrlError.message}`);
+      }
 
       if (!signUrl?.signedUrl) {
-        throw new Error('Could not generate document URL');
+        console.error('No signed URL in response:', {
+          signUrl,
+          storage_path: documentData.storage_path
+        });
+        throw new Error('Could not generate document URL: No signed URL in response');
       }
+
+      console.log('Successfully generated signed URL:', {
+        signedUrl: signUrl.signedUrl,
+        expiresIn: '1 hour',
+        storage_path: documentData.storage_path
+      });
 
       const newDocument = { ...documentData, url: signUrl.signedUrl };
       setDocument(newDocument);
@@ -97,11 +143,16 @@ export function useEditorState(documentId: string | undefined, userId: string | 
         .select('*')
         .eq('document_id', documentId);
 
-      console.log('Signing elements result:', { elementsData, elementsError });
-
       if (elementsError) {
+        console.error('Error fetching signing elements:', elementsError);
         throw elementsError;
       }
+
+      console.log('Signing elements result:', {
+        count: elementsData?.length || 0,
+        elementsData,
+        elementsError
+      });
 
       if (elementsData) {
         const newElements = elementsData.map(element => ({
@@ -119,7 +170,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
       initialLoadRef.current = true;
     } catch (error) {
       console.error('Detailed error loading document:', error);
-      toast.error('Failed to load document');
+      toast.error(error instanceof Error ? error.message : 'Failed to load document');
       navigate('/documents');
     } finally {
       loadingRef.current = false;
