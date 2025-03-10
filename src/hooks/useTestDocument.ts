@@ -22,7 +22,7 @@ export function useTestDocument() {
           .insert({
             name: 'Test Document',
             file_path: 'test/sample.pdf', // Make sure this file exists in your storage
-            user_id: currentUser.id,
+            created_by: currentUser.id,
             status: 'pending'
           })
           .select()

@@ -14,11 +14,14 @@ export function useEditorState(documentId: string | undefined, userId: string | 
 
   const loadDocument = useCallback(async () => {
     if (!documentId || !userId) {
+      console.log('Missing required params:', { documentId, userId });
       setIsLoading(false);
       return;
     }
 
     try {
+      console.log('Attempting to load document:', { documentId, userId });
+      
       const { data: documentData, error: documentError } = await supabase
         .from('documents')
         .select(`
@@ -34,17 +37,21 @@ export function useEditorState(documentId: string | undefined, userId: string | 
           )
         `)
         .eq('id', documentId)
-        .eq('user_id', userId)
+        .eq('created_by', userId)
         .single();
+
+      console.log('Document query result:', { documentData, documentError });
 
       if (documentError || !documentData) {
         throw new Error('Document not found');
       }
 
       // Get document URL
-      const { data: signUrl } = await supabase.storage
+      const { data: signUrl, error: signUrlError } = await supabase.storage
         .from('documents')
         .createSignedUrl(documentData.file_path, 3600);
+
+      console.log('Storage URL result:', { signUrl, signUrlError });
 
       if (!signUrl?.signedUrl) {
         throw new Error('Could not generate document URL');
@@ -57,6 +64,8 @@ export function useEditorState(documentId: string | undefined, userId: string | 
         .from('signing_elements')
         .select('*')
         .eq('document_id', documentId);
+
+      console.log('Signing elements result:', { elementsData, elementsError });
 
       if (elementsError) {
         throw elementsError;
@@ -74,7 +83,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
         })));
       }
     } catch (error) {
-      console.error('Error loading document:', error);
+      console.error('Detailed error loading document:', error);
       toast.error('Failed to load document');
       navigate('/documents');
     } finally {
