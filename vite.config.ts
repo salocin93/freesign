@@ -53,7 +53,8 @@ export default defineConfig(({ mode }) => ({
             'tailwind-merge'
           ],
           'vendor-icons': ['lucide-react'],
-          'pdfjs': ['pdfjs-dist', 'react-pdf', 'pdfjs-dist/build/pdf.worker.mjs']
+          'pdfjs': ['pdfjs-dist', 'react-pdf'],
+          'pdf.worker': ['pdfjs-dist/build/pdf.worker.entry']
         }
       }
     },
@@ -63,13 +64,11 @@ export default defineConfig(({ mode }) => ({
     include: [
       'pdfjs-dist',
       'react-pdf',
-      'pdfjs-dist/build/pdf.worker.mjs'
-    ],
-    exclude: ['pdf.worker.min.mjs']
+      'pdfjs-dist/build/pdf.worker.entry'
+    ]
   },
   worker: {
-    format: 'es',
-    plugins: () => [react()],
+    format: 'es'
   },
   assetsInclude: ['**/*.worker.js', '**/*.worker.mjs']
 }));
