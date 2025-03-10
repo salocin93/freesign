@@ -49,8 +49,7 @@ export default defineConfig(({ mode }) => ({
             'tailwind-merge'
           ],
           'vendor-icons': ['lucide-react'],
-          'pdfjs': ['pdfjs-dist', 'react-pdf'],
-          'pdf.worker': ['pdfjs-dist/build/pdf.worker.min.js']
+          'pdfjs': ['pdfjs-dist', 'react-pdf']
         }
       }
     },
@@ -59,11 +58,7 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     include: [
       'pdfjs-dist',
-      'react-pdf',
-      'pdfjs-dist/build/pdf.worker.min.js'
-    ],
-    exclude: [
-      'pdfjs-dist/web/pdf_viewer.js'
+      'react-pdf'
     ]
   },
   worker: {

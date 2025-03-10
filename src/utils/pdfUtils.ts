@@ -5,12 +5,7 @@ let workerSrcInitialized = false;
 
 async function initializeWorkerSrc() {
   if (!workerSrcInitialized) {
-    // Use bundled worker
-    const workerUrl = new URL(
-      'pdfjs-dist/build/pdf.worker.min.js',
-      import.meta.url
-    );
-    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl.href;
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.worker.min.js`;
     workerSrcInitialized = true;
   }
 }
@@ -32,7 +27,7 @@ export async function loadPdfDocument(url: string) {
     // Create loading task with specific options
     const loadingTask = pdfjs.getDocument({
       url: pdfUrl,
-      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/cmaps/',
       cMapPacked: true,
     });
 

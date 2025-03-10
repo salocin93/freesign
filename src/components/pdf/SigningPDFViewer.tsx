@@ -5,11 +5,7 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2 } from 'lucide-react';
 
 // Configure PDF.js worker
-const workerUrl = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url
-);
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl.href;
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.worker.min.js`;
 
 interface SigningPDFViewerProps {
   url: string;
