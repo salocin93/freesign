@@ -10,7 +10,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function Editor() {
   const params = useParams();
-  const documentId = params.documentId;
+  const documentId = params.id;
   const { currentUser } = useAuth();
   const { document, recipients, signingElements, handleSelectElement, isLoading } = useEditorState(documentId, currentUser?.id);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
