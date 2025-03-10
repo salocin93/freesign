@@ -1,12 +1,15 @@
 import * as pdfjs from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.js?worker';
 
 // Initialize PDFjs worker
 let workerSrcInitialized = false;
 
 async function initializeWorkerSrc() {
   if (!workerSrcInitialized) {
-    pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+    const worker = new pdfWorker();
+    pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
+      new Blob(['(' + worker.toString() + ')()'], { type: 'application/javascript' })
+    );
     workerSrcInitialized = true;
   }
 }
