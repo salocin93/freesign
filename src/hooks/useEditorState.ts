@@ -15,6 +15,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
   const [isLoading, setIsLoading] = useState(true);
   const initialLoadRef = useRef(false);
   const loadingRef = useRef(false);
+  const lastLoadedDocumentId = useRef<string | undefined>(undefined);
 
   const loadDocument = useCallback(async (force = false) => {
     if (!documentId || !userId) {
@@ -23,14 +24,20 @@ export function useEditorState(documentId: string | undefined, userId: string | 
       return;
     }
 
-    // Prevent concurrent loads and unnecessary reloads
-    if (loadingRef.current || (!force && initialLoadRef.current)) {
-      console.log('Skipping load - already loading or already loaded:', 
-        { loading: loadingRef.current, initialLoaded: initialLoadRef.current });
+    // Check if we're already loading this document
+    if (loadingRef.current) {
+      console.log('Already loading document:', { documentId });
+      return;
+    }
+
+    // Check if we've already loaded this document and don't need to force reload
+    if (!force && initialLoadRef.current && documentId === lastLoadedDocumentId.current) {
+      console.log('Document already loaded:', { documentId });
       return;
     }
 
     loadingRef.current = true;
+    setIsLoading(true);
     console.log('Starting document load:', { documentId, userId, force });
 
     try {
@@ -168,6 +175,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
       }
 
       initialLoadRef.current = true;
+      lastLoadedDocumentId.current = documentId;
     } catch (error) {
       console.error('Detailed error loading document:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to load document');
@@ -180,8 +188,17 @@ export function useEditorState(documentId: string | undefined, userId: string | 
 
   // Initial load
   useEffect(() => {
+    // Reset state when document ID changes
+    if (documentId !== lastLoadedDocumentId.current) {
+      setDocument(null);
+      setSigningElements([]);
+      setRecipients([]);
+      setSelectedRecipientId(null);
+      initialLoadRef.current = false;
+      lastLoadedDocumentId.current = undefined;
+    }
     loadDocument(true);
-  }, [loadDocument]);
+  }, [loadDocument, documentId]);
 
   // Subscribe to changes in the recipients table
   useEffect(() => {

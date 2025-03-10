@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { SigningElement } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -6,7 +6,10 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2 } from 'lucide-react';
 
 // Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url,
+).toString();
 
 interface PDFViewerProps {
   url: string;
@@ -19,6 +22,14 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Reset state when URL changes
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    setNumPages(0);
+    setPageNumber(1);
+  }, [url]);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     console.log('PDF loaded successfully with', numPages, 'pages');
@@ -33,19 +44,19 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
     setError(err);
   }
 
+  if (!url) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
+        <p className="text-gray-500">No document URL provided</p>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
         <p className="text-red-500 mb-2">Failed to load PDF</p>
         <p className="text-sm text-gray-500">{error.message}</p>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -69,6 +80,7 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
       >
         <div className="relative">
           <Page
+            key={`${url}-${pageNumber}`}
             pageNumber={pageNumber}
             renderTextLayer={false}
             renderAnnotationLayer={false}
@@ -84,44 +96,46 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
             }}
           />
           <div className="absolute top-0 left-0 w-full h-full">
-            {signingElements.map((element) => (
-              <div
-                key={element.id}
-                className="absolute cursor-pointer border-2 border-blue-500 bg-blue-50 bg-opacity-30 flex items-center justify-center"
-                style={{
-                  left: `${element.position.x}px`,
-                  top: `${element.position.y}px`,
-                  width: `${element.size.width}px`,
-                  height: `${element.size.height}px`,
-                }}
-                onClick={() => onElementClick?.(element.id)}
-              >
-                {element.type === 'signature' && !element.value && (
-                  <span className="text-sm text-blue-500">Click to sign</span>
-                )}
-                {element.type === 'signature' && element.value && (
-                  <img src={element.value as string} alt="Signature" className="w-full h-full object-contain" />
-                )}
-                {element.type === 'date' && (
-                  <span className="text-sm text-blue-500">
-                    {element.value || 'Date'}
-                  </span>
-                )}
-                {element.type === 'text' && (
-                  <span className="text-sm text-blue-500">
-                    {element.value || 'Text'}
-                  </span>
-                )}
-                {element.type === 'checkbox' && (
-                  <input
-                    type="checkbox"
-                    checked={element.value === true}
-                    readOnly
-                    className="w-6 h-6"
-                  />
-                )}
-              </div>
-            ))}
+            {signingElements
+              .filter(element => element.position.pageIndex === pageNumber - 1)
+              .map((element) => (
+                <div
+                  key={element.id}
+                  className="absolute cursor-pointer border-2 border-blue-500 bg-blue-50 bg-opacity-30 flex items-center justify-center"
+                  style={{
+                    left: `${element.position.x}px`,
+                    top: `${element.position.y}px`,
+                    width: `${element.size.width}px`,
+                    height: `${element.size.height}px`,
+                  }}
+                  onClick={() => onElementClick?.(element.id)}
+                >
+                  {element.type === 'signature' && !element.value && (
+                    <span className="text-sm text-blue-500">Click to sign</span>
+                  )}
+                  {element.type === 'signature' && element.value && (
+                    <img src={element.value as string} alt="Signature" className="w-full h-full object-contain" />
+                  )}
+                  {element.type === 'date' && (
+                    <span className="text-sm text-blue-500">
+                      {element.value || 'Date'}
+                    </span>
+                  )}
+                  {element.type === 'text' && (
+                    <span className="text-sm text-blue-500">
+                      {element.value || 'Text'}
+                    </span>
+                  )}
+                  {element.type === 'checkbox' && (
+                    <input
+                      type="checkbox"
+                      checked={element.value === true}
+                      readOnly
+                      className="w-6 h-6"
+                    />
+                  )}
+                </div>
+              ))}
           </div>
         </div>
       </Document>
