@@ -79,15 +79,8 @@ export function useEditorState(documentId: string | undefined, userId: string | 
       }
 
       const newDocument = { ...documentData, url: signUrl.signedUrl };
-      const newRecipients = documentData.recipients || [];
-
-      // Only update state if the data has changed
-      if (JSON.stringify(document) !== JSON.stringify(newDocument)) {
-        setDocument(newDocument);
-      }
-      if (JSON.stringify(recipients) !== JSON.stringify(newRecipients)) {
-        setRecipients(newRecipients);
-      }
+      setDocument(newDocument);
+      setRecipients(documentData.recipients || []);
 
       const { data: elementsData, error: elementsError } = await supabase
         .from('signing_elements')
@@ -110,11 +103,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
           required: true,
           assignedTo: element.recipient_id,
         }));
-        
-        // Only update if elements have changed
-        if (JSON.stringify(signingElements) !== JSON.stringify(newElements)) {
-          setSigningElements(newElements);
-        }
+        setSigningElements(newElements);
       }
     } catch (error) {
       console.error('Detailed error loading document:', error);
@@ -123,7 +112,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
     } finally {
       setIsLoading(false);
     }
-  }, [documentId, userId, navigate, document, recipients, signingElements]);
+  }, [documentId, userId, navigate]);
 
   useEffect(() => {
     loadDocument();
@@ -132,6 +121,8 @@ export function useEditorState(documentId: string | undefined, userId: string | 
   // Subscribe to changes in the recipients table
   useEffect(() => {
     if (!documentId) return;
+
+    let isSubscribed = true; // Add flag to prevent updates after unmount
 
     const subscription = supabase
       .channel(`recipients:${documentId}`)
@@ -144,6 +135,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
           filter: `document_id=eq.${documentId}`,
         },
         (payload) => {
+          if (!isSubscribed) return; // Check if still subscribed
           // Only reload if there's an actual change in the data
           const newData = payload.new as Recipient;
           const oldData = payload.old as Recipient;
@@ -155,6 +147,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
       .subscribe();
 
     return () => {
+      isSubscribed = false;
       subscription.unsubscribe();
     };
   }, [documentId, loadDocument]);

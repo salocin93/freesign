@@ -4,12 +4,12 @@ import { SigningElement } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2 } from 'lucide-react';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs';
 
 // Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url,
-).toString();
+if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+}
 
 interface PDFViewerProps {
   url: string;
@@ -24,6 +24,7 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
   const [loading, setLoading] = useState(true);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+    console.log('PDF loaded successfully with', numPages, 'pages');
     setLoading(false);
     setError(null);
     setNumPages(numPages);
@@ -64,6 +65,10 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
           </div>
         }
         className="flex justify-center"
+        options={{
+          cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+          cMapPacked: true,
+        }}
       >
         <div className="relative">
           <Page
@@ -71,6 +76,15 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
             renderTextLayer={false}
             renderAnnotationLayer={false}
             className="shadow-lg"
+            loading={
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            }
+            onLoadError={(err) => {
+              console.error('Error loading page:', err);
+              setError(err);
+            }}
           />
           <div className="absolute top-0 left-0 w-full h-full">
             {signingElements.map((element) => (
