@@ -3,12 +3,10 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import { SigningElement } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import { Loader2 } from 'lucide-react';
 
 // Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url,
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 interface PDFViewerProps {
   url: string;
@@ -19,9 +17,36 @@ interface PDFViewerProps {
 export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
+  const [error, setError] = useState<Error | null>(null);
+  const [loading, setLoading] = useState(true);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+    setLoading(false);
+    setError(null);
     setNumPages(numPages);
+  }
+
+  function onDocumentLoadError(err: Error) {
+    console.error('Error loading PDF:', err, { url });
+    setLoading(false);
+    setError(err);
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
+        <p className="text-red-500 mb-2">Failed to load PDF</p>
+        <p className="text-sm text-gray-500">{error.message}</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
@@ -29,6 +54,12 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
       <Document
         file={url}
         onLoadSuccess={onDocumentLoadSuccess}
+        onLoadError={onDocumentLoadError}
+        loading={
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        }
         className="flex justify-center"
       >
         <div className="relative">
