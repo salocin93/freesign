@@ -1,12 +1,11 @@
 import * as pdfjs from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs';
 
 // Initialize PDFjs worker
 let workerSrcInitialized = false;
 
 async function initializeWorkerSrc() {
   if (!workerSrcInitialized) {
-    pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
     workerSrcInitialized = true;
   }
 }
@@ -28,7 +27,7 @@ export async function loadPdfDocument(url: string) {
     // Create loading task with specific options
     const loadingTask = pdfjs.getDocument({
       url: pdfUrl,
-      cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/cmaps/',
+      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
       cMapPacked: true,
     });
 
@@ -40,45 +39,32 @@ export async function loadPdfDocument(url: string) {
   }
 }
 
-export async function renderPage(pdf: pdfjs.PDFDocumentProxy, pageNumber: number, scale = 1.0) {
+export async function renderPage(pdf: pdfjs.PDFDocumentProxy, pageNumber: number, scale: number = 1.0) {
   try {
     const page = await pdf.getPage(pageNumber);
-    // Get the device pixel ratio (1 for normal displays, 2 for retina, etc.)
-    const pixelRatio = window.devicePixelRatio || 1;
-    
-    // Create viewport with the original scale
     const viewport = page.getViewport({ scale });
-    
+
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    
+
     if (!context) {
-      throw new Error('Could not create canvas context');
+      throw new Error('Could not get canvas context');
     }
-    
-    // Set canvas dimensions accounting for pixel ratio
-    canvas.height = viewport.height * pixelRatio;
-    canvas.width = viewport.width * pixelRatio;
-    
-    // Set display size to the original viewport dimensions
-    canvas.style.width = viewport.width + 'px';
-    canvas.style.height = viewport.height + 'px';
-    
-    // Scale the context to ensure proper resolution on high DPI displays
-    context.scale(pixelRatio, pixelRatio);
-    
+
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
     const renderContext = {
       canvasContext: context,
       viewport: viewport,
     };
-    
+
     await page.render(renderContext).promise;
-    
+
     return {
-      canvas: canvas,
+      canvas,
       width: viewport.width,
       height: viewport.height,
-      scale
     };
   } catch (error) {
     console.error('Error rendering page:', error);
