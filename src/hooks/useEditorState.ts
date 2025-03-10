@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase';
 import { Document, Recipient, SigningElement } from '@/utils/types';
 import { toast } from 'sonner';
 
+const STORAGE_BUCKET = 'documents';
+
 export function useEditorState(documentId: string | undefined, userId: string | undefined) {
   const navigate = useNavigate();
   const [document, setDocument] = useState<Document | null>(null);
@@ -40,18 +42,37 @@ export function useEditorState(documentId: string | undefined, userId: string | 
         .eq('created_by', userId)
         .single();
 
-      console.log('Document query result:', { documentData, documentError });
+      console.log('Document query result:', { 
+        documentData, 
+        documentError,
+        file_path: documentData?.file_path,
+        storage_path: documentData?.storage_path 
+      });
 
       if (documentError || !documentData) {
         throw new Error('Document not found');
       }
 
       // Get document URL
-      const { data: signUrl, error: signUrlError } = await supabase.storage
-        .from('documents')
-        .createSignedUrl(documentData.file_path, 3600);
+      const storagePath = documentData.storage_path || documentData.file_path;
+      if (!storagePath) {
+        throw new Error('No storage path found for document');
+      }
 
-      console.log('Storage URL result:', { signUrl, signUrlError });
+      console.log('Attempting to get signed URL for path:', storagePath);
+
+      // First check if the file exists
+      const { data: fileExists } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .list(storagePath.split('/').slice(0, -1).join('/'));
+
+      console.log('File exists check:', fileExists);
+      
+      const { data: signUrl, error: signUrlError } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .createSignedUrl(storagePath, 3600);
+
+      console.log('Storage URL result:', { signUrl, signUrlError, storagePath });
 
       if (!signUrl?.signedUrl) {
         throw new Error('Could not generate document URL');
