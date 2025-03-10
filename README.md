@@ -4,7 +4,7 @@
 
 FreeSign is an open-source document signing platform that allows users to securely sign and manage documents online. Built with modern web technologies and a focus on user privacy and security.
 
-[MIT License](./LICENSE) • [Report a Bug](https://github.com/yourusername/freesign/issues) • [Request a Feature](https://github.com/yourusername/freesign/issues)
+[MIT License](https://github.com/salocin93/freesign?tab=MIT-1-ov-file) • [Report a Bug](https://github.com/salocin93/freesign/issues) • [Request a Feature](https://github.com/salocin93/freesign/issues)
 
 ## Features
 
