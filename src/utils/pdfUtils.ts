@@ -5,7 +5,7 @@ let workerSrcInitialized = false;
 
 async function initializeWorkerSrc() {
   if (!workerSrcInitialized) {
-    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.worker.min.js`;
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.worker.min.mjs`;
     workerSrcInitialized = true;
   }
 }
