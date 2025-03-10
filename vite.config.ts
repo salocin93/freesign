@@ -52,12 +52,16 @@ export default defineConfig(({ mode }) => ({
             return 'vendor-pdf';
           }
         }
-      }
+      },
+      external: [
+        // Exclude PDF.js worker from bundle
+        /pdf\.worker\.js$/,
+      ],
     },
     chunkSizeWarningLimit: 1000,
   },
   optimizeDeps: {
-    include: ['pdfjs-dist']
+    include: ['pdfjs-dist', 'react-pdf']
   },
   worker: {
     format: 'es',

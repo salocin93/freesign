@@ -4,12 +4,9 @@ import { SigningElement } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2 } from 'lucide-react';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs';
 
 // Configure PDF.js worker
-if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-}
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 interface PDFViewerProps {
   url: string;
