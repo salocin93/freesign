@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     allowedHosts: ["c16c3d7e-d345-466b-ad13-1ccb13df0584.lovableproject.com"],
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp'
+    },
     proxy: {
       '/api/send-signature-request': {
         target: process.env.SUPABASE_URL,
@@ -49,7 +53,7 @@ export default defineConfig(({ mode }) => ({
             'tailwind-merge'
           ],
           'vendor-icons': ['lucide-react'],
-          'pdfjs': ['pdfjs-dist', 'react-pdf']
+          'pdfjs': ['pdfjs-dist', 'react-pdf', 'pdfjs-dist/build/pdf.worker.mjs']
         }
       }
     },
@@ -58,8 +62,10 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     include: [
       'pdfjs-dist',
-      'react-pdf'
-    ]
+      'react-pdf',
+      'pdfjs-dist/build/pdf.worker.mjs'
+    ],
+    exclude: ['pdf.worker.min.mjs']
   },
   worker: {
     format: 'es',
