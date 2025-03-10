@@ -1,3 +1,11 @@
+/*
+MIT License
+Copyright (c) 2025 Nicolas Freiherr von Rosen
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction...
+*/
+
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';

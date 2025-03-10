@@ -1,7 +1,10 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "freesign",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Free and open-source document signing platform",
+  "license": "MIT",
+  "author": "Nicolas Freiherr von Rosen",
   "type": "module",
   "scripts": {
     "dev": "vite",
