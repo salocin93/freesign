@@ -2,9 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import type { PluginOption } from 'vite';
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   server: {
     host: "::",
     port: 8080,
@@ -17,15 +18,14 @@ export default defineConfig(({ mode }) => ({
       '/api/send-signature-request': {
         target: process.env.SUPABASE_URL,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/send-signature-request/, '/functions/v1/send-signature-request'),
+        rewrite: (path: string) => path.replace(/^\/api\/send-signature-request/, '/functions/v1/send-signature-request'),
       },
     },
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
+    process.env.NODE_ENV === 'development' && componentTagger(),
+  ].filter(Boolean) as PluginOption[],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -67,7 +67,7 @@ export default defineConfig(({ mode }) => ({
   },
   worker: {
     format: 'es',
-    plugins: []
+    plugins: () => [] as PluginOption[]
   },
   assetsInclude: ['**/*.worker.js', '**/*.worker.mjs']
-}));
+});

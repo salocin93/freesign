@@ -4,7 +4,7 @@ import { SigningElement } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2 } from 'lucide-react';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.js?worker';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
 
 // Configure PDF.js worker
 const worker = new pdfWorker();

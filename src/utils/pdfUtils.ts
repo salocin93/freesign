@@ -1,5 +1,5 @@
 import * as pdfjs from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.js?worker';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
 
 // Initialize PDFjs worker
 let workerSrcInitialized = false;

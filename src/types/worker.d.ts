@@ -5,7 +5,7 @@ declare module '*?worker' {
   export default workerConstructor;
 }
 
-declare module 'pdfjs-dist/build/pdf.worker.min.js?worker' {
+declare module 'pdfjs-dist/build/pdf.worker.min.mjs?worker' {
   const workerConstructor: {
     new (): Worker;
   };
