@@ -5,35 +5,13 @@
  */
 
 import * as pdfjs from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
 
-// Initialize PDFjs worker
-let workerSrcInitialized = false;
-
-/**
- * Initializes the PDF.js worker if it hasn't been initialized yet.
- * This is required for PDF.js to function properly in a browser environment.
- * The function creates a worker blob URL and sets it as the worker source.
- */
-async function initializeWorkerSrc() {
-  if (!workerSrcInitialized) {
-    const worker = new pdfWorker();
-    pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
-      new Blob(['(' + worker.toString() + ')()'], { type: 'application/javascript' })
-    );
-    workerSrcInitialized = true;
-  }
+// Initialize worker once
+if (typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 }
 
-/**
- * Loads a PDF document from a given URL.
- * @param url - The URL of the PDF document. Can be a direct URL or a blob URL.
- * @returns A Promise that resolves to a PDFDocumentProxy object representing the loaded PDF.
- * @throws Will throw an error if the PDF loading fails.
- */
 export async function loadPdfDocument(url: string) {
-  await initializeWorkerSrc();
-  
   try {
     let pdfUrl = url;
     
@@ -48,29 +26,25 @@ export async function loadPdfDocument(url: string) {
     // Create loading task with specific options
     const loadingTask = pdfjs.getDocument({
       url: pdfUrl,
-      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/cmaps/',
+      cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
       cMapPacked: true,
     });
 
     const pdf = await loadingTask.promise;
     return pdf;
   } catch (error) {
-    console.error('Error loading PDF:', error);
-    throw error;
+    // Enhanced error handling
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      throw new Error('Network error: Unable to load PDF file. Please check your internet connection.');
+    } else if (error instanceof Error && error.message.includes('Invalid PDF')) {
+      throw new Error('Invalid PDF file: The file appears to be corrupted or is not a valid PDF.');
+    } else {
+      console.error('Error loading PDF:', error);
+      throw new Error('Failed to load PDF: An unexpected error occurred.');
+    }
   }
 }
 
-/**
- * Renders a specific page of a PDF document to a canvas element.
- * @param pdf - The PDF document proxy object obtained from loadPdfDocument.
- * @param pageNumber - The page number to render (1-based index).
- * @param scale - The scale factor to apply when rendering the page (default: 1.0).
- * @returns A Promise that resolves to an object containing:
- *          - canvas: The rendered canvas element
- *          - width: The width of the rendered page
- *          - height: The height of the rendered page
- * @throws Will throw an error if page rendering fails.
- */
 export async function renderPage(pdf: pdfjs.PDFDocumentProxy, pageNumber: number, scale: number = 1.0) {
   try {
     const page = await pdf.getPage(pageNumber);
