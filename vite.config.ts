@@ -53,21 +53,33 @@ export default defineConfig({
             'tailwind-merge'
           ],
           'vendor-icons': ['lucide-react'],
+          'pdf.worker': ['pdfjs-dist/build/pdf.worker.min'],
           'pdfjs': ['pdfjs-dist', 'react-pdf']
         }
       }
     },
     chunkSizeWarningLimit: 1000,
+    target: 'esnext',
+    sourcemap: true
   },
   optimizeDeps: {
     include: [
       'pdfjs-dist',
       'react-pdf'
-    ]
+    ],
+    exclude: ['pdfjs-dist/build/pdf.worker.min']
   },
   worker: {
     format: 'es',
-    plugins: () => [] as PluginOption[]
+    plugins: () => [] as PluginOption[],
+    rollupOptions: {
+      output: {
+        format: 'es',
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]'
+      }
+    }
   },
   assetsInclude: ['**/*.worker.js', '**/*.worker.mjs']
 });
