@@ -8,12 +8,12 @@
   "type": "module",
   "scripts": {
     "dev": "cp CODE_OF_CONDUCT.md public/ && vite",
-    "build": "cp CODE_OF_CONDUCT.md public/ && vite build && cp public/_redirects dist/_redirects",
+    "build": "cp CODE_OF_CONDUCT.md public/ && ROLLUP_SKIP_NODE_RESOLVE=true vite build && cp public/_redirects dist/_redirects",
     "build:dev": "cp CODE_OF_CONDUCT.md public/ && vite build --mode development",
     "start": "npm run build && npm run dev",
     "clean": "rm -rf dist node_modules",
     "clean:start": "npm run clean && npm install && npm run start",
-    "lint": "eslint .",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -98,5 +98,8 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.6.1"
   }
 }
