@@ -53,8 +53,7 @@ export default defineConfig({
             'tailwind-merge'
           ],
           'vendor-icons': ['lucide-react'],
-          'pdfjs': ['pdfjs-dist'],
-          'pdf.worker': ['pdfjs-dist/build/pdf.worker.min.mjs']
+          'pdfjs': ['pdfjs-dist', 'react-pdf']
         }
       }
     },
@@ -68,20 +67,11 @@ export default defineConfig({
     include: [
       'pdfjs-dist',
       'react-pdf'
-    ],
-    exclude: ['pdfjs-dist/build/pdf.worker.min.mjs']
+    ]
   },
   worker: {
-    format: 'es',
+    format: 'iife',
     plugins: () => [] as PluginOption[],
-    rollupOptions: {
-      output: {
-        format: 'es',
-        entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash].[ext]'
-      }
-    }
   },
-  assetsInclude: ['**/*.worker.js', '**/*.worker.mjs']
+  assetsInclude: ['**/*.worker.js']
 });
