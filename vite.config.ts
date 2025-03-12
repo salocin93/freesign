@@ -67,9 +67,8 @@ export default defineConfig({
       'react-pdf'
     ]
   },
-  worker: {
-    format: 'iife',
-    plugins: () => [] as PluginOption[],
-  },
-  assetsInclude: ['**/*.worker.js']
+  define: {
+    'process.env.NODE_DEBUG': 'false',
+    'process.platform': JSON.stringify(process.platform)
+  }
 });
