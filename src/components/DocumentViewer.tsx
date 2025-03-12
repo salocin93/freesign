@@ -1,3 +1,32 @@
+/**
+ * DocumentViewer Component
+ * 
+ * A canvas-based PDF viewer component that provides advanced features such as zooming
+ * and precise rendering control. This component uses PDF.js directly without React-PDF wrapper,
+ * allowing for more fine-grained control over the rendering process.
+ * 
+ * Features:
+ * - Canvas-based PDF rendering
+ * - Zoom controls with smooth scaling
+ * - Page navigation
+ * - Support for blob URLs
+ * - Detailed error handling and loading states
+ * 
+ * Note: This component is currently not in use in the application. Consider using this
+ * component when you need advanced features like zooming or canvas-based rendering that
+ * aren't available in the React-PDF based viewers.
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <DocumentViewer 
+ *   documentUrl="path/to/document.pdf"
+ * >
+ *   {/* Optional overlay content */}
+ * </DocumentViewer>
+ * ```
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import * as pdfjs from 'pdfjs-dist';
 import { loadPdfDocument, renderPage } from '@/utils/pdfUtils';
@@ -7,7 +36,9 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 interface DocumentViewerProps {
+  /** URL of the PDF document to display */
   documentUrl: string;
+  /** Optional child elements to render over the PDF */
   children?: React.ReactNode;
 }
 

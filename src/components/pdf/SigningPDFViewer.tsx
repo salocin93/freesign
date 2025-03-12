@@ -1,3 +1,22 @@
+/**
+ * SigningPDFViewer Component
+ * 
+ * A simplified PDF viewer component specifically designed for the document signing flow.
+ * This component provides a clean interface for users to view documents they need to sign,
+ * without the ability to add or modify signing elements.
+ * 
+ * Features:
+ * - PDF document rendering with page navigation
+ * - Error handling and loading states
+ * - Optimized for document signing workflow
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <SigningPDFViewer url="path/to/document.pdf" />
+ * ```
+ */
+
 import { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -12,6 +31,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
 );
 
 interface SigningPDFViewerProps {
+  /** URL of the PDF document to display */
   url: string;
 }
 

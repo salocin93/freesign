@@ -15,7 +15,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Mock user for development with a valid UUID
 const mockUser: User = {
-  id: '123e4567-e89b-12d3-a456-426614174000', // Valid UUID for development
+  id: '00000000-0000-0000-0000-000000000000', // Development user ID
   email: 'dev@example.com',
   user_metadata: {
     full_name: 'Dev User',

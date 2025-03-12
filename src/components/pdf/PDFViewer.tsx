@@ -1,3 +1,27 @@
+/**
+ * PDFViewer Component
+ * 
+ * A PDF viewer component specifically designed for the document creation and editing flow.
+ * This component allows users to view PDF documents and interact with signing elements
+ * such as signature boxes, date fields, text inputs, and checkboxes.
+ * 
+ * Features:
+ * - PDF document rendering with page navigation
+ * - Interactive signing elements overlay
+ * - Error handling and loading states
+ * - Support for different types of signing elements (signature, date, text, checkbox)
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <PDFViewer
+ *   url="path/to/document.pdf"
+ *   signingElements={[]}
+ *   onElementClick={(elementId) => console.log(elementId)}
+ * />
+ * ```
+ */
+
 import { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { SigningElement } from '@/utils/types';
@@ -13,8 +37,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
 );
 
 interface PDFViewerProps {
+  /** URL of the PDF document to display */
   url: string;
+  /** Array of signing elements to overlay on the PDF */
   signingElements: SigningElement[];
+  /** Callback function when a signing element is clicked */
   onElementClick?: (elementId: string) => void;
 }
 
