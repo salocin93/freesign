@@ -5,7 +5,11 @@
  */
 
 import * as pdfjs from 'pdfjs-dist';
-import { PDF_CONFIG } from '@/config/pdf';
+
+// Initialize worker once
+if (typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+}
 
 export async function loadPdfDocument(url: string) {
   try {
@@ -22,7 +26,8 @@ export async function loadPdfDocument(url: string) {
     // Create loading task with specific options
     const loadingTask = pdfjs.getDocument({
       url: pdfUrl,
-      ...PDF_CONFIG.viewer
+      cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
+      cMapPacked: true,
     });
 
     const pdf = await loadingTask.promise;
@@ -33,9 +38,6 @@ export async function loadPdfDocument(url: string) {
       throw new Error('Network error: Unable to load PDF file. Please check your internet connection.');
     } else if (error instanceof Error && error.message.includes('Invalid PDF')) {
       throw new Error('Invalid PDF file: The file appears to be corrupted or is not a valid PDF.');
-    } else if (error instanceof Error && error.message.includes('Worker')) {
-      console.error('PDF.js Worker initialization failed:', error);
-      throw new Error('Failed to initialize PDF viewer. Please try refreshing the page.');
     } else {
       console.error('Error loading PDF:', error);
       throw new Error('Failed to load PDF: An unexpected error occurred.');

@@ -1,7 +1,5 @@
 declare module '*?worker' {
-  const workerConstructor: {
-    new (): Worker;
-  };
+  const workerConstructor: any;
   export default workerConstructor;
 }
 

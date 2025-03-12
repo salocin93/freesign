@@ -28,7 +28,6 @@ import { SigningElement } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2 } from 'lucide-react';
-import { PDF_CONFIG } from '@/config/pdf';
 
 interface PDFViewerProps {
   /** URL of the PDF document to display */
@@ -95,7 +94,10 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
           </div>
         }
         className="flex justify-center"
-        options={PDF_CONFIG.viewer}
+        options={{
+          cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
+          cMapPacked: true,
+        }}
       >
         <div className="relative">
           <Page
