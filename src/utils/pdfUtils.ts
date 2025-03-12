@@ -1,22 +1,11 @@
 import * as pdfjs from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
 
-// Initialize PDFjs worker
-let workerSrcInitialized = false;
-
-async function initializeWorkerSrc() {
-  if (!workerSrcInitialized) {
-    const worker = new pdfWorker();
-    pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
-      new Blob(['(' + worker.toString() + ')()'], { type: 'application/javascript' })
-    );
-    workerSrcInitialized = true;
-  }
+// Initialize worker once
+if (typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 }
 
 export async function loadPdfDocument(url: string) {
-  await initializeWorkerSrc();
-  
   try {
     let pdfUrl = url;
     
@@ -31,15 +20,22 @@ export async function loadPdfDocument(url: string) {
     // Create loading task with specific options
     const loadingTask = pdfjs.getDocument({
       url: pdfUrl,
-      cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/cmaps/',
+      cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
       cMapPacked: true,
     });
 
     const pdf = await loadingTask.promise;
     return pdf;
   } catch (error) {
-    console.error('Error loading PDF:', error);
-    throw error;
+    // Enhanced error handling
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      throw new Error('Network error: Unable to load PDF file. Please check your internet connection.');
+    } else if (error instanceof Error && error.message.includes('Invalid PDF')) {
+      throw new Error('Invalid PDF file: The file appears to be corrupted or is not a valid PDF.');
+    } else {
+      console.error('Error loading PDF:', error);
+      throw new Error('Failed to load PDF: An unexpected error occurred.');
+    }
   }
 }
 
