@@ -58,6 +58,8 @@ export default defineConfig({
       }
     },
     chunkSizeWarningLimit: 1000,
+    target: 'esnext',
+    sourcemap: true
   },
   optimizeDeps: {
     include: [
@@ -65,9 +67,8 @@ export default defineConfig({
       'react-pdf'
     ]
   },
-  worker: {
-    format: 'es',
-    plugins: () => [] as PluginOption[]
-  },
-  assetsInclude: ['**/*.worker.js', '**/*.worker.mjs']
+  define: {
+    'process.env.NODE_DEBUG': 'false',
+    'process.platform': JSON.stringify(process.platform)
+  }
 });

@@ -23,18 +23,12 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
+import { Document, Page } from 'react-pdf';
 import { SigningElement } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2 } from 'lucide-react';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
-
-// Configure PDF.js worker
-const worker = new pdfWorker();
-pdfjs.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
-  new Blob(['(' + worker.toString() + ')()'], { type: 'application/javascript' })
-);
+import { PDF_CONFIG } from '@/config/pdf';
 
 interface PDFViewerProps {
   /** URL of the PDF document to display */
@@ -101,10 +95,7 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
           </div>
         }
         className="flex justify-center"
-        options={{
-          cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-          cMapPacked: true,
-        }}
+        options={PDF_CONFIG.viewer}
       >
         <div className="relative">
           <Page

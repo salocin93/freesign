@@ -5,6 +5,7 @@ import { useEditorState } from '@/hooks/useEditorState';
 import { Button } from '@/components/ui/button';
 import { SendEmailModal } from '@/components/SendEmailModal';
 import { PDFViewer } from '@/components/pdf/PDFViewer';
+import { PDFErrorBoundary } from '@/components/pdf/PDFErrorBoundary';
 import { AddRecipientModal } from '@/components/recipient/AddRecipientModal';
 import { Loader2 } from 'lucide-react';
 
@@ -57,11 +58,13 @@ export default function Editor() {
 
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-9">
-          <PDFViewer
-            url={document.url || ''}
-            signingElements={signingElements}
-            onElementClick={handleSelectElement}
-          />
+          <PDFErrorBoundary>
+            <PDFViewer
+              url={document.url || ''}
+              signingElements={signingElements}
+              onElementClick={handleSelectElement}
+            />
+          </PDFErrorBoundary>
         </div>
         <div className="col-span-3">
           <div className="bg-white rounded-lg shadow p-4">
