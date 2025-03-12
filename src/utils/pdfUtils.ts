@@ -5,10 +5,13 @@
  */
 
 import * as pdfjs from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
 
-// Initialize worker once
-if (typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Initialize worker
+if (typeof window !== 'undefined') {
+  // Create a new worker instance
+  const worker = new pdfjsWorker();
+  pdfjs.GlobalWorkerOptions.workerPort = worker;
 }
 
 export async function loadPdfDocument(url: string) {
@@ -28,6 +31,7 @@ export async function loadPdfDocument(url: string) {
       url: pdfUrl,
       cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
       cMapPacked: true,
+      standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/standard_fonts/`
     });
 
     const pdf = await loadingTask.promise;
