@@ -1,11 +1,9 @@
 import * as pdfjs from 'pdfjs-dist';
+import { PDF_CONFIG } from '@/config/pdf';
 
-// Initialize worker
-if (typeof window !== 'undefined') {
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.js',
-    import.meta.url
-  ).toString();
+// Initialize worker once
+if (typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = PDF_CONFIG.worker.workerSrc;
 }
 
 export async function loadPdfDocument(url: string) {
@@ -23,9 +21,7 @@ export async function loadPdfDocument(url: string) {
     // Create loading task with specific options
     const loadingTask = pdfjs.getDocument({
       url: pdfUrl,
-      cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
-      cMapPacked: true,
-      standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/standard_fonts/`
+      ...PDF_CONFIG.viewer
     });
 
     const pdf = await loadingTask.promise;
@@ -36,6 +32,9 @@ export async function loadPdfDocument(url: string) {
       throw new Error('Network error: Unable to load PDF file. Please check your internet connection.');
     } else if (error instanceof Error && error.message.includes('Invalid PDF')) {
       throw new Error('Invalid PDF file: The file appears to be corrupted or is not a valid PDF.');
+    } else if (error instanceof Error && error.message.includes('Worker')) {
+      console.error('PDF.js Worker initialization failed:', error);
+      throw new Error('Failed to initialize PDF viewer. Please try refreshing the page.');
     } else {
       console.error('Error loading PDF:', error);
       throw new Error('Failed to load PDF: An unexpected error occurred.');
