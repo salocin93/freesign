@@ -1,6 +1,7 @@
 /**
  * SigningPDFViewer Component
  * 
+ * 
  * A simplified PDF viewer component specifically designed for the document signing flow.
  * This component provides a clean interface for users to view documents they need to sign,
  * without the ability to add or modify signing elements.
