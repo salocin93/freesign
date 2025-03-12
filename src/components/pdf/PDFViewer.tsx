@@ -97,6 +97,7 @@ export function PDFViewer({ url, signingElements, onElementClick }: PDFViewerPro
         options={{
           cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
           cMapPacked: true,
+          standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/standard_fonts/`
         }}
       >
         <div className="relative">
