@@ -1,11 +1,11 @@
 import * as pdfjs from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
 
 // Initialize worker
 if (typeof window !== 'undefined') {
-  // Create a new worker instance
-  const worker = new pdfjsWorker();
-  pdfjs.GlobalWorkerOptions.workerPort = worker;
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.js',
+    import.meta.url
+  ).toString();
 }
 
 export async function loadPdfDocument(url: string) {
