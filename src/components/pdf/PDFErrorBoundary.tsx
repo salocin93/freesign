@@ -8,30 +8,21 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
-  key: number;
 }
 
 export class PDFErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null, key: 0 };
+    this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error: Error): Partial<State> {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('PDF Viewer Error:', error, errorInfo);
   }
-
-  resetComponent = () => {
-    this.setState(prevState => ({
-      hasError: false,
-      error: null,
-      key: prevState.key + 1
-    }));
-  };
 
   render() {
     if (this.state.hasError) {
@@ -43,7 +34,10 @@ export class PDFErrorBoundary extends React.Component<Props, State> {
           </p>
           <Button
             variant="outline"
-            onClick={this.resetComponent}
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              window.location.reload();
+            }}
           >
             Try again
           </Button>
@@ -51,10 +45,6 @@ export class PDFErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    return (
-      <div key={this.state.key}>
-        {this.props.children}
-      </div>
-    );
+    return this.props.children;
   }
 } 

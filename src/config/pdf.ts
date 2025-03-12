@@ -1,14 +1,12 @@
-import * as pdfjsLib from 'pdfjs-dist';
-// Import the worker directly as a URL
-import PDFWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { version } from 'pdfjs-dist';
 
 export const PDF_CONFIG = {
   worker: {
-    workerSrc: PDFWorker
+    workerSrc: `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.js`
   },
   viewer: {
-    cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+    cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/cmaps/`,
     cMapPacked: true,
-    standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`
+    standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/standard_fonts/`
   }
 } as const; 
