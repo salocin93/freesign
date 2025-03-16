@@ -1,8 +1,47 @@
+/**
+ * Signature Verification Utility Module
+ * 
+ * This module provides functionality for creating and verifying digital signatures
+ * in the document signing workflow. It implements cryptographic hashing and verification
+ * to ensure the integrity and authenticity of signatures.
+ * 
+ * Features:
+ * - Cryptographic hash generation using SHA-256
+ * - Signature verification against stored hashes
+ * - Database integration for signature storage and retrieval
+ * - User information tracking for audit purposes
+ * 
+ * @module SignatureVerification
+ */
+
 import { supabase } from '@/lib/supabase';
 import { SignatureVerification as SignatureVerificationType } from './types';
 
+/**
+ * Utility class for handling signature verification operations.
+ * Provides methods for creating and verifying digital signatures.
+ */
 export class SignatureVerificationUtil {
-  // Create a hash of the signature data and metadata
+  /**
+   * Creates a cryptographic hash of the signature data and associated metadata.
+   * This hash is used to verify the integrity of the signature later.
+   * 
+   * @param signatureData - The actual signature data (usually a base64 encoded string)
+   * @param userId - The ID of the user who created the signature
+   * @param timestamp - The timestamp when the signature was created
+   * @param documentId - The ID of the document being signed
+   * @returns A Promise resolving to a hex-encoded SHA-256 hash string
+   * 
+   * @example
+   * ```typescript
+   * const hash = await SignatureVerificationUtil.createSignatureHash(
+   *   signatureData,
+   *   'user123',
+   *   '2024-03-15T12:34:56Z',
+   *   'doc456'
+   * );
+   * ```
+   */
   static async createSignatureHash(
     signatureData: string,
     userId: string,
@@ -25,7 +64,27 @@ export class SignatureVerificationUtil {
     return hashHex;
   }
 
-  // Verify the signature hasn't been tampered with
+  /**
+   * Verifies the integrity of a signature by comparing its stored hash
+   * with a newly generated hash of the same data.
+   * 
+   * @param signatureId - The ID of the signature to verify
+   * @param documentId - The ID of the document the signature belongs to
+   * @returns A Promise resolving to a boolean indicating if the signature is valid
+   * 
+   * @throws {Error} If the signature record cannot be found
+   * 
+   * @example
+   * ```typescript
+   * const isValid = await SignatureVerificationUtil.verifySignature(
+   *   'sig789',
+   *   'doc456'
+   * );
+   * if (isValid) {
+   *   console.log('Signature is valid');
+   * }
+   * ```
+   */
   static async verifySignature(
     signatureId: string,
     documentId: string

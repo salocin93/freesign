@@ -1,3 +1,25 @@
+/**
+ * Send Signature Request Edge Function
+ * 
+ * This Supabase Edge Function handles the sending of signature request emails to document recipients.
+ * It integrates with SendGrid for email delivery and manages the email templating and sending process.
+ * 
+ * Features:
+ * - SendGrid integration for reliable email delivery
+ * - Email template rendering with recipient data
+ * - CORS handling for cross-origin requests
+ * - Authentication and authorization checks
+ * - Error handling and logging
+ * 
+ * Environment Variables Required:
+ * - SENDGRID_API_KEY: API key for SendGrid service
+ * - SUPABASE_URL: URL of the Supabase instance
+ * - SUPABASE_SERVICE_ROLE_KEY: Service role key for Supabase
+ * - APP_URL: Base URL of the application
+ * 
+ * @module SendSignatureRequest
+ */
+
 // Follow this setup guide to integrate the Deno language server with your editor:
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
@@ -11,6 +33,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import { corsHeaders } from '../_shared/cors.ts'
 import { generateSignatureRequestEmail } from '../_shared/emailTemplates.ts'
 
+// Environment variables for configuration
 const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY') || ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
