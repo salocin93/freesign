@@ -6,13 +6,8 @@ import { PDF_CONFIG } from '@/config/pdf';
 if (typeof window !== 'undefined') {
   console.log('Initializing PDF.js worker with version:', pdfjs.version);
   
-  const workerConfig = {
-    workerSrc: PDF_CONFIG.worker.workerSrc,
-    workerPort: new Worker(PDF_CONFIG.worker.workerSrc, { type: 'module' })
-  };
-  
   // Set worker for pdfjs-dist
-  Object.assign(pdfjs.GlobalWorkerOptions, workerConfig);
+  pdfjs.GlobalWorkerOptions.workerSrc = PDF_CONFIG.worker.workerSrc;
   // Set worker for react-pdf
-  Object.assign(reactPdfJs.GlobalWorkerOptions, workerConfig);
+  reactPdfJs.GlobalWorkerOptions.workerSrc = PDF_CONFIG.worker.workerSrc;
 } 
