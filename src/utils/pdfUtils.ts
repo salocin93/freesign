@@ -3,11 +3,34 @@ import { PDF_CONFIG } from '@/config/pdf';
 
 // Initialize worker once
 if (typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
+  console.log('Initializing PDF.js worker with version:', pdfjs.version);
   pdfjs.GlobalWorkerOptions.workerSrc = PDF_CONFIG.worker.workerSrc;
+}
+
+let isWorkerInitialized = false;
+
+async function ensureWorkerInitialized() {
+  if (isWorkerInitialized) return;
+  
+  try {
+    // Test worker initialization
+    const testDoc = await pdfjs.getDocument({ data: new Uint8Array([]) }).promise;
+    isWorkerInitialized = true;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Invalid PDF')) {
+      // This is expected for our test document
+      isWorkerInitialized = true;
+    } else {
+      console.error('PDF.js worker initialization failed:', error);
+      throw new Error('Failed to initialize PDF viewer. Please check your internet connection and try again.');
+    }
+  }
 }
 
 export async function loadPdfDocument(url: string) {
   try {
+    await ensureWorkerInitialized();
+    
     let pdfUrl = url;
     
     // If the URL is a blob URL, fetch it first
