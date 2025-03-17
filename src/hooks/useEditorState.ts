@@ -163,15 +163,18 @@ export function useEditorState(documentId: string | undefined, userId: string | 
       });
 
       if (elementsData) {
-        const newElements = elementsData.map(element => ({
-          id: element.id,
-          type: element.type as SigningElement['type'],
-          position: element.position,
-          size: element.size,
-          value: element.value,
-          required: true,
-          assignedTo: element.recipient_id,
-        }));
+        const newElements = elementsData.map(element => {
+          const recipient = documentData.recipients.find(r => r.id === element.recipient_id);
+          return {
+            id: element.id,
+            type: element.type as SigningElement['type'],
+            position: element.position,
+            size: element.size,
+            value: element.value,
+            required: true,
+            assignedTo: recipient?.name || 'Unknown',
+          };
+        });
         setSigningElements(newElements);
       }
 
