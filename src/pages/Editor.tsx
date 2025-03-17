@@ -128,6 +128,7 @@ export default function Editor() {
         isOpen={isEmailModalOpen}
         onClose={() => setIsEmailModalOpen(false)}
         documentId={document.id}
+        recipients={recipients}
       />
 
       {document && (

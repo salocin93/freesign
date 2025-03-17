@@ -4,22 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { sendSignatureRequest } from '@/lib/emailService';
-import { useEditorState } from '@/hooks/useEditorState';
-import { useAuth } from '@/contexts/AuthContext';
+import { Recipient } from '@/utils/types';
 
 interface SendEmailModalProps {
   isOpen: boolean;
   onClose: () => void;
   documentId: string;
+  recipients: Recipient[];
 }
 
-export function SendEmailModal({ isOpen, onClose, documentId }: SendEmailModalProps) {
-  const { currentUser } = useAuth();
-  const { document, recipients } = useEditorState(documentId, currentUser?.id);
+export function SendEmailModal({ isOpen, onClose, documentId, recipients }: SendEmailModalProps) {
   const [isSending, setIsSending] = useState(false);
 
   const handleSend = async () => {
-    if (!document || !recipients.length) {
+    if (!recipients.length) {
       toast.error('Please add at least one recipient');
       return;
     }
@@ -28,7 +26,7 @@ export function SendEmailModal({ isOpen, onClose, documentId }: SendEmailModalPr
       setIsSending(true);
 
       // Send emails
-      await sendSignatureRequest(document.id, recipients);
+      await sendSignatureRequest(documentId, recipients);
 
       toast.success('Document sent successfully');
       onClose();
