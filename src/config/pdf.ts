@@ -1,8 +1,10 @@
 import * as pdfjsLib from 'pdfjs-dist';
+// Import the worker directly as a URL
+import PDFWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 export const PDF_CONFIG = {
   worker: {
-    workerSrc: 'pdfjs-dist/build/pdf.worker.entry'
+    workerSrc: PDFWorker
   },
   viewer: {
     cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
