@@ -11,14 +11,14 @@ CREATE POLICY "Enable read for document recipients" ON storage.objects
   USING (
     bucket_id = 'documents' AND (
       -- Allow access if user is the document creator
-      auth.uid()::text = (storage.foldername(name))[1]
+      auth.uid()::text = (storage.foldername(storage.objects.name))[1]
       OR
       -- Allow access if user is a recipient of the document
       EXISTS (
         SELECT 1 FROM public.recipients r
         JOIN public.documents d ON d.id = r.document_id
         WHERE r.email = auth.jwt()->>'email'
-        AND d.storage_path = name
+        AND d.storage_path = storage.objects.name
       )
     )
   );
@@ -27,21 +27,21 @@ CREATE POLICY "Enable insert for document creators" ON storage.objects
   FOR INSERT
   TO authenticated
   WITH CHECK (
-    bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(name))[1]
+    bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(storage.objects.name))[1]
   );
 
 CREATE POLICY "Enable update for document creators" ON storage.objects
   FOR UPDATE
   TO authenticated
   USING (
-    bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(name))[1]
+    bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(storage.objects.name))[1]
   );
 
 CREATE POLICY "Enable delete for document creators" ON storage.objects
   FOR DELETE
   TO authenticated
   USING (
-    bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(name))[1]
+    bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(storage.objects.name))[1]
   );
 
 -- Ensure RLS is enabled
