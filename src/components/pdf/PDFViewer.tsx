@@ -255,7 +255,7 @@ export function PDFViewer({
                   return (
                     <div
                       key={element.id}
-                      className="absolute border-2 rounded cursor-pointer"
+                      className="absolute border-2 rounded cursor-pointer flex flex-col"
                       style={{
                         left: `${element.position.x}px`,
                         top: `${element.position.y}px`,
@@ -266,13 +266,12 @@ export function PDFViewer({
                       onClick={() => onElementClick?.(element.id)}
                     >
                       <div 
-                        className="flex items-center justify-between px-2 py-1 border-b"
+                        className="flex items-center justify-center px-2 py-1 border-b text-xs font-medium"
                         style={{ backgroundColor: `${recipientColor}20`, borderColor: recipientColor }}
                       >
-                        <span className="text-xs font-medium">{element.type}</span>
-                        <span className="text-xs text-muted-foreground">{recipient?.name || 'Unassigned'}</span>
+                        {element.type}
                       </div>
-                      <div className="h-full flex items-center justify-center">
+                      <div className="flex-1 flex items-center justify-center">
                         {onRemoveElement && (
                           <button
                             style={{
@@ -287,21 +286,8 @@ export function PDFViewer({
                             <X className="h-4 w-4 text-red-500" />
                           </button>
                         )}
-                        {element.type === 'signature' && !element.value && (
-                          <span className="text-sm text-blue-500">Click to sign</span>
-                        )}
                         {element.type === 'signature' && element.value && (
                           <img src={element.value as string} alt="Signature" className="w-full h-full object-contain" />
-                        )}
-                        {element.type === 'date' && (
-                          <span className="text-sm text-blue-500">
-                            {element.value || 'Date'}
-                          </span>
-                        )}
-                        {element.type === 'text' && (
-                          <span className="text-sm text-blue-500">
-                            {element.value || 'Text'}
-                          </span>
                         )}
                         {element.type === 'checkbox' && (
                           <input
@@ -311,6 +297,12 @@ export function PDFViewer({
                             className="w-6 h-6"
                           />
                         )}
+                      </div>
+                      <div 
+                        className="flex items-center justify-center px-2 py-1 border-t text-xs text-muted-foreground"
+                        style={{ borderColor: recipientColor }}
+                      >
+                        {recipient?.name || 'Unassigned'}
                       </div>
                     </div>
                   );
