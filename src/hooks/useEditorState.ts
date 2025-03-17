@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Document, Recipient, SigningElement } from '@/utils/types';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 const STORAGE_BUCKET = 'documents';
 
@@ -235,9 +236,98 @@ export function useEditorState(documentId: string | undefined, userId: string | 
     };
   }, [documentId, loadDocument]);
 
+  const addSigningElement = useCallback(async (type: SigningElement['type'], position: { x: number; y: number; pageIndex: number }) => {
+    if (!documentId) return;
+
+    const newElement: SigningElement = {
+      id: uuidv4(),
+      type,
+      position,
+      size: {
+        width: type === 'signature' ? 200 : 150,
+        height: type === 'signature' ? 100 : 40,
+      },
+      value: null,
+      required: true,
+      assignedTo: selectedRecipientId,
+    };
+
+    try {
+      const { error } = await supabase
+        .from('signing_elements')
+        .insert({
+          id: newElement.id,
+          document_id: documentId,
+          recipient_id: selectedRecipientId,
+          type: newElement.type,
+          position: newElement.position,
+          size: newElement.size,
+          value: newElement.value,
+        });
+
+      if (error) throw error;
+
+      setSigningElements(prev => [...prev, newElement]);
+      toast.success('Field added successfully');
+    } catch (error) {
+      console.error('Error adding signing element:', error);
+      toast.error('Failed to add field');
+    }
+  }, [documentId, selectedRecipientId]);
+
+  const updateSigningElement = useCallback(async (id: string, updates: Partial<SigningElement>) => {
+    if (!documentId) return;
+
+    try {
+      const { error } = await supabase
+        .from('signing_elements')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('document_id', documentId);
+
+      if (error) throw error;
+
+      setSigningElements(prev =>
+        prev.map(el => (el.id === id ? { ...el, ...updates } : el))
+      );
+    } catch (error) {
+      console.error('Error updating signing element:', error);
+      toast.error('Failed to update field');
+    }
+  }, [documentId]);
+
+  const removeSigningElement = useCallback(async (id: string) => {
+    if (!documentId) return;
+
+    try {
+      const { error } = await supabase
+        .from('signing_elements')
+        .delete()
+        .eq('id', id)
+        .eq('document_id', documentId);
+
+      if (error) throw error;
+
+      setSigningElements(prev => prev.filter(el => el.id !== id));
+      toast.success('Field removed successfully');
+    } catch (error) {
+      console.error('Error removing signing element:', error);
+      toast.error('Failed to remove field');
+    }
+  }, [documentId]);
+
   const handleSelectElement = useCallback((elementId: string) => {
     const element = signingElements.find(el => el.id === elementId);
     if (!element) return;
+
+    // Handle signature field click
+    if (element.type === 'signature') {
+      // TODO: Open signature dialog
+      console.log('Signature field clicked:', elementId);
+    }
   }, [signingElements]);
 
   return {
@@ -246,6 +336,10 @@ export function useEditorState(documentId: string | undefined, userId: string | 
     signingElements,
     selectedRecipientId,
     handleSelectElement,
+    addSigningElement,
+    updateSigningElement,
+    removeSigningElement,
+    setSelectedRecipientId,
     isLoading,
   };
 }

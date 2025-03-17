@@ -6,17 +6,31 @@ import { Button } from '@/components/ui/button';
 import { SendEmailModal } from '@/components/SendEmailModal';
 import { PDFViewer } from '@/components/pdf/PDFViewer';
 import { PDFErrorBoundary } from '@/components/pdf/PDFErrorBoundary';
-import { PDFErrorBoundary } from '@/components/pdf/PDFErrorBoundary';
 import { AddRecipientModal } from '@/components/recipient/AddRecipientModal';
 import { Loader2 } from 'lucide-react';
+import SigningElementsToolbar from '@/components/SigningElementsToolbar';
+import { SigningElement } from '@/utils/types';
+import { cn } from '@/lib/utils';
 
 export default function Editor() {
   const params = useParams();
   const documentId = params.id;
   const { currentUser } = useAuth();
-  const { document, recipients, signingElements, handleSelectElement, isLoading } = useEditorState(documentId, currentUser?.id);
+  const { 
+    document, 
+    recipients, 
+    signingElements, 
+    handleSelectElement, 
+    addSigningElement,
+    updateSigningElement,
+    removeSigningElement,
+    setSelectedRecipientId,
+    selectedRecipientId,
+    isLoading 
+  } = useEditorState(documentId, currentUser?.id);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isRecipientModalOpen, setIsRecipientModalOpen] = useState(false);
+  const [activeElementType, setActiveElementType] = useState<SigningElement['type'] | null>(null);
 
   if (isLoading) {
     return (
@@ -65,6 +79,8 @@ export default function Editor() {
                 url={document.url}
                 signingElements={signingElements}
                 onElementClick={handleSelectElement}
+                onAddElement={addSigningElement}
+                activeElementType={activeElementType}
               />
             ) : (
               <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
@@ -73,14 +89,26 @@ export default function Editor() {
             )}
           </PDFErrorBoundary>
         </div>
-        <div className="col-span-3">
+        <div className="col-span-3 space-y-6">
+          <SigningElementsToolbar
+            activeElementType={activeElementType}
+            onSelectElement={setActiveElementType}
+            variant="default"
+            showTooltips={true}
+          />
           <div className="bg-white rounded-lg shadow p-4">
             <h2 className="text-lg font-semibold mb-4">Recipients</h2>
             <div className="space-y-2">
               {recipients.map((recipient) => (
                 <div
                   key={recipient.id}
-                  className="p-2 bg-gray-50 rounded-md"
+                  className={cn(
+                    "p-2 rounded-md cursor-pointer transition-colors",
+                    selectedRecipientId === recipient.id 
+                      ? "bg-primary/10 border border-primary" 
+                      : "bg-gray-50 hover:bg-gray-100"
+                  )}
+                  onClick={() => setSelectedRecipientId(recipient.id)}
                 >
                   <div className="font-medium">{recipient.name}</div>
                   <div className="text-sm text-gray-500">{recipient.email}</div>
