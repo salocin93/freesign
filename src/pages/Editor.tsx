@@ -7,6 +7,7 @@ import { SendEmailModal } from '@/components/SendEmailModal';
 import { PDFViewer } from '@/components/pdf/PDFViewer';
 import { PDFErrorBoundary } from '@/components/pdf/PDFErrorBoundary';
 import { AddRecipientModal } from '@/components/recipient/AddRecipientModal';
+import SigningFieldList from '@/components/SigningFieldList';
 import { Loader2 } from 'lucide-react';
 import SigningElementsToolbar from '@/components/SigningElementsToolbar';
 import { SigningElement } from '@/utils/types';
@@ -130,6 +131,11 @@ export default function Editor() {
               )}
             </div>
           </div>
+          <SigningFieldList
+            signingElements={signingElements}
+            recipients={recipients}
+            onRemoveElement={removeSigningElement}
+          />
         </div>
       </div>
 
