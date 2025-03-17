@@ -26,7 +26,8 @@ export default function Editor() {
     removeSigningElement,
     setSelectedRecipientId,
     selectedRecipientId,
-    isLoading 
+    isLoading,
+    setRecipients
   } = useEditorState(documentId, currentUser?.id);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isRecipientModalOpen, setIsRecipientModalOpen] = useState(false);
@@ -144,7 +145,7 @@ export default function Editor() {
           onClose={() => setIsRecipientModalOpen(false)}
           documentId={document.id}
           onAddRecipient={(recipient) => {
-            // The recipient will be added to the list through the useEditorState hook
+            setRecipients(prev => [...prev, recipient]);
             setSelectedRecipientId(recipient.id);
           }}
           recipients={recipients}
