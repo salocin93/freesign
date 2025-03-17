@@ -219,12 +219,20 @@ export function useEditorState(documentId: string | undefined, userId: string | 
         },
         (payload) => {
           if (!isSubscribed) return;
-          // Only reload if there's an actual change in the data
+          
           const newData = payload.new as Recipient;
           const oldData = payload.old as Recipient;
-          if (JSON.stringify(newData) !== JSON.stringify(oldData)) {
-            console.log('Recipient change detected, forcing reload');
-            loadDocument(true);
+          
+          if (payload.eventType === 'INSERT') {
+            setRecipients(prev => [...prev, newData]);
+          } else if (payload.eventType === 'UPDATE') {
+            setRecipients(prev => 
+              prev.map(r => r.id === newData.id ? newData : r)
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setRecipients(prev => 
+              prev.filter(r => r.id !== oldData.id)
+            );
           }
         }
       )
