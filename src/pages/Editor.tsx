@@ -59,11 +59,17 @@ export default function Editor() {
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-9">
           <PDFErrorBoundary>
-            <PDFViewer
-              url={document.url || ''}
-              signingElements={signingElements}
-              onElementClick={handleSelectElement}
-            />
+            {document.url ? (
+              <PDFViewer
+                url={document.url}
+                signingElements={signingElements}
+                onElementClick={handleSelectElement}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
+                <p className="text-gray-500">No document URL available</p>
+              </div>
+            )}
           </PDFErrorBoundary>
         </div>
         <div className="col-span-3">
