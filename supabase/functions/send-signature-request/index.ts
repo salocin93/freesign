@@ -38,6 +38,8 @@ const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY') || ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const APP_URL = Deno.env.get('APP_URL') || ''
+const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') || 'nicolasvonrosen@gmail.com'
+const SENDER_NAME = Deno.env.get('SENDER_NAME') || 'FreeSign'
 
 console.log("Hello from Functions!")
 
@@ -171,18 +173,12 @@ serve(async (req) => {
 
     console.log('Found document:', document)
 
-    // Get sender profile
-    const { data: sender, error: senderError } = await supabase
-      .from('auth.users')
-      .select('id, email, raw_user_meta_data->full_name')
-      .eq('id', document.created_by)
-      .single();
+    // Get sender profile using Auth API
+    const { data: sender, error: senderError } = await supabase.auth.admin.getUserById(document.created_by);
 
     if (senderError) {
       throw new DatabaseError('Failed to fetch sender profile', {
-        code: senderError.code,
-        details: senderError.details,
-        hint: senderError.hint,
+        code: senderError.status,
         message: senderError.message
       });
     }
@@ -191,7 +187,7 @@ serve(async (req) => {
       throw new ValidationError('Sender not found');
     }
 
-    const senderName = sender.raw_user_meta_data?.full_name || sender.email;
+    const senderName = sender.user.user_metadata?.full_name || sender.user.email;
 
     // Update document status with error handling
     const { error: updateError } = await supabase
@@ -249,8 +245,8 @@ serve(async (req) => {
                 },
               ],
               from: {
-                email: 'noreply@freesign.app',
-                name: 'FreeSign',
+                email: SENDER_EMAIL,
+                name: SENDER_NAME,
               },
               subject: emailContent.subject,
               content: [
