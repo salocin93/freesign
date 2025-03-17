@@ -62,12 +62,12 @@ export async function sendSignatureRequest(documentId: string, recipients: Recip
     });
 
     if (error) {
-      throw error;
+      throw new Error(error.message || 'Failed to send signature request');
     }
 
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending signature request:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to send signature request');
   }
 } 

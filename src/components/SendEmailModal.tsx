@@ -32,9 +32,10 @@ export function SendEmailModal({ isOpen, onClose, documentId }: SendEmailModalPr
 
       toast.success('Document sent successfully');
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending document:', error);
-      toast.error('Failed to send document');
+      const errorMessage = error.message || 'Failed to send document';
+      toast.error(errorMessage);
     } finally {
       setIsSending(false);
     }
