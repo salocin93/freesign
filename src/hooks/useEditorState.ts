@@ -301,10 +301,13 @@ export function useEditorState(documentId: string | undefined, userId: string | 
     if (!documentId) return;
 
     try {
+      // Remove UI-specific fields that don't exist in the database
+      const { required, assignedTo, ...dbUpdates } = updates;
+
       const { error } = await supabase
         .from('signing_elements')
         .update({
-          ...updates,
+          ...dbUpdates,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
