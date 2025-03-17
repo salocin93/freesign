@@ -376,6 +376,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
     updateSigningElement,
     removeSigningElement,
     setSelectedRecipientId,
+    setRecipients,
     isLoading,
   };
 }
