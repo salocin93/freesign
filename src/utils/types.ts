@@ -1,3 +1,13 @@
+/**
+ * Core Type Definitions
+ * 
+ * This module contains TypeScript type definitions used throughout the application.
+ * It defines interfaces and types for various features including document signing,
+ * user management, and verification processes.
+ * 
+ * @module Types
+ */
+
 export interface Document {
   id: string;
   name: string;
@@ -70,15 +80,34 @@ export interface SignatureData {
   type: 'drawn' | 'typed' | 'uploaded';
 }
 
+/**
+ * Interface representing the result of a signature verification process.
+ * Contains all necessary information about a verified signature, including
+ * the signer's details and verification metadata.
+ * 
+ * @interface SignatureVerification
+ */
 export interface SignatureVerification {
+  /** Whether the signature is valid and verified */
   isValid: boolean;
+  
+  /** ISO timestamp of when the signature was created */
   timestamp: string;
+  
+  /** Information about the person who signed the document */
   signedBy: {
+    /** Full name of the signer */
     name: string;
+    /** Email address of the signer */
     email: string;
+    /** Unique identifier of the signer in the system */
     userId: string;
   };
+  
+  /** Unique identifier of the signed document */
   documentId: string;
+  
+  /** Cryptographic hash used for verification */
   verificationHash: string;
 }
 
