@@ -21,6 +21,7 @@ import { supabase } from './supabase';
 export interface Recipient {
   email: string;
   name?: string;
+  message?: string;
 }
 
 /**

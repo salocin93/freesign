@@ -202,7 +202,7 @@ serve(async (req) => {
 
     // Process recipients with better error handling
     const results = await Promise.allSettled(
-      recipients.map(async (recipient: { name: string; email: string }) => {
+      recipients.map(async (recipient: { name: string; email: string; message?: string }) => {
         try {
           // Create recipient in the database
           const { data: recipientData, error: recipientError } = await supabase
@@ -224,12 +224,13 @@ serve(async (req) => {
           }
 
           // Generate and send email
-          const emailContent = generateSignatureRequestEmail(
+          const emailContent = await generateSignatureRequestEmail(
             recipient.name,
             senderName,
             document.name,
             documentId,
-            recipient.email
+            recipient.email,
+            recipient.message
           )
 
           const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
