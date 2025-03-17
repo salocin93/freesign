@@ -71,22 +71,33 @@ serve(async (req) => {
       throw new Error('Invalid request body')
     }
 
+    console.log('Processing request for document:', documentId)
+    console.log('Recipients:', recipients)
+
     // Get the document details
     const { data: document, error: documentError } = await supabase
       .from('documents')
-      .select('name, user_id')
+      .select('name, created_by')
       .eq('id', documentId)
       .single()
 
-    if (documentError || !document) {
+    if (documentError) {
+      console.error('Document fetch error:', documentError)
+      throw new Error(`Document not found: ${documentError.message}`)
+    }
+
+    if (!document) {
+      console.error('No document found for ID:', documentId)
       throw new Error('Document not found')
     }
+
+    console.log('Found document:', document)
 
     // Get the sender's name
     const { data: sender, error: senderError } = await supabase
       .from('profiles')
       .select('full_name')
-      .eq('id', document.user_id)
+      .eq('id', document.created_by)
       .single()
 
     if (senderError || !sender) {
