@@ -21,20 +21,8 @@ export async function generateSignatureRequestEmail(
     logoUrl
   });
 
-  // Use a simpler template path
-  const templatePath = './_shared/templates/signature-request.html';
-  console.log('Reading template from:', templatePath);
-  
-  try {
-    // First try to read the template file
-    let template: string;
-    try {
-      template = await Deno.readTextFile(templatePath);
-      console.log('Template read successfully, length:', template.length);
-    } catch (readError) {
-      console.error('Failed to read template file:', readError);
-      // Fallback to inline template if file read fails
-      template = `
+  // Use the inline template directly since file reading is not working
+  const template = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -133,9 +121,9 @@ export async function generateSignatureRequestEmail(
   </div>
 </body>
 </html>`;
-      console.log('Using fallback template');
-    }
-    
+
+  try {
+    console.log('Using inline template');
     const handlebars = new Handlebars();
     const compiledTemplate = handlebars.compile(template);
     console.log('Template compiled successfully');
@@ -172,9 +160,7 @@ This is an automated message from FreeSign. Please do not reply to this email.
     console.error('Error details:', {
       name: error.name,
       message: error.message,
-      stack: error.stack,
-      cwd: Deno.cwd(),
-      files: await Deno.readDir(Deno.cwd())
+      stack: error.stack
     });
     throw error;
   }
