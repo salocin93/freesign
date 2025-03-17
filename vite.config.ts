@@ -60,8 +60,6 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     target: 'esnext',
     sourcemap: true
-    target: 'esnext',
-    sourcemap: true
   },
   optimizeDeps: {
     include: [
