@@ -76,6 +76,20 @@ const styles = {
     zIndex: 20,
     pointerEvents: 'auto' as const,
   },
+  deleteButton: {
+    position: 'absolute' as const,
+    top: '-8px',
+    right: '-8px',
+    backgroundColor: 'white',
+    borderRadius: '9999px',
+    padding: '4px',
+    boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+    opacity: 0,
+    transition: 'opacity 0.2s',
+  },
+  deleteButtonVisible: {
+    opacity: 1,
+  },
 };
 
 interface PDFViewerProps {
@@ -91,6 +105,8 @@ interface PDFViewerProps {
   activeElementType?: SigningElement['type'] | null;
   /** Callback function when a signing element is removed */
   onRemoveElement?: (elementId: string) => void;
+  /** The currently selected recipient ID */
+  selectedRecipientId?: string | null;
 }
 
 export function PDFViewer({ 
@@ -99,11 +115,13 @@ export function PDFViewer({
   onElementClick,
   onAddElement,
   activeElementType,
-  onRemoveElement
+  onRemoveElement,
+  selectedRecipientId
 }: PDFViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1);
+  const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
@@ -113,6 +131,11 @@ export function PDFViewer({
   const handlePageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!activeElementType || !onAddElement) {
       console.log('Cannot add element:', { activeElementType, hasOnAddElement: !!onAddElement });
+      return;
+    }
+
+    if (!selectedRecipientId) {
+      alert('Please select a recipient before adding signing elements');
       return;
     }
 
@@ -229,10 +252,15 @@ export function PDFViewer({
                       e.stopPropagation();
                       onElementClick?.(element.id);
                     }}
+                    onMouseEnter={() => setHoveredElementId(element.id)}
+                    onMouseLeave={() => setHoveredElementId(null)}
                   >
                     {onRemoveElement && (
                       <button
-                        className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{
+                          ...styles.deleteButton,
+                          ...(hoveredElementId === element.id ? styles.deleteButtonVisible : {})
+                        }}
                         onClick={(e) => {
                           e.stopPropagation();
                           onRemoveElement(element.id);
