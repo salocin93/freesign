@@ -22,7 +22,7 @@ export interface Document {
 
 export interface SigningElement {
   id: string;
-  type: 'signature' | 'date' | 'text' | 'checkbox' | 'name' | 'email' | 'address';
+  type: 'signature' | 'date' | 'text' | 'checkbox' | 'name' | 'email' | 'address' | 'title';
   position: {
     x: number;
     y: number;
