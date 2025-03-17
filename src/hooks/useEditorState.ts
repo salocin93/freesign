@@ -285,7 +285,6 @@ export function useEditorState(documentId: string | undefined, userId: string | 
           position: newElement.position,
           size: newElement.size,
           value: newElement.value,
-          required: newElement.required,
         }]);
 
       if (error) throw error;
