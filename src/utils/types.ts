@@ -22,7 +22,7 @@ export interface Document {
 
 export interface SigningElement {
   id: string;
-  type: 'signature' | 'date' | 'text' | 'checkbox';
+  type: 'signature' | 'date' | 'text' | 'checkbox' | 'name' | 'email' | 'address';
   position: {
     x: number;
     y: number;
@@ -32,9 +32,10 @@ export interface SigningElement {
     width: number;
     height: number;
   };
-  value: string | boolean;
+  value: string | boolean | null;
   required: boolean;
-  assignedTo: string;
+  assignedTo: string | null;
+  label?: string;
 }
 
 export interface Recipient {
