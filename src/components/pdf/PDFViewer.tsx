@@ -30,6 +30,54 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2, X } from 'lucide-react';
 import { PDF_CONFIG } from '@/config/pdf';
 
+// Add styles for PDF viewer
+const styles = {
+  container: {
+    position: 'relative' as const,
+    backgroundColor: 'white',
+    borderRadius: '0.5rem',
+    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+    padding: '1rem',
+  },
+  controls: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1rem',
+  },
+  pdfContainer: {
+    position: 'relative' as const,
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  pageContainer: {
+    position: 'relative' as const,
+  },
+  overlay: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    cursor: 'crosshair',
+    zIndex: 10,
+    pointerEvents: 'auto' as const,
+  },
+  element: {
+    position: 'absolute' as const,
+    cursor: 'pointer',
+    borderRadius: '0.5rem',
+    border: '2px solid #3b82f6',
+    backgroundColor: 'rgba(239, 246, 255, 0.3)',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 20,
+    pointerEvents: 'auto' as const,
+  },
+};
+
 interface PDFViewerProps {
   /** URL of the PDF document to display */
   url: string;
@@ -97,8 +145,8 @@ export function PDFViewer({
   };
 
   return (
-    <div className="relative bg-white rounded-lg shadow-lg p-4">
-      <div className="flex justify-between items-center mb-4">
+    <div style={styles.container}>
+      <div style={styles.controls}>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setScale(prev => Math.max(0.5, prev - 0.1))}
@@ -135,7 +183,7 @@ export function PDFViewer({
         </div>
       </div>
 
-      <div className="relative flex justify-center">
+      <div style={styles.pdfContainer}>
         <Document
           file={url}
           onLoadSuccess={onDocumentLoadSuccess}
@@ -155,14 +203,14 @@ export function PDFViewer({
             cMapPacked: true,
           }}
         >
-          <div className="relative" ref={pageRef}>
+          <div style={styles.pageContainer} ref={pageRef}>
             <Page
               pageNumber={pageNumber}
               scale={scale}
               className="pdf-page"
             />
             <div 
-              className="absolute top-0 left-0 w-full h-full cursor-crosshair"
+              style={styles.overlay}
               onClick={handlePageClick}
             >
               {signingElements
@@ -170,8 +218,8 @@ export function PDFViewer({
                 .map((element) => (
                   <div
                     key={element.id}
-                    className="absolute cursor-pointer rounded-lg border-2 border-blue-500 bg-blue-50 bg-opacity-30 flex flex-col items-center justify-center group"
                     style={{
+                      ...styles.element,
                       left: `${element.position.x}px`,
                       top: `${element.position.y}px`,
                       width: `${element.size.width}px`,
