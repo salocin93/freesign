@@ -38,7 +38,7 @@ export function AddRecipientModal({ isOpen, onClose, documentId, onAddRecipient,
             document_id: documentId,
             name,
             email,
-            order: recipients.length,
+            status: 'pending'
           },
         ])
         .select()
