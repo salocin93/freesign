@@ -8,6 +8,7 @@ import { PDFViewer } from '@/components/pdf/PDFViewer';
 import { PDFErrorBoundary } from '@/components/pdf/PDFErrorBoundary';
 import { AddRecipientModal } from '@/components/recipient/AddRecipientModal';
 import SigningFieldList from '@/components/SigningFieldList';
+import RecipientSelector from '@/components/RecipientSelector';
 import { Loader2 } from 'lucide-react';
 import SigningElementsToolbar from '@/components/SigningElementsToolbar';
 import { SigningElement } from '@/utils/types';
@@ -85,6 +86,7 @@ export default function Editor() {
               <PDFViewer
                 url={document.url}
                 signingElements={signingElements}
+                recipients={recipients}
                 onElementClick={handleSelectElement}
                 onAddElement={addSigningElement}
                 activeElementType={activeElementType}
@@ -107,29 +109,12 @@ export default function Editor() {
             showTooltips={true}
           />
           <div className="bg-white rounded-lg shadow p-4">
-            <h2 className="text-lg font-semibold mb-4">Recipients</h2>
-            <div className="space-y-2">
-              {recipients.map((recipient) => (
-                <div
-                  key={recipient.id}
-                  className={cn(
-                    "p-2 rounded-md cursor-pointer transition-colors",
-                    selectedRecipientId === recipient.id 
-                      ? "bg-primary/10 border border-primary" 
-                      : "bg-gray-50 hover:bg-gray-100"
-                  )}
-                  onClick={() => setSelectedRecipientId(recipient.id)}
-                >
-                  <div className="font-medium">{recipient.name}</div>
-                  <div className="text-sm text-gray-500">{recipient.email}</div>
-                </div>
-              ))}
-              {!recipients.length && (
-                <p className="text-sm text-gray-500">
-                  No recipients added yet. Click "Add Recipient" to get started.
-                </p>
-              )}
-            </div>
+            <RecipientSelector
+              recipients={recipients}
+              selectedRecipientId={selectedRecipientId}
+              onSelectRecipient={setSelectedRecipientId}
+              onAddRecipient={() => setIsRecipientModalOpen(true)}
+            />
           </div>
           <SigningFieldList
             signingElements={signingElements}
