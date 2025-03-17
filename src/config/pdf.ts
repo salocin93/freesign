@@ -2,7 +2,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 
 export const PDF_CONFIG = {
   worker: {
-    workerSrc: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
+    workerSrc: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`,
+    workerEntry: 'pdfjs-dist/build/pdf.worker.entry'
   },
   viewer: {
     cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
