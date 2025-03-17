@@ -88,6 +88,7 @@ export default function Editor() {
                 activeElementType={activeElementType}
                 onRemoveElement={removeSigningElement}
                 selectedRecipientId={selectedRecipientId}
+                onOpenAddRecipient={() => setIsRecipientModalOpen(true)}
               />
             ) : (
               <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">

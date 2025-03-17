@@ -107,6 +107,8 @@ interface PDFViewerProps {
   onRemoveElement?: (elementId: string) => void;
   /** The currently selected recipient ID */
   selectedRecipientId?: string | null;
+  /** Callback function to open the add recipient modal */
+  onOpenAddRecipient?: () => void;
 }
 
 export function PDFViewer({ 
@@ -116,7 +118,8 @@ export function PDFViewer({
   onAddElement,
   activeElementType,
   onRemoveElement,
-  selectedRecipientId
+  selectedRecipientId,
+  onOpenAddRecipient
 }: PDFViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState(1);
@@ -135,7 +138,7 @@ export function PDFViewer({
     }
 
     if (!selectedRecipientId) {
-      alert('Please select a recipient before adding signing elements');
+      onOpenAddRecipient?.();
       return;
     }
 
