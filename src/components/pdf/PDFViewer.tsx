@@ -22,7 +22,7 @@
  * ```
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Document, Page } from 'react-pdf';
 import { SigningElement } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -56,17 +56,38 @@ export function PDFViewer({
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1);
+  const pageRef = useRef<HTMLDivElement>(null);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
   }
 
   const handlePageClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!activeElementType || !onAddElement) return;
+    if (!activeElementType || !onAddElement) {
+      console.log('Cannot add element:', { activeElementType, hasOnAddElement: !!onAddElement });
+      return;
+    }
 
-    const rect = e.currentTarget.getBoundingClientRect();
+    const pageElement = pageRef.current;
+    if (!pageElement) {
+      console.log('No page element found');
+      return;
+    }
+
+    const rect = pageElement.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
+    console.log('Click position:', {
+      clientX: e.clientX,
+      clientY: e.clientY,
+      rectLeft: rect.left,
+      rectTop: rect.top,
+      x,
+      y,
+      pageIndex: pageNumber - 1,
+      activeElementType
+    });
 
     onAddElement(activeElementType, {
       x,
@@ -134,14 +155,14 @@ export function PDFViewer({
             cMapPacked: true,
           }}
         >
-          <div className="relative">
+          <div className="relative" ref={pageRef}>
             <Page
               pageNumber={pageNumber}
               scale={scale}
               className="pdf-page"
             />
             <div 
-              className="absolute top-0 left-0 w-full h-full"
+              className="absolute top-0 left-0 w-full h-full cursor-crosshair"
               onClick={handlePageClick}
             >
               {signingElements

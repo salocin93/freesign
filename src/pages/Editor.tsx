@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEditorState } from '@/hooks/useEditorState';
@@ -31,6 +31,11 @@ export default function Editor() {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isRecipientModalOpen, setIsRecipientModalOpen] = useState(false);
   const [activeElementType, setActiveElementType] = useState<SigningElement['type'] | null>(null);
+
+  // Add debugging for activeElementType changes
+  useEffect(() => {
+    console.log('Active element type changed:', activeElementType);
+  }, [activeElementType]);
 
   if (isLoading) {
     return (
