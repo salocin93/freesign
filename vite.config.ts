@@ -67,6 +67,9 @@ export default defineConfig({
     include: [
       'pdfjs-dist',
       'react-pdf'
+    ],
+    exclude: [
+      'pdfjs-dist/build/pdf.worker.min.mjs'
     ]
   },
   define: {
