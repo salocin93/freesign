@@ -13,13 +13,7 @@ import { Button } from '@/components/ui/button';
 import { SignatureModal } from '@/components/signature/SignatureModal';
 import { SigningPDFViewer } from '@/components/pdf/SigningPDFViewer';
 import { toast } from 'sonner';
-
-interface Recipient {
-  id: string;
-  name: string;
-  email: string;
-  status: string;
-}
+import { SigningElement, Recipient } from '@/utils/types';
 
 export default function SignDocument() {
   const { documentId } = useParams();
@@ -32,6 +26,7 @@ export default function SignDocument() {
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recipient, setRecipient] = useState<Recipient | null>(null);
+  const [signingElements, setSigningElements] = useState<SigningElement[]>([]);
 
   useEffect(() => {
     async function fetchDocument() {
@@ -49,7 +44,20 @@ export default function SignDocument() {
               id,
               name,
               email,
-              status
+              status,
+              document_id,
+              created_at,
+              updated_at
+            ),
+            signing_elements (
+              id,
+              type,
+              position,
+              size,
+              value,
+              required,
+              recipient_id,
+              label
             )
           `)
           .eq('id', documentId)
@@ -80,6 +88,7 @@ export default function SignDocument() {
         if (!signUrl?.signedUrl) throw new Error('Could not generate document URL');
         
         setDocumentUrl(signUrl.signedUrl);
+        setSigningElements(document.signing_elements);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load document');
         toast.error(err instanceof Error ? err.message : 'Failed to load document');
@@ -177,7 +186,11 @@ export default function SignDocument() {
         </div>
         
         <div className="mb-6">
-          <SigningPDFViewer url={documentUrl} />
+          <SigningPDFViewer 
+            url={documentUrl} 
+            signingElements={signingElements}
+            recipients={recipient ? [recipient] : []}
+          />
         </div>
 
         <div className="flex justify-center">
