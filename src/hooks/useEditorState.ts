@@ -271,13 +271,22 @@ export function useEditorState(documentId: string | undefined, userId: string | 
       },
       value: type === 'checkbox' ? false : null,
       required: true,
-      assignedTo: recipientToUse.name, // Use name instead of ID
+      assignedTo: recipientToUse.name, // Use name for display
     };
 
     try {
       const { error } = await supabase
         .from('signing_elements')
-        .insert([newElement]);
+        .insert([{
+          id: newElement.id,
+          document_id: documentId,
+          recipient_id: recipientToUse.id, // Use ID for database
+          type: newElement.type,
+          position: newElement.position,
+          size: newElement.size,
+          value: newElement.value,
+          required: newElement.required,
+        }]);
 
       if (error) throw error;
 
