@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Pen, X } from 'lucide-react';
 import { SigningElement } from './EditorTypes';
@@ -12,6 +11,15 @@ interface DocumentElementsProps {
   handleSignatureFieldClick: (fieldId: string) => void;
 }
 
+/**
+ * Component for rendering signing elements in the document.
+ * 
+ * @param signingElements - Array of signing elements to display.
+ * @param recipients - Array of recipients associated with the signing elements.
+ * @param handleDragStart - Callback function to handle the start of dragging an element.
+ * @param handleRemoveElement - Callback function to handle removing a signing element.
+ * @param handleSignatureFieldClick - Callback function to handle clicking on a signature field.
+ */
 const DocumentElements: React.FC<DocumentElementsProps> = ({
   signingElements,
   recipients,
