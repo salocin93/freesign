@@ -171,21 +171,27 @@ serve(async (req) => {
 
     console.log('Found document:', document)
 
-    // Get the sender's name with error handling
+    // Get sender profile
     const { data: sender, error: senderError } = await supabase
-      .from('profiles')
-      .select('full_name')
+      .from('auth.users')
+      .select('id, email, raw_user_meta_data->full_name')
       .eq('id', document.created_by)
-      .single()
+      .single();
 
     if (senderError) {
-      console.error('Sender fetch error:', senderError)
-      throw new DatabaseError(`Failed to fetch sender profile: ${senderError.message}`, senderError)
+      throw new DatabaseError('Failed to fetch sender profile', {
+        code: senderError.code,
+        details: senderError.details,
+        hint: senderError.hint,
+        message: senderError.message
+      });
     }
 
     if (!sender) {
-      throw new DatabaseError(`Sender profile not found for user ID: ${document.created_by}`)
+      throw new ValidationError('Sender not found');
     }
+
+    const senderName = sender.raw_user_meta_data?.full_name || sender.email;
 
     // Update document status with error handling
     const { error: updateError } = await supabase
@@ -224,7 +230,7 @@ serve(async (req) => {
           // Generate and send email
           const emailContent = generateSignatureRequestEmail(
             recipient.name,
-            sender.full_name,
+            senderName,
             document.name,
             documentId,
             recipient.email
