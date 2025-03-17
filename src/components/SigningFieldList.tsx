@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { SigningElement, Recipient } from '@/utils/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -58,7 +57,7 @@ const SigningFieldList: React.FC<SigningFieldListProps> = ({
                     Position: x: {Math.round(element.position.x)}, y: {Math.round(element.position.y)}
                   </div>
                   <div>
-                    Assigned to: {getRecipientName(element.assignedTo)}
+                    Assigned to: {getRecipientName(element.recipient_id)}
                   </div>
                 </div>
                 <Button 

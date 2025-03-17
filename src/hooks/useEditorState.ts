@@ -173,6 +173,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
             value: element.value,
             required: true,
             assignedTo: recipient?.name || 'Unknown',
+            recipient_id: element.recipient_id,
           };
         });
         setSigningElements(newElements);
@@ -283,6 +284,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
       value: type === 'checkbox' ? false : null,
       required: true,
       assignedTo: recipientToUse.name, // Use name for display
+      recipient_id: recipientToUse.id, // Use ID for database
     };
 
     try {
