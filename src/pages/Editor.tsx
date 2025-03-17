@@ -81,6 +81,7 @@ export default function Editor() {
                 onElementClick={handleSelectElement}
                 onAddElement={addSigningElement}
                 activeElementType={activeElementType}
+                onRemoveElement={removeSigningElement}
               />
             ) : (
               <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
