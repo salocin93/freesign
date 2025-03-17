@@ -378,20 +378,17 @@ const Documents = () => {
                                   <TooltipTrigger asChild>
                                     <div>
                                       <DropdownMenuItem
-                                        onClick={() => doc.status === 'draft' && handleDeleteDocument(doc.id)}
-                                        className="gap-2 text-red-600 data-[disabled]:text-red-300"
-                                        disabled={doc.status !== 'draft'}
+                                        onClick={() => handleDeleteDocument(doc.id)}
+                                        className="gap-2 text-red-600"
                                       >
                                         <Trash2 className="h-4 w-4" />
                                         Delete
                                       </DropdownMenuItem>
                                     </div>
                                   </TooltipTrigger>
-                                  {doc.status !== 'draft' && (
-                                    <TooltipContent>
-                                      <p>Only draft documents can be deleted</p>
-                                    </TooltipContent>
-                                  )}
+                                  <TooltipContent>
+                                    <p>Delete this document</p>
+                                  </TooltipContent>
                                 </Tooltip>
 
                                 <DropdownMenuItem
