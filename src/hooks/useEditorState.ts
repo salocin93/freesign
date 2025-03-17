@@ -138,7 +138,7 @@ export function useEditorState(documentId: string | undefined, userId: string | 
 
       console.log('Successfully generated signed URL:', {
         signedUrl: signUrl.signedUrl,
-        expiresIn: '1 hour',
+        expiresIn: '24 hours',
         storage_path: documentData.storage_path
       });
 

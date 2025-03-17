@@ -168,7 +168,7 @@ export async function getDocumentUrl(path: string) {
 
     const { data, error } = await supabase.storage
       .from(STORAGE_BUCKET)
-      .createSignedUrl(path, 3600); // 1 hour expiry
+      .createSignedUrl(path, 86400); // 24 hour expiry
 
     if (error) {
       console.error('Error getting document URL:', error);
