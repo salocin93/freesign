@@ -204,6 +204,8 @@ serve(async (req) => {
     const results = await Promise.allSettled(
       recipients.map(async (recipient: { name: string; email: string; message?: string }) => {
         try {
+          console.log(`Processing recipient: ${recipient.email}`);
+          
           // Create recipient in the database
           const { data: recipientData, error: recipientError } = await supabase
             .from('recipients')
@@ -217,13 +219,16 @@ serve(async (req) => {
             .single()
 
           if (recipientError) {
+            console.error('Recipient creation error:', recipientError);
             throw new DatabaseError(
               `Failed to create recipient: ${recipientError.message}`,
               recipientError
             )
           }
+          console.log('Recipient created successfully:', recipientData);
 
           // Generate and send email
+          console.log('Generating email content...');
           const emailContent = await generateSignatureRequestEmail(
             recipient.name,
             senderName,
@@ -232,7 +237,9 @@ serve(async (req) => {
             recipient.email,
             recipient.message
           )
+          console.log('Email content generated successfully');
 
+          console.log('Sending email via SendGrid...');
           const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
             method: 'POST',
             headers: {
@@ -272,6 +279,7 @@ serve(async (req) => {
               errorText
             )
           }
+          console.log('Email sent successfully to:', recipient.email);
 
           return { recipient: recipient.email, status: 'success' }
         } catch (error: unknown) {
