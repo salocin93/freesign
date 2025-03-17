@@ -24,7 +24,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Document, Page } from 'react-pdf';
-import { SigningElement } from '@/utils/types';
+import { SigningElement, Recipient } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { Loader2, X } from 'lucide-react';
@@ -97,6 +97,8 @@ interface PDFViewerProps {
   url: string;
   /** Array of signing elements to overlay on the PDF */
   signingElements: SigningElement[];
+  /** Array of recipients associated with the signing elements */
+  recipients: Recipient[];
   /** Callback function when a signing element is clicked */
   onElementClick?: (elementId: string) => void;
   /** Callback function when clicking on the document to add a new element */
@@ -113,7 +115,8 @@ interface PDFViewerProps {
 
 export function PDFViewer({ 
   url, 
-  signingElements, 
+  signingElements,
+  recipients,
   onElementClick,
   onAddElement,
   activeElementType,
@@ -241,66 +244,77 @@ export function PDFViewer({
             >
               {signingElements
                 .filter(element => element.position.pageIndex === pageNumber - 1)
-                .map((element) => (
-                  <div
-                    key={element.id}
-                    style={{
-                      ...styles.element,
-                      left: `${element.position.x}px`,
-                      top: `${element.position.y}px`,
-                      width: `${element.size.width}px`,
-                      height: `${element.size.height}px`,
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onElementClick?.(element.id);
-                    }}
-                    onMouseEnter={() => setHoveredElementId(element.id)}
-                    onMouseLeave={() => setHoveredElementId(null)}
-                  >
-                    {onRemoveElement && (
-                      <button
-                        style={{
-                          ...styles.deleteButton,
-                          ...(hoveredElementId === element.id ? styles.deleteButtonVisible : {})
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemoveElement(element.id);
-                        }}
+                .map((element) => {
+                  const recipient = recipients.find(r => r.id === element.recipient_id);
+                  const recipientColor = recipient ? 
+                    (recipients.findIndex(r => r.id === recipient.id) === 0 ? '#3b82f6' : 
+                     recipients.findIndex(r => r.id === recipient.id) === 1 ? '#22c55e' : 
+                     recipients.findIndex(r => r.id === recipient.id) === 2 ? '#ef4444' : 
+                     `hsl(${(recipients.findIndex(r => r.id === recipient.id) * 360) / recipients.length}, 70%, 50%)`) : '#666';
+                  
+                  return (
+                    <div
+                      key={element.id}
+                      className="absolute border-2 rounded cursor-pointer"
+                      style={{
+                        left: `${element.position.x}px`,
+                        top: `${element.position.y}px`,
+                        width: `${element.size.width}px`,
+                        height: `${element.size.height}px`,
+                        borderColor: recipientColor,
+                      }}
+                      onClick={() => onElementClick?.(element.id)}
+                    >
+                      <div 
+                        className="flex items-center justify-between px-2 py-1 border-b"
+                        style={{ backgroundColor: `${recipientColor}20`, borderColor: recipientColor }}
                       >
-                        <X className="h-4 w-4 text-red-500" />
-                      </button>
-                    )}
-                    <div className="text-xs text-blue-500 font-medium mb-1">
-                      {element.assignedTo || 'Unassigned'}
+                        <span className="text-xs font-medium">{element.type}</span>
+                        <span className="text-xs text-muted-foreground">{recipient?.name || 'Unassigned'}</span>
+                      </div>
+                      <div className="h-full flex items-center justify-center">
+                        {onRemoveElement && (
+                          <button
+                            style={{
+                              ...styles.deleteButton,
+                              ...(hoveredElementId === element.id ? styles.deleteButtonVisible : {})
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemoveElement(element.id);
+                            }}
+                          >
+                            <X className="h-4 w-4 text-red-500" />
+                          </button>
+                        )}
+                        {element.type === 'signature' && !element.value && (
+                          <span className="text-sm text-blue-500">Click to sign</span>
+                        )}
+                        {element.type === 'signature' && element.value && (
+                          <img src={element.value as string} alt="Signature" className="w-full h-full object-contain" />
+                        )}
+                        {element.type === 'date' && (
+                          <span className="text-sm text-blue-500">
+                            {element.value || 'Date'}
+                          </span>
+                        )}
+                        {element.type === 'text' && (
+                          <span className="text-sm text-blue-500">
+                            {element.value || 'Text'}
+                          </span>
+                        )}
+                        {element.type === 'checkbox' && (
+                          <input
+                            type="checkbox"
+                            checked={element.value === true}
+                            readOnly
+                            className="w-6 h-6"
+                          />
+                        )}
+                      </div>
                     </div>
-                    {element.type === 'signature' && !element.value && (
-                      <span className="text-sm text-blue-500">Click to sign</span>
-                    )}
-                    {element.type === 'signature' && element.value && (
-                      <img src={element.value as string} alt="Signature" className="w-full h-full object-contain" />
-                    )}
-                    {element.type === 'date' && (
-                      <span className="text-sm text-blue-500">
-                        {element.value || 'Date'}
-                      </span>
-                    )}
-                    {element.type === 'text' && (
-                      <span className="text-sm text-blue-500">
-                        {element.value || 'Text'}
-                      </span>
-                    )}
-                    {element.type === 'checkbox' && (
-                      <input
-                        type="checkbox"
-                        checked={element.value === true}
-                        readOnly
-                        className="w-6 h-6"
-                      />
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
             </div>
           </div>
         </Document>

@@ -35,6 +35,7 @@ export interface SigningElement {
   value: string | boolean | null;
   required: boolean;
   assignedTo: string | null;
+  recipient_id: string | null;
   label?: string;
 }
 
