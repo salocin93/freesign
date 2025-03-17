@@ -1,6 +1,5 @@
 // @deno-types="https://deno.land/std@0.168.0/types/index.d.ts"
 import { Handlebars } from "https://deno.land/x/handlebars@v0.10.0/mod.ts";
-import { join } from "https://deno.land/std@0.168.0/path/mod.ts";
 
 export async function generateSignatureRequestEmail(
   recipientName: string,
