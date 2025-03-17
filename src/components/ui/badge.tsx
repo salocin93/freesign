@@ -1,3 +1,34 @@
+/**
+ * Badge Component
+ * 
+ * A versatile badge component that can be used to display status, labels, or small pieces of information.
+ * It supports multiple variants and can be customized through className props.
+ * 
+ * Features:
+ * - Multiple variants (default, secondary, destructive, outline)
+ * - Customizable through className prop
+ * - Accessible focus states
+ * - Responsive design
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * // Default badge
+ * <Badge>New</Badge>
+ * 
+ * // Secondary badge
+ * <Badge variant="secondary">Beta</Badge>
+ * 
+ * // Destructive badge
+ * <Badge variant="destructive">Error</Badge>
+ * 
+ * // Outline badge
+ * <Badge variant="outline">Draft</Badge>
+ * 
+ * // Custom className
+ * <Badge className="bg-purple-500">Custom</Badge>
+ * ```
+ */
 
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -24,10 +55,21 @@ const badgeVariants = cva(
   }
 )
 
+/**
+ * Props for the Badge component
+ * Extends HTML div attributes and includes variant props
+ */
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
+/**
+ * Badge component that displays a small piece of information with different style variants
+ * 
+ * @param className - Additional CSS classes to apply
+ * @param variant - The style variant to use (default, secondary, destructive, outline)
+ * @param props - Additional HTML div props
+ */
 function Badge({ className, variant, ...props }: BadgeProps) {
   return (
     <div className={cn(badgeVariants({ variant }), className)} {...props} />

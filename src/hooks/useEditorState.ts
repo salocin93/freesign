@@ -236,44 +236,58 @@ export function useEditorState(documentId: string | undefined, userId: string | 
     };
   }, [documentId, loadDocument]);
 
-  const addSigningElement = useCallback(async (type: SigningElement['type'], position: { x: number; y: number; pageIndex: number }) => {
+  const addSigningElement = useCallback(async (
+    type: SigningElement['type'],
+    position: { x: number; y: number; pageIndex: number }
+  ) => {
     if (!documentId) return;
+
+    // Get the selected recipient's name or use the last added recipient
+    const selectedRecipient = recipients.find(r => r.id === selectedRecipientId);
+    const lastRecipient = recipients[recipients.length - 1];
+    const recipientToUse = selectedRecipient || lastRecipient;
+
+    if (!recipientToUse) {
+      console.error('No recipient available');
+      return;
+    }
+
+    // Set the last added recipient as selected
+    if (!selectedRecipientId) {
+      setSelectedRecipientId(recipientToUse.id);
+    }
 
     const newElement: SigningElement = {
       id: uuidv4(),
       type,
-      position,
-      size: {
-        width: type === 'signature' ? 200 : 150,
-        height: type === 'signature' ? 100 : 40,
+      position: {
+        x: position.x - (type === 'signature' ? 150 : 100) / 2, // Center horizontally
+        y: position.y - (type === 'signature' ? 50 : 30) / 2,   // Center vertically
+        pageIndex: position.pageIndex,
       },
-      value: null,
+      size: {
+        width: type === 'signature' ? 150 : 100,
+        height: type === 'signature' ? 50 : 30,
+      },
+      value: type === 'checkbox' ? false : null,
       required: true,
-      assignedTo: selectedRecipientId,
+      assignedTo: recipientToUse.name, // Use name instead of ID
     };
 
     try {
       const { error } = await supabase
         .from('signing_elements')
-        .insert({
-          id: newElement.id,
-          document_id: documentId,
-          recipient_id: selectedRecipientId,
-          type: newElement.type,
-          position: newElement.position,
-          size: newElement.size,
-          value: newElement.value,
-        });
+        .insert([newElement]);
 
       if (error) throw error;
 
       setSigningElements(prev => [...prev, newElement]);
-      toast.success('Field added successfully');
+      toast.success('Signing element added successfully');
     } catch (error) {
       console.error('Error adding signing element:', error);
-      toast.error('Failed to add field');
+      toast.error('Failed to add signing element');
     }
-  }, [documentId, selectedRecipientId]);
+  }, [documentId, recipients, selectedRecipientId, setSelectedRecipientId]);
 
   const updateSigningElement = useCallback(async (id: string, updates: Partial<SigningElement>) => {
     if (!documentId) return;

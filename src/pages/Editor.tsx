@@ -143,6 +143,12 @@ export default function Editor() {
           isOpen={isRecipientModalOpen}
           onClose={() => setIsRecipientModalOpen(false)}
           documentId={document.id}
+          onAddRecipient={(recipient) => {
+            // The recipient will be added to the list through the useEditorState hook
+            setSelectedRecipientId(recipient.id);
+          }}
+          recipients={recipients}
+          setSelectedRecipientId={setSelectedRecipientId}
         />
       )}
     </div>

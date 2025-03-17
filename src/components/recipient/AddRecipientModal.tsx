@@ -11,15 +11,19 @@ interface AddRecipientModalProps {
   isOpen: boolean;
   onClose: () => void;
   documentId: string;
+  onAddRecipient: (recipient: any) => void;
+  recipients: any[];
+  setSelectedRecipientId: (id: string) => void;
 }
 
-export function AddRecipientModal({ isOpen, onClose, documentId }: AddRecipientModalProps) {
+export function AddRecipientModal({ isOpen, onClose, documentId, onAddRecipient, recipients, setSelectedRecipientId }: AddRecipientModalProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     if (!name.trim() || !email.trim()) {
       toast.error('Please fill in all fields');
@@ -27,27 +31,24 @@ export function AddRecipientModal({ isOpen, onClose, documentId }: AddRecipientM
     }
 
     try {
-      setIsSubmitting(true);
-
-      const recipientId = uuidv4();
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('recipients')
-        .insert({
-          id: recipientId,
-          document_id: documentId,
-          name: name.trim(),
-          email: email.trim(),
-          status: 'pending',
-        });
+        .insert([
+          {
+            document_id: documentId,
+            name,
+            email,
+            order: recipients.length,
+          },
+        ])
+        .select()
+        .single();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      toast.success('Recipient added successfully');
-      setName('');
-      setEmail('');
+      onAddRecipient(data);
       onClose();
+      setSelectedRecipientId(data.id);
     } catch (error) {
       console.error('Error adding recipient:', error);
       toast.error('Failed to add recipient');
