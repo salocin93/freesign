@@ -75,7 +75,7 @@ export default function SignDocument() {
         // Get document URL
         const { data: signUrl } = await supabase.storage
           .from('documents')
-          .createSignedUrl(document.file_path, 3600);
+          .createSignedUrl(document.storage_path, 3600);
 
         if (!signUrl?.signedUrl) throw new Error('Could not generate document URL');
         
