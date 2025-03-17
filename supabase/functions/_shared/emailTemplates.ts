@@ -11,29 +11,40 @@ export async function generateSignatureRequestEmail(
   message?: string
 ) {
   const APP_URL = Deno.env.get('APP_URL') || '';
+  console.log('APP_URL:', APP_URL);
+  
   const signingUrl = `${APP_URL}/sign/${documentId}?recipient=${encodeURIComponent(recipientEmail)}`;
-  const logoUrl = `${APP_URL}/logo.png`; // Add your logo URL
+  const logoUrl = `${APP_URL}/logo.png`;
+  
+  console.log('Generated URLs:', {
+    signingUrl,
+    logoUrl
+  });
 
+  // Use absolute path from the edge function root
   const templatePath = join(Deno.cwd(), '_shared', 'templates', 'signature-request.html');
   console.log('Reading template from:', templatePath);
   
   try {
     const template = await Deno.readTextFile(templatePath);
-    console.log('Template read successfully');
+    console.log('Template read successfully, length:', template.length);
     
     const handlebars = new Handlebars();
     const compiledTemplate = handlebars.compile(template);
     console.log('Template compiled successfully');
 
-    const html = compiledTemplate({
+    const templateData = {
       recipient_name: recipientName,
       sender_name: senderName,
       document_name: documentName,
       signing_url: signingUrl,
       logo_url: logoUrl,
       message: message
-    });
-    console.log('Template rendered successfully');
+    };
+    console.log('Template data:', templateData);
+
+    const html = compiledTemplate(templateData);
+    console.log('Template rendered successfully, HTML length:', html.length);
 
     return {
       subject: `${senderName} has requested your signature`,
@@ -51,6 +62,13 @@ This is an automated message from FreeSign. Please do not reply to this email.
     };
   } catch (error) {
     console.error('Error generating email:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cwd: Deno.cwd(),
+      files: await Deno.readDir(Deno.cwd())
+    });
     throw error;
   }
 } 
