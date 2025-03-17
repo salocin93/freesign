@@ -41,159 +41,315 @@ const APP_URL = Deno.env.get('APP_URL') || ''
 
 console.log("Hello from Functions!")
 
+// Add custom error types
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ValidationError'
+  }
+}
+
+class DatabaseError extends Error {
+  originalError?: any
+  constructor(message: string, originalError?: any) {
+    super(message)
+    this.name = 'DatabaseError'
+    this.originalError = originalError
+  }
+}
+
+class EmailError extends Error {
+  recipientEmail: string
+  originalError?: any
+  constructor(message: string, recipientEmail: string, originalError?: any) {
+    super(message)
+    this.name = 'EmailError'
+    this.recipientEmail = recipientEmail
+    this.originalError = originalError
+  }
+}
+
+// Add input validation function
+function validateInput(documentId: string, recipients: any[]) {
+  if (!documentId || typeof documentId !== 'string') {
+    throw new ValidationError('Invalid documentId: must be a non-empty string')
+  }
+
+  if (!Array.isArray(recipients) || recipients.length === 0) {
+    throw new ValidationError('Invalid recipients: must be a non-empty array')
+  }
+
+  recipients.forEach((recipient, index) => {
+    if (!recipient.name || typeof recipient.name !== 'string') {
+      throw new ValidationError(`Invalid recipient name at index ${index}: must be a non-empty string`)
+    }
+    if (!recipient.email || typeof recipient.email !== 'string' || !recipient.email.includes('@')) {
+      throw new ValidationError(`Invalid recipient email at index ${index}: must be a valid email address`)
+    }
+  })
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  // Validate request method
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({
+      error: 'Method not allowed',
+      details: 'Only POST requests are allowed'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 405,
+    })
+  }
 
-    // Get the authorization header from the request
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
+  try {
+    // Validate environment variables
+    if (!SENDGRID_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !APP_URL) {
+      throw new Error('Missing required environment variables')
     }
 
-    // Get the JWT token from the authorization header
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+    // Get and validate authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new ValidationError('No authorization header provided')
+    }
+
     const token = authHeader.replace('Bearer ', '')
+    if (!token) {
+      throw new ValidationError('Invalid authorization header format')
+    }
 
     // Get the user from the token
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
-    if (userError || !user) {
-      throw new Error('Invalid authorization token')
+    if (userError) {
+      console.error('Auth error:', userError)
+      throw new ValidationError(`Authentication failed: ${userError.message}`)
+    }
+    if (!user) {
+      throw new ValidationError('User not found')
     }
 
-    // Get the request body
-    const { documentId, recipients } = await req.json()
-    if (!documentId || !recipients || !Array.isArray(recipients)) {
-      throw new Error('Invalid request body')
+    // Parse and validate request body
+    let body
+    try {
+      body = await req.json()
+    } catch (e) {
+      throw new ValidationError('Invalid JSON in request body')
     }
+
+    const { documentId, recipients } = body
+    validateInput(documentId, recipients)
 
     console.log('Processing request for document:', documentId)
     console.log('Recipients:', recipients)
 
-    // Get the document details
+    // Get the document details with error handling
     const { data: document, error: documentError } = await supabase
       .from('documents')
-      .select('name, created_by')
+      .select('name, created_by, status')
       .eq('id', documentId)
       .single()
 
     if (documentError) {
       console.error('Document fetch error:', documentError)
-      throw new Error(`Document not found: ${documentError.message}`)
+      throw new DatabaseError(`Failed to fetch document: ${documentError.message}`, documentError)
     }
 
     if (!document) {
-      console.error('No document found for ID:', documentId)
-      throw new Error('Document not found')
+      throw new DatabaseError(`Document not found with ID: ${documentId}`)
+    }
+
+    if (document.status === 'sent') {
+      throw new ValidationError('Document has already been sent')
     }
 
     console.log('Found document:', document)
 
-    // Get the sender's name
+    // Get the sender's name with error handling
     const { data: sender, error: senderError } = await supabase
       .from('profiles')
       .select('full_name')
       .eq('id', document.created_by)
       .single()
 
-    if (senderError || !sender) {
-      throw new Error('Sender not found')
+    if (senderError) {
+      console.error('Sender fetch error:', senderError)
+      throw new DatabaseError(`Failed to fetch sender profile: ${senderError.message}`, senderError)
     }
 
-    // Update document status
+    if (!sender) {
+      throw new DatabaseError(`Sender profile not found for user ID: ${document.created_by}`)
+    }
+
+    // Update document status with error handling
     const { error: updateError } = await supabase
       .from('documents')
       .update({ status: 'sent' })
       .eq('id', documentId)
 
     if (updateError) {
-      throw new Error('Failed to update document status')
+      console.error('Document update error:', updateError)
+      throw new DatabaseError(`Failed to update document status: ${updateError.message}`, updateError)
     }
 
-    // Create recipients in the database and send emails
-    const recipientPromises = recipients.map(async (recipient: { name: string; email: string }) => {
-      // Create recipient in the database
-      const { data: recipientData, error: recipientError } = await supabase
-        .from('recipients')
-        .insert({
-          document_id: documentId,
-          name: recipient.name,
-          email: recipient.email,
-          status: 'pending'
-        })
-        .select()
-        .single()
+    // Process recipients with better error handling
+    const results = await Promise.allSettled(
+      recipients.map(async (recipient: { name: string; email: string }) => {
+        try {
+          // Create recipient in the database
+          const { data: recipientData, error: recipientError } = await supabase
+            .from('recipients')
+            .insert({
+              document_id: documentId,
+              name: recipient.name,
+              email: recipient.email,
+              status: 'pending'
+            })
+            .select()
+            .single()
 
-      if (recipientError) {
-        throw new Error(`Failed to create recipient: ${recipientError.message}`)
-      }
+          if (recipientError) {
+            throw new DatabaseError(
+              `Failed to create recipient: ${recipientError.message}`,
+              recipientError
+            )
+          }
 
-      // Generate and send email
-      const emailContent = generateSignatureRequestEmail(
-        recipient.name,
-        sender.full_name,
-        document.name,
-        documentId,
-        recipient.email
-      )
+          // Generate and send email
+          const emailContent = generateSignatureRequestEmail(
+            recipient.name,
+            sender.full_name,
+            document.name,
+            documentId,
+            recipient.email
+          )
 
-      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          personalizations: [
-            {
-              to: [{ email: recipient.email, name: recipient.name }],
+          const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+              'Content-Type': 'application/json',
             },
-          ],
-          from: {
-            email: 'noreply@freesign.app',
-            name: 'FreeSign',
-          },
-          subject: emailContent.subject,
-          content: [
-            {
-              type: 'text/plain',
-              value: emailContent.text,
-            },
-            {
-              type: 'text/html',
-              value: emailContent.html,
-            },
-          ],
-        }),
+            body: JSON.stringify({
+              personalizations: [
+                {
+                  to: [{ email: recipient.email, name: recipient.name }],
+                },
+              ],
+              from: {
+                email: 'noreply@freesign.app',
+                name: 'FreeSign',
+              },
+              subject: emailContent.subject,
+              content: [
+                {
+                  type: 'text/plain',
+                  value: emailContent.text,
+                },
+                {
+                  type: 'text/html',
+                  value: emailContent.html,
+                },
+              ],
+            }),
+          })
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error('SendGrid API error:', errorText)
+            throw new EmailError(
+              `Failed to send email to ${recipient.email}: ${errorText}`,
+              recipient.email,
+              errorText
+            )
+          }
+
+          return { recipient: recipient.email, status: 'success' }
+        } catch (error: unknown) {
+          console.error(`Error processing recipient ${recipient.email}:`, error)
+          return { 
+            recipient: recipient.email, 
+            status: 'error', 
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }
+        }
       })
+    )
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('SendGrid API error:', errorText)
-        throw new Error(`Failed to send email to ${recipient.email}`)
+    // Check if any recipients failed
+    const failedRecipients = results.filter(
+      (result) => result.status === 'rejected' || (result.status === 'fulfilled' && result.value.status === 'error')
+    )
+
+    if (failedRecipients.length > 0) {
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Some recipients failed to process',
+        details: {
+          failedRecipients: failedRecipients.map(r => 
+            r.status === 'rejected' ? { recipient: 'unknown', error: r.reason } : r.value
+          )
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 207, // Multi-Status
+      })
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'All signature requests sent successfully',
+      details: {
+        documentId,
+        recipientCount: recipients.length
       }
-
-      return response
-    })
-
-    await Promise.all(recipientPromises)
-
-    return new Response(JSON.stringify({ success: true }), {
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error) {
-    console.error('Error:', error.message)
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      details: error.stack || 'No additional details available'
+  } catch (error: unknown) {
+    console.error('Error:', error)
+    
+    // Determine appropriate status code based on error type
+    let statusCode = 500
+    let errorMessage = 'An unknown error occurred'
+    let errorType = 'UnknownError'
+    let errorDetails = 'No additional details available'
+
+    if (error instanceof ValidationError) {
+      statusCode = 400
+      errorMessage = error.message
+      errorType = error.name
+      errorDetails = error.stack || errorDetails
+    } else if (error instanceof DatabaseError) {
+      statusCode = 503
+      errorMessage = error.message
+      errorType = error.name
+      errorDetails = error.originalError ? JSON.stringify(error.originalError) : error.stack || errorDetails
+    } else if (error instanceof EmailError) {
+      statusCode = 502
+      errorMessage = error.message
+      errorType = error.name
+      errorDetails = error.originalError ? JSON.stringify(error.originalError) : error.stack || errorDetails
+    } else if (error instanceof Error) {
+      errorMessage = error.message
+      errorType = error.name
+      errorDetails = error.stack || errorDetails
+    }
+
+    return new Response(JSON.stringify({
+      error: errorMessage,
+      type: errorType,
+      details: errorDetails
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
+      status: statusCode,
     })
   }
 })
