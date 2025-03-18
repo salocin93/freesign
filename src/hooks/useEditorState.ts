@@ -22,6 +22,7 @@ interface UseEditorStateReturn {
   handleSelectElement: (elementId: string) => void;
   setIsRecipientModalOpen: (isOpen: boolean) => void;
   setIsEmailModalOpen: (isOpen: boolean) => void;
+  setActiveElementType: (type: SigningElement['type'] | null) => void;
 }
 
 export function useEditorState(documentId: string): UseEditorStateReturn {
@@ -208,6 +209,7 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
 
       setSigningElements(prev => [...prev, newElement]);
       toast.success('Signing element added successfully');
+      setActiveElementType(null); // Reset active element type after adding
     } catch (error) {
       console.error('Error adding signing element:', error);
       toast.error('Failed to add signing element');
@@ -238,8 +240,14 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     const element = signingElements.find(el => el.id === elementId);
     if (element) {
       setSelectedRecipientId(element.recipient_id);
+      setActiveElementType(element.type);
     }
   }, [signingElements]);
+
+  // Add a new function to set the active element type
+  const setActiveElementTypeHandler = useCallback((type: SigningElement['type'] | null) => {
+    setActiveElementType(type);
+  }, []);
 
   return {
     document,
@@ -256,5 +264,6 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     handleSelectElement,
     setIsRecipientModalOpen,
     setIsEmailModalOpen,
+    setActiveElementType: setActiveElementTypeHandler,
   };
 }

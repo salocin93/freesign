@@ -33,6 +33,7 @@ export default function Editor() {
     setIsEmailModalOpen,
     isRecipientModalOpen,
     isEmailModalOpen,
+    setActiveElementType,
   } = useEditorState(params.id);
 
   if (isLoading) {
@@ -120,7 +121,7 @@ export default function Editor() {
             <div className="space-y-6">
               <SigningElementsToolbar
                 activeElementType={activeElementType}
-                onSelectElement={handleSelectElement}
+                onSelectElement={setActiveElementType}
               />
               <RecipientSelector
                 recipients={recipients}
