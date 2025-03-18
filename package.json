@@ -7,8 +7,6 @@
   "author": "Nicolas Freiherr von Rosen",
   "type": "module",
   "scripts": {
-    "generate-template": "deno run --allow-read --allow-write scripts/generateTemplate.ts",
-    "deploy": "npm run generate-template && supabase functions deploy send-signature-request",
     "dev": "cp CODE_OF_CONDUCT.md public/ && vite",
     "build": "cp CODE_OF_CONDUCT.md public/ && ROLLUP_SKIP_NODE_RESOLVE=true vite build && cp public/_redirects dist/_redirects",
     "build:dev": "cp CODE_OF_CONDUCT.md public/ && vite build --mode development",

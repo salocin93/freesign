@@ -1,69 +1,45 @@
-import { Handlebars } from "https://deno.land/x/handlebars@v0.10.0/mod.ts";
-import { signatureRequestTemplate } from './templates/signature-request.ts';
+import { serve } from "https://deno.land/std/http/server.ts";
 
-// Initialize Handlebars instance once
-const handlebars = new Handlebars();
+serve(async (req) => {
+  const { recipientEmail, recipientName, senderName, documentName, documentId, message } = await req.json();
 
-// Compile the template ONCE at load time
-const compiledTemplate = handlebars.compile(signatureRequestTemplate);
-
-export async function generateSignatureRequestEmail(
-  recipientName: string,
-  senderName: string,
-  documentName: string,
-  documentId: string,
-  recipientEmail: string,
-  message?: string
-) {
   const APP_URL = Deno.env.get('APP_URL') || '';
-  console.log('APP_URL:', APP_URL);
-  
   const signingUrl = `${APP_URL}/sign/${documentId}?recipient=${encodeURIComponent(recipientEmail)}`;
   const logoUrl = `${APP_URL}/logo.png`;
-  
-  console.log('Generated URLs:', {
-    signingUrl,
-    logoUrl
+
+  const SENDGRID_API_KEY = Deno.env.get("SENDGRID_API_KEY")!;
+  const TEMPLATE_ID = Deno.env.get("SENDGRID_TEMPLATE_ID")!;
+
+  const emailPayload = {
+    personalizations: [{
+      to: [{ email: recipientEmail }],
+      dynamic_template_data: {
+        recipient_name: recipientName,
+        sender_name: senderName,
+        document_name: documentName,
+        signing_url: signingUrl,
+        logo_url: logoUrl,
+        message: message
+      }
+    }],
+    from: { email: "nicolasvonrosen@gmail.com", name: "FreeSign" },
+    template_id: TEMPLATE_ID
+  };
+
+  const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${SENDGRID_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(emailPayload)
   });
 
-  try {
-    console.log('Using external HTML template (preprocessed & compiled)');
-
-    const templateData = {
-      recipient_name: recipientName,
-      sender_name: senderName,
-      document_name: documentName,
-      signing_url: signingUrl,
-      logo_url: logoUrl,
-      message: message
-    };
-    console.log('Template data:', templateData);
-
-    // Render pre-compiled template
-    const html = await compiledTemplate(templateData);
-    console.log('Template rendered successfully, HTML length:', html.length);
-
-    return {
-      subject: `${senderName} has requested your signature`,
-      html,
-      text: `
-Hello ${recipientName},
-
-${senderName} has requested your signature on the document "${documentName}".
-
-Please visit the following link to review and sign the document:
-${signingUrl}
-
-This is an automated message from FreeSign. Please do not reply to this email.
-      `.trim()
-    };
-  } catch (error) {
-    console.error('Error generating email:', error);
-    console.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    });
-    throw error;
+  if (response.status === 202) {
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } else {
+    const error = await response.text();
+    console.error("SendGrid Error:", error);
+    return new Response(JSON.stringify({ success: false, error }), { status: 500 });
   }
-}
+});
