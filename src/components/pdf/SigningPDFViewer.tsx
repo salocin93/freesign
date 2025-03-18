@@ -93,7 +93,8 @@ export function SigningPDFViewer({ url, signingElements, recipients }: SigningPD
         options={{
           cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
           cMapPacked: true,
-          withCredentials: true // Important for Supabase signed URLs
+          disableStream: true,
+          disableAutoFetch: true
         }}
       >
         {Array.from(new Array(numPages), (el, index) => (
