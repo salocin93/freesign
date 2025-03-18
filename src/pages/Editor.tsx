@@ -31,6 +31,8 @@ export default function Editor() {
     handleSelectElement,
     setIsRecipientModalOpen,
     setIsEmailModalOpen,
+    isRecipientModalOpen,
+    isEmailModalOpen,
   } = useEditorState(params.id);
 
   if (isLoading) {
@@ -116,9 +118,21 @@ export default function Editor() {
         {document.status !== 'completed' && (
           <div className="col-span-3">
             <div className="space-y-6">
-              <SigningElementsToolbar />
-              <RecipientSelector />
-              <SigningFieldList />
+              <SigningElementsToolbar
+                activeElementType={activeElementType}
+                onSelectElement={handleSelectElement}
+              />
+              <RecipientSelector
+                recipients={recipients}
+                selectedRecipientId={selectedRecipientId}
+                onSelectRecipient={handleSelectElement}
+                onAddRecipient={() => setIsRecipientModalOpen(true)}
+              />
+              <SigningFieldList
+                signingElements={signingElements}
+                recipients={recipients}
+                onRemoveElement={removeSigningElement}
+              />
             </div>
           </div>
         )}
@@ -127,6 +141,10 @@ export default function Editor() {
       <AddRecipientModal
         isOpen={isRecipientModalOpen}
         onClose={() => setIsRecipientModalOpen(false)}
+        documentId={params.id}
+        onAddRecipient={() => setIsRecipientModalOpen(false)}
+        recipients={recipients}
+        setSelectedRecipientId={handleSelectElement}
       />
 
       <SendEmailModal

@@ -15,6 +15,8 @@ interface UseEditorStateReturn {
   selectedRecipientId: string | null;
   isLoading: boolean;
   error: string | null;
+  isRecipientModalOpen: boolean;
+  isEmailModalOpen: boolean;
   addSigningElement: (type: SigningElement['type'], position: { x: number; y: number; pageIndex: number }) => void;
   removeSigningElement: (elementId: string) => void;
   handleSelectElement: (elementId: string) => void;
@@ -236,6 +238,8 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     selectedRecipientId,
     isLoading,
     error,
+    isRecipientModalOpen,
+    isEmailModalOpen,
     addSigningElement,
     removeSigningElement,
     handleSelectElement,
