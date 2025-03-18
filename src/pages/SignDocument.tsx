@@ -63,8 +63,7 @@ export default function SignDocument() {
         if (urlError || !urlData?.signedUrl) {
           throw new Error('Could not generate document URL');
         }
-        const fullSignedUrl = `${supabase.storage.url}${urlData.signedUrl}`;
-        setDocumentUrl(fullSignedUrl);
+        setDocumentUrl(urlData.signedUrl);
         setSigningElements(data.document.signing_elements);
         setRecipient(data.document.recipients[0]); // Recipient from Edge Function result
       } catch (err) {
