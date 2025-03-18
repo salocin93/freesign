@@ -27,6 +27,15 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // First check if document exists
+    const { data: documentCheck, error: documentError } = await supabase
+      .from("documents")
+      .select("id")
+      .eq("id", documentId)
+      .maybeSingle();
+
+    console.log("Document existence check:", documentCheck, documentError);
+
     // DEBUG: Query the recipient table to see if token exists
     const { data: tokenRecipient, error: tokenError } = await supabase
       .from('recipients')
@@ -37,11 +46,16 @@ serve(async (req) => {
     console.log("Token recipient check:", tokenRecipient, tokenError);
 
     if (!tokenRecipient) {
+      console.error("No recipient found with token:", token);
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         headers: corsHeaders,
         status: 404,
       });
     }
+
+    // Log the recipient's document_id to verify it matches
+    console.log("Recipient's document_id:", tokenRecipient.document_id);
+    console.log("Expected document_id:", documentId);
 
     // Fetch document + check recipient token match
     const { data, error } = await supabase
@@ -49,12 +63,15 @@ serve(async (req) => {
       .select(`
         id, name, status, storage_path,
         recipients!inner ( id, name, email, status, access_token, token_expiry ),
-        signing_elements ( id, type, position, size, value, required, recipient_id, label )
+        signing_elements ( id, type, position, size, value, recipient_id, label )
       `)
       .match({ id: documentId, "recipients.access_token": token })
       .maybeSingle();
 
     console.log("Document fetch result:", data, error);
+    if (error) {
+      console.error("Supabase error details:", error);
+    }
 
     if (error || !data) {
       return new Response(JSON.stringify({ error: "Invalid token or document not found" }), {
