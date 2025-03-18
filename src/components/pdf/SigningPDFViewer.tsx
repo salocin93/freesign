@@ -59,6 +59,7 @@ const styles = {
 export function SigningPDFViewer({ url, signingElements, recipients, isCompleted = false }: SigningPDFViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [error, setError] = useState<Error | null>(null);
+  const [pageWidth, setPageWidth] = useState<number>(800); // Default width
 
   useEffect(() => {
     console.log('Received PDF URL:', url);
@@ -69,6 +70,10 @@ export function SigningPDFViewer({ url, signingElements, recipients, isCompleted
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     console.log('PDF loaded successfully, total pages:', numPages);
     setNumPages(numPages);
+  }
+
+  function onPageLoadSuccess({ width }: { width: number }) {
+    setPageWidth(width);
   }
 
   if (error) {
@@ -106,6 +111,7 @@ export function SigningPDFViewer({ url, signingElements, recipients, isCompleted
             <Page
               pageNumber={index + 1}
               width={800}
+              onLoadSuccess={onPageLoadSuccess}
               renderTextLayer={false}
               renderAnnotationLayer={false}
             />
@@ -120,15 +126,22 @@ export function SigningPDFViewer({ url, signingElements, recipients, isCompleted
                    recipients.findIndex(r => r.id === recipient.id) === 2 ? '#ef4444' : 
                    `hsl(${(recipients.findIndex(r => r.id === recipient.id) * 360) / recipients.length}, 70%, 50%)`) : '#666';
                 
+                // Calculate position relative to page width
+                const scale = pageWidth / 800; // Scale factor between actual and rendered width
+                const x = element.position.x * scale;
+                const y = element.position.y * scale;
+                const width = element.size.width * scale;
+                const height = element.size.height * scale;
+                
                 return (
                   <div
                     key={element.id}
                     className="absolute border-2 rounded flex flex-col"
                     style={{
-                      left: `${element.position.x}px`,
-                      top: `${element.position.y}px`,
-                      width: `${element.size.width}px`,
-                      height: `${element.size.height}px`,
+                      left: `${x}px`,
+                      top: `${y}px`,
+                      width: `${width}px`,
+                      height: `${height}px`,
                       borderColor: recipientColor,
                     }}
                   >
