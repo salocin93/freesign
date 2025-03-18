@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { SignatureModal } from '@/components/signature/SignatureModal';
 import { SigningPDFViewer } from '@/components/pdf/SigningPDFViewer';
+import { PDFErrorBoundary } from '@/components/pdf/PDFErrorBoundary';
 import { toast } from 'sonner';
 import { SigningElement, Recipient } from '@/utils/types';
 
@@ -174,11 +175,19 @@ export default function SignDocument() {
         </div>
 
         <div className="mb-6">
-          <SigningPDFViewer
-            url={documentUrl}
-            signingElements={signingElements}
-            recipients={recipient ? [recipient] : []}
-          />
+          <PDFErrorBoundary>
+            {documentUrl ? (
+              <SigningPDFViewer
+                url={documentUrl}
+                signingElements={signingElements}
+                recipients={recipient ? [recipient] : []}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
+                <p className="text-gray-500">No document URL available</p>
+              </div>
+            )}
+          </PDFErrorBoundary>
         </div>
 
         <div className="flex justify-center">

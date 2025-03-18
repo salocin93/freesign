@@ -55,11 +55,9 @@ const styles = {
 export function SigningPDFViewer({ url, signingElements, recipients }: SigningPDFViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [error, setError] = useState<Error | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('Received PDF URL:', url); // <--- DEBUG URL HERE
-    setLoading(true);
+    console.log('Received PDF URL:', url);
     setError(null);
     setNumPages(0);
   }, [url]);
@@ -67,15 +65,6 @@ export function SigningPDFViewer({ url, signingElements, recipients }: SigningPD
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     console.log('PDF loaded successfully, total pages:', numPages);
     setNumPages(numPages);
-    setLoading(false);
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
   }
 
   if (error) {
@@ -88,16 +77,18 @@ export function SigningPDFViewer({ url, signingElements, recipients }: SigningPD
 
   return (
     <div className="w-full">
-      {console.log('PDFViewer loading URL:', url)}
       <Document
-        file={{ url }}
-        crossOrigin="anonymous"
+        file={url}
         onLoadSuccess={onDocumentLoadSuccess}
         onLoadError={(err) => {
-          console.error('Error loading PDF:', err); // <--- Log exact PDF.js error
+          console.error('Error loading PDF:', err);
           setError(err);
-          setLoading(false);
         }}
+        loading={
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        }
         className="flex flex-col items-center"
         options={{
           cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
