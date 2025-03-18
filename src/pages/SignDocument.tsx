@@ -12,6 +12,8 @@ import { SigningPDFViewer } from '@/components/pdf/SigningPDFViewer';
 import { PDFErrorBoundary } from '@/components/pdf/PDFErrorBoundary';
 import { toast } from 'sonner';
 import { SigningElement, Recipient, SignatureData } from '@/utils/types';
+import { getClientInfo } from '@/utils/clientInfo';
+import { SignatureVerificationUtil } from '@/utils/signatureVerification';
 
 /**
  * SignDocument Component
@@ -96,6 +98,17 @@ export default function SignDocument() {
 
       console.log('Saving signature for document:', documentId);
 
+      // Get comprehensive client information
+      const clientInfo = await getClientInfo();
+      
+      // Create verification hash
+      const verificationHash = await SignatureVerificationUtil.createSignatureHash(
+        signatureData,
+        recipient.id,
+        clientInfo.timestamp,
+        documentId
+      );
+
       // Create a proper SignatureData object
       const signature: SignatureData = {
         dataUrl: signatureData,
@@ -105,16 +118,39 @@ export default function SignDocument() {
       const { error: signError } = await supabase.from('signatures').insert({
         document_id: documentId,
         recipient_id: recipient.id,
-        value: signature.dataUrl, // The base64-encoded signature image
-        type: signature.type, // The type of signature
-        created_at: date.toISOString(), // When the signature was created
+        value: signature.dataUrl,
+        type: signature.type,
+        created_at: date.toISOString(),
         agreed_to_terms: agreed,
+        verification_hash: verificationHash,
         metadata: {
-          userAgent: navigator.userAgent
-        }
+          userAgent: clientInfo.userAgent,
+          timestamp: clientInfo.timestamp,
+          geolocation: clientInfo.geolocation,
+        },
+        ip_address: clientInfo.ip,
+        user_agent: clientInfo.userAgent,
       });
 
       if (signError) throw signError;
+
+      // Log the signature event
+      await supabase.from('signature_audit_logs').insert({
+        document_id: documentId,
+        recipient_id: recipient.id,
+        event_type: 'signature_created',
+        event_data: {
+          type: signature.type,
+          metadata: {
+            userAgent: clientInfo.userAgent,
+            timestamp: clientInfo.timestamp,
+            geolocation: clientInfo.geolocation,
+          },
+        },
+        ip_address: clientInfo.ip,
+        user_agent: clientInfo.userAgent,
+        geolocation: clientInfo.geolocation,
+      });
 
       if (recipient) {
         const { error: recipientError } = await supabase
