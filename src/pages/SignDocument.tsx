@@ -18,7 +18,7 @@ import { SigningElement, Recipient } from '@/utils/types';
 export default function SignDocument() {
   const { documentId } = useParams();
   const [searchParams] = useSearchParams();
-  const recipientEmail = searchParams.get('recipient');
+  const token = searchParams.get('token');
   const navigate = useNavigate();
   
   const [isLoading, setIsLoading] = useState(true);
@@ -31,54 +31,23 @@ export default function SignDocument() {
   useEffect(() => {
     async function fetchDocument() {
       try {
-        if (!documentId) {
-          throw new Error('Document ID is required');
+        if (!documentId || !token) {
+          throw new Error('Document ID and token are required');
         }
 
-        // Get document and check if recipient is authorized
-        const { data: document, error: docError } = await supabase
-          .from('documents')
-          .select(`
-            *,
-            recipients (
-              id,
-              name,
-              email,
-              status,
-              document_id,
-              created_at,
-              updated_at
-            ),
-            signing_elements (
-              id,
-              type,
-              position,
-              size,
-              value,
-              required,
-              recipient_id,
-              label
-            )
-          `)
-          .eq('id', documentId)
-          .single();
+        // Call the Edge Function to get document details
+        const response = await fetch('/functions/v1/get-document-for-recipient', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentId, token }),
+        });
 
-        if (docError) throw docError;
-        if (!document) throw new Error('Document not found');
-
-        // Check if the recipient exists and is authorized
-        if (recipientEmail) {
-          const recipientData = document.recipients.find(r => r.email === recipientEmail);
-          if (!recipientData) {
-            throw new Error('Unauthorized recipient');
-          }
-
-          if (recipientData.status === 'completed') {
-            throw new Error('Document already signed');
-          }
-
-          setRecipient(recipientData);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to load document');
         }
+
+        const { document } = await response.json();
 
         // Get document URL
         const { data: signUrl } = await supabase.storage
@@ -89,6 +58,7 @@ export default function SignDocument() {
         
         setDocumentUrl(signUrl.signedUrl);
         setSigningElements(document.signing_elements);
+        setRecipient(document.recipients[0]); // The Edge Function returns only the authorized recipient
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load document');
         toast.error(err instanceof Error ? err.message : 'Failed to load document');
@@ -98,7 +68,7 @@ export default function SignDocument() {
     }
 
     fetchDocument();
-  }, [documentId, recipientEmail]);
+  }, [documentId, token]);
 
   const handleSignatureComplete = async (signatureData: string, date: Date, agreed: boolean) => {
     try {

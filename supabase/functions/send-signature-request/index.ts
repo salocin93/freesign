@@ -2,23 +2,25 @@
  * Send Signature Request Edge Function
  * 
  * This Supabase Edge Function handles sending signature request emails
- * to recipients of a document, using SendGrid Dynamic Templates.
+ * to recipients of a document, using SendGrid Dynamic Templates and secure tokens.
  * 
  * Features:
  * - Authenticates the request via Supabase Auth
+ * - Generates unique access tokens for each recipient
  * - Validates and updates document and recipient data in Supabase database
- * - Sends transactional emails using SendGrid dynamic templates
+ * - Sends transactional emails using SendGrid dynamic templates (token included)
  * - Provides robust error handling and detailed status responses
  * 
  * Requirements:
- * - Supabase project set up with `documents` and `recipients` tables
- * - SendGrid account with a dynamic email template created
+ * - Supabase project with `documents` and `recipients` tables
+ * - `recipients` table has `access_token` (TEXT) and optional `token_expiry` (TIMESTAMP) columns
+ * - SendGrid account with a dynamic template created
  * 
  * Environment Variables Required:
  * - SENDGRID_API_KEY: API key for SendGrid (with Mail Send permission)
  * - SENDGRID_TEMPLATE_ID: ID of the dynamic template in SendGrid
  * - SUPABASE_URL: URL of your Supabase instance
- * - SUPABASE_SERVICE_ROLE_KEY: Service role key with DB access
+ * - SUPABASE_SERVICE_ROLE_KEY: Service role key for Supabase
  * - APP_URL: Base URL of the application (used for signing links & logo)
  * - SENDER_EMAIL: Email address shown in the "From" field
  * - SENDER_NAME: Name shown in the "From" field
@@ -47,7 +49,6 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import { corsHeaders } from '../_shared/cors.ts'
 
-// Load environment variables
 const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY') || ''
 const SENDGRID_TEMPLATE_ID = Deno.env.get('SENDGRID_TEMPLATE_ID') || ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
@@ -60,12 +61,10 @@ const SENDER_NAME = Deno.env.get('SENDER_NAME') || 'FreeSign'
 console.log("Send Signature Request Function Initialized")
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  // Allow only POST requests
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -74,14 +73,12 @@ serve(async (req) => {
   }
 
   try {
-    // Validate environment variables
     if (!SENDGRID_API_KEY || !SENDGRID_TEMPLATE_ID || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !APP_URL) {
       throw new Error('Missing required environment variables')
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-    // --- AUTHENTICATION ---
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) throw new Error('No authorization header provided')
 
@@ -89,7 +86,6 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
     if (userError || !user) throw new Error('Authentication failed')
 
-    // --- PARSE & VALIDATE BODY ---
     const { documentId, recipients } = await req.json()
     if (!documentId || !Array.isArray(recipients) || recipients.length === 0) {
       throw new Error('Invalid input: documentId and recipients are required')
@@ -97,7 +93,6 @@ serve(async (req) => {
 
     console.log(`Processing signature request for document: ${documentId}`)
 
-    // --- FETCH DOCUMENT ---
     const { data: document, error: docError } = await supabase
       .from('documents')
       .select('name, created_by, status')
@@ -107,29 +102,35 @@ serve(async (req) => {
     if (docError || !document) throw new Error(`Document not found or error: ${docError?.message || 'No data'}`)
     if (document.status === 'sent') throw new Error('Document has already been sent')
 
-    // --- FETCH SENDER PROFILE ---
     const { data: senderData } = await supabase.auth.admin.getUserById(document.created_by)
     const senderName = senderData?.user.user_metadata?.full_name || senderData?.user.email || SENDER_NAME
 
-    // --- UPDATE DOCUMENT STATUS ---
     await supabase.from('documents').update({ status: 'sent' }).eq('id', documentId)
 
-    // --- PROCESS RECIPIENTS ---
     const results = await Promise.allSettled(
       recipients.map(async (recipient: { name: string; email: string; message?: string }) => {
         try {
           console.log(`Processing recipient: ${recipient.email}`)
 
-          // Insert recipient into DB
-          await supabase.from('recipients').insert({
-            document_id: documentId,
-            name: recipient.name,
-            email: recipient.email,
-            status: 'pending'
-          })
+          // Generate secure token
+          const accessToken = crypto.randomUUID()
 
-          // --- SEND EMAIL USING SENDGRID ---
-          const signingUrl = `${APP_URL}/sign/${documentId}?recipient=${encodeURIComponent(recipient.email)}`
+          // Insert recipient into DB with token
+          const { data: recipientData, error: recipientError } = await supabase
+            .from('recipients')
+            .insert({
+              document_id: documentId,
+              name: recipient.name,
+              email: recipient.email,
+              status: 'pending',
+              access_token: accessToken
+            })
+            .select()
+            .single()
+
+          if (recipientError) throw new Error(`Failed to create recipient: ${recipientError.message}`)
+
+          const signingUrl = `${APP_URL}/sign/${documentId}?token=${accessToken}`
           const logoUrl = `${APP_URL}/logo.png`
 
           const sendGridPayload = {
@@ -141,7 +142,9 @@ serve(async (req) => {
                 document_name: document.name,
                 signing_url: signingUrl,
                 logo_url: logoUrl,
-                message: recipient.message || ''
+                message: recipient.message || '',
+                document_id: documentId,
+                access_token: accessToken
               }
             }],
             from: { email: SENDER_EMAIL, name: SENDER_NAME },
@@ -173,7 +176,6 @@ serve(async (req) => {
       })
     )
 
-    // --- HANDLE FAILURES ---
     const failed = results.filter(r => r.status === 'fulfilled' && r.value.status === 'error')
     if (failed.length > 0) {
       return new Response(JSON.stringify({
@@ -182,11 +184,10 @@ serve(async (req) => {
         failedRecipients: failed.map(f => f.value)
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 207 // Multi-Status
+        status: 207
       })
     }
 
-    // --- SUCCESS RESPONSE ---
     return new Response(JSON.stringify({
       success: true,
       message: 'All signature requests sent successfully',
@@ -206,17 +207,3 @@ serve(async (req) => {
     })
   }
 })
-
-/**
- * Test Locally:
- * 
- * 1. Run Supabase locally:
- *    supabase start
- * 
- * 2. Call function via curl:
- * 
- * curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/send-signature-request' \
- * --header 'Authorization: Bearer <YOUR_JWT>' \
- * --header 'Content-Type: application/json' \
- * --data '{"documentId":"<uuid>", "recipients":[{"name":"John Doe", "email":"john@example.com"}]}'
- */
