@@ -1,7 +1,6 @@
 /**
  * SigningPDFViewer Component
  * 
- * 
  * A simplified PDF viewer component specifically designed for the document signing flow.
  * This component provides a clean interface for users to view documents they need to sign,
  * without the ability to add or modify signing elements.
@@ -10,6 +9,7 @@
  * - PDF document rendering with page navigation
  * - Error handling and loading states
  * - Optimized for document signing workflow
+ * - Displays signatures for completed documents
  * 
  * @component
  * @example
@@ -28,8 +28,12 @@ import 'react-pdf/dist/Page/TextLayer.css';
 interface SigningPDFViewerProps {
   /** URL of the PDF document to display */
   url: string;
+  /** Array of signing elements to overlay on the PDF */
   signingElements: SigningElement[];
+  /** Array of recipients associated with the signing elements */
   recipients: Recipient[];
+  /** Whether the document is completed (to show signatures) */
+  isCompleted?: boolean;
 }
 
 const styles = {
@@ -52,7 +56,7 @@ const styles = {
   },
 };
 
-export function SigningPDFViewer({ url, signingElements, recipients }: SigningPDFViewerProps) {
+export function SigningPDFViewer({ url, signingElements, recipients, isCompleted = false }: SigningPDFViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [error, setError] = useState<Error | null>(null);
 
@@ -105,6 +109,57 @@ export function SigningPDFViewer({ url, signingElements, recipients }: SigningPD
               renderTextLayer={false}
               renderAnnotationLayer={false}
             />
+            {/* Render signing elements for this page */}
+            {signingElements
+              .filter(element => element.position.pageIndex === index)
+              .map((element) => {
+                const recipient = recipients.find(r => r.id === element.recipient_id);
+                const recipientColor = recipient ? 
+                  (recipients.findIndex(r => r.id === recipient.id) === 0 ? '#3b82f6' : 
+                   recipients.findIndex(r => r.id === recipient.id) === 1 ? '#22c55e' : 
+                   recipients.findIndex(r => r.id === recipient.id) === 2 ? '#ef4444' : 
+                   `hsl(${(recipients.findIndex(r => r.id === recipient.id) * 360) / recipients.length}, 70%, 50%)`) : '#666';
+                
+                return (
+                  <div
+                    key={element.id}
+                    className="absolute border-2 rounded flex flex-col"
+                    style={{
+                      left: `${element.position.x}px`,
+                      top: `${element.position.y}px`,
+                      width: `${element.size.width}px`,
+                      height: `${element.size.height}px`,
+                      borderColor: recipientColor,
+                    }}
+                  >
+                    <div 
+                      className="flex items-center justify-center px-2 py-1 border-b text-xs font-medium"
+                      style={{ backgroundColor: `${recipientColor}20`, borderColor: recipientColor }}
+                    >
+                      {element.type}
+                    </div>
+                    <div className="flex-1 flex items-center justify-center">
+                      {element.type === 'signature' && element.value && (
+                        <img src={element.value as string} alt="Signature" className="w-full h-full object-contain" />
+                      )}
+                      {element.type === 'checkbox' && (
+                        <input
+                          type="checkbox"
+                          checked={element.value === true}
+                          readOnly
+                          className="w-6 h-6"
+                        />
+                      )}
+                    </div>
+                    <div 
+                      className="flex items-center justify-center px-2 py-1 border-t text-xs text-muted-foreground"
+                      style={{ borderColor: recipientColor }}
+                    >
+                      {recipient?.name || 'Unassigned'}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         ))}
       </Document>

@@ -5,6 +5,7 @@ import { useEditorState } from '@/hooks/useEditorState';
 import { Button } from '@/components/ui/button';
 import { SendEmailModal } from '@/components/SendEmailModal';
 import { PDFViewer } from '@/components/pdf/PDFViewer';
+import { SigningPDFViewer } from '@/components/pdf/SigningPDFViewer';
 import { PDFErrorBoundary } from '@/components/pdf/PDFErrorBoundary';
 import { AddRecipientModal } from '@/components/recipient/AddRecipientModal';
 import SigningFieldList from '@/components/SigningFieldList';
@@ -16,42 +17,37 @@ import { cn } from '@/lib/utils';
 
 export default function Editor() {
   const params = useParams();
-  const documentId = params.id;
   const { currentUser } = useAuth();
-  const { 
-    document, 
-    recipients, 
-    signingElements, 
-    handleSelectElement, 
-    addSigningElement,
-    updateSigningElement,
-    removeSigningElement,
-    setSelectedRecipientId,
+  const {
+    document,
+    recipients,
+    signingElements,
+    activeElementType,
     selectedRecipientId,
     isLoading,
-    setRecipients
-  } = useEditorState(documentId, currentUser?.id);
-  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [isRecipientModalOpen, setIsRecipientModalOpen] = useState(false);
-  const [activeElementType, setActiveElementType] = useState<SigningElement['type'] | null>(null);
-
-  // Add debugging for activeElementType changes
-  useEffect(() => {
-    console.log('Active element type changed:', activeElementType);
-  }, [activeElementType]);
+    error,
+    addSigningElement,
+    removeSigningElement,
+    handleSelectElement,
+    setIsRecipientModalOpen,
+    setIsEmailModalOpen,
+  } = useEditorState(params.id);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (!document) {
+  if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Document not found</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Reload Page</Button>
+        </div>
       </div>
     );
   }
@@ -61,39 +57,54 @@ export default function Editor() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">{document.name}</h1>
-          <p className="text-gray-600">Add recipients and signature fields</p>
+          <p className="text-gray-600">
+            {document.status === 'completed' 
+              ? 'Document has been signed by all recipients'
+              : 'Add recipients and signature fields'}
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setIsRecipientModalOpen(true)}
-          >
-            Add Recipient
-          </Button>
-          <Button
-            onClick={() => setIsEmailModalOpen(true)}
-            disabled={!recipients.length}
-          >
-            Send for Signature
-          </Button>
-        </div>
+        {document.status !== 'completed' && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsRecipientModalOpen(true)}
+            >
+              Add Recipient
+            </Button>
+            <Button
+              onClick={() => setIsEmailModalOpen(true)}
+              disabled={!recipients.length}
+            >
+              Send for Signature
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-9">
           <PDFErrorBoundary>
             {document.url ? (
-              <PDFViewer
-                url={document.url}
-                signingElements={signingElements}
-                recipients={recipients}
-                onElementClick={handleSelectElement}
-                onAddElement={addSigningElement}
-                activeElementType={activeElementType}
-                onRemoveElement={removeSigningElement}
-                selectedRecipientId={selectedRecipientId}
-                onOpenAddRecipient={() => setIsRecipientModalOpen(true)}
-              />
+              document.status === 'completed' ? (
+                <SigningPDFViewer
+                  url={document.url}
+                  signingElements={signingElements}
+                  recipients={recipients}
+                  isCompleted={true}
+                />
+              ) : (
+                <PDFViewer
+                  url={document.url}
+                  signingElements={signingElements}
+                  recipients={recipients}
+                  onElementClick={handleSelectElement}
+                  onAddElement={addSigningElement}
+                  activeElementType={activeElementType}
+                  onRemoveElement={removeSigningElement}
+                  selectedRecipientId={selectedRecipientId}
+                  onOpenAddRecipient={() => setIsRecipientModalOpen(true)}
+                />
+              )
             ) : (
               <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
                 <p className="text-gray-500">No document URL available</p>
@@ -101,49 +112,29 @@ export default function Editor() {
             )}
           </PDFErrorBoundary>
         </div>
-        <div className="col-span-3 space-y-6">
-          <SigningElementsToolbar
-            activeElementType={activeElementType}
-            onSelectElement={setActiveElementType}
-            variant="default"
-            showTooltips={true}
-          />
-          <div className="bg-white rounded-lg shadow p-4">
-            <RecipientSelector
-              recipients={recipients}
-              selectedRecipientId={selectedRecipientId}
-              onSelectRecipient={setSelectedRecipientId}
-              onAddRecipient={() => setIsRecipientModalOpen(true)}
-            />
+
+        {document.status !== 'completed' && (
+          <div className="col-span-3">
+            <div className="space-y-6">
+              <SigningElementsToolbar />
+              <RecipientSelector />
+              <SigningFieldList />
+            </div>
           </div>
-          <SigningFieldList
-            signingElements={signingElements}
-            recipients={recipients}
-            onRemoveElement={removeSigningElement}
-          />
-        </div>
+        )}
       </div>
+
+      <AddRecipientModal
+        isOpen={isRecipientModalOpen}
+        onClose={() => setIsRecipientModalOpen(false)}
+      />
 
       <SendEmailModal
         isOpen={isEmailModalOpen}
         onClose={() => setIsEmailModalOpen(false)}
-        documentId={document.id}
+        documentId={params.id}
         recipients={recipients}
       />
-
-      {document && (
-        <AddRecipientModal
-          isOpen={isRecipientModalOpen}
-          onClose={() => setIsRecipientModalOpen(false)}
-          documentId={document.id}
-          onAddRecipient={(recipient) => {
-            setRecipients(prev => [...prev, recipient]);
-            setSelectedRecipientId(recipient.id);
-          }}
-          recipients={recipients}
-          setSelectedRecipientId={setSelectedRecipientId}
-        />
-      )}
     </div>
   );
 } 

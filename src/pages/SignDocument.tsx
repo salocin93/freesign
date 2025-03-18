@@ -145,7 +145,7 @@ export default function SignDocument() {
       // Create a proper SignatureData object
       const signature: SignatureData = {
         dataUrl: signatureData,
-        type: 'uploaded'
+        type: 'drawn' // Since we only support drawn signatures currently
       };
 
       console.log('Preparing signature data for insertion:', {
