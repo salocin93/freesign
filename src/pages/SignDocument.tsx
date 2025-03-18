@@ -11,7 +11,7 @@ import { SignatureModal } from '@/components/signature/SignatureModal';
 import { SigningPDFViewer } from '@/components/pdf/SigningPDFViewer';
 import { PDFErrorBoundary } from '@/components/pdf/PDFErrorBoundary';
 import { toast } from 'sonner';
-import { SigningElement, Recipient } from '@/utils/types';
+import { SigningElement, Recipient, SignatureData } from '@/utils/types';
 
 /**
  * SignDocument Component
@@ -95,11 +95,21 @@ export default function SignDocument() {
 
       console.log('Saving signature for document:', documentId);
 
+      // Create a proper SignatureData object
+      const signature: SignatureData = {
+        dataUrl: signatureData,
+        type: 'uploaded'
+      };
+
       const { error: signError } = await supabase.from('signatures').insert({
         document_id: documentId,
-        signature: signatureData,
-        signed_at: date.toISOString(),
-        agreed_to_terms: agreed
+        value: signature.dataUrl, // The base64-encoded signature image
+        type: signature.type, // The type of signature
+        created_at: date.toISOString(), // When the signature was created
+        agreed_to_terms: agreed,
+        metadata: {
+          userAgent: navigator.userAgent
+        }
       });
 
       if (signError) throw signError;
