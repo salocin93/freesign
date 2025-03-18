@@ -36,38 +36,48 @@ export default function SignDocument() {
   const [recipient, setRecipient] = useState<Recipient | null>(null);
   const [signingElements, setSigningElements] = useState<SigningElement[]>([]);
 
-  // Fetch document and recipient details securely via Edge Function
   useEffect(() => {
     async function fetchDocument() {
       try {
+        console.log('Fetching document:', { documentId, token });
+
         if (!documentId || !token) {
           throw new Error('Document ID and token are required');
         }
 
-        // Call Edge Function to securely fetch document & recipient
+        // --- Call Edge Function ---
         const { data, error } = await supabase.functions.invoke('get-document-for-recipient', {
           body: { documentId, token },
         });
 
         if (error || !data?.document) {
+          console.error('Error fetching document from Edge Function:', error, data);
           throw new Error(error?.message || 'Failed to load document');
         }
 
-        const storagePath = data.document.storage_path;
+        console.log('Edge Function returned document:', data.document);
 
-        // Get signed URL for the document file
+        const storagePath = data.document.storage_path;
+        console.log('Document storage path:', storagePath);
+
+        // --- Get signed URL ---
         const { data: urlData, error: urlError } = await supabase.storage
           .from('documents')
           .createSignedUrl(storagePath, 3600);
 
         if (urlError || !urlData?.signedUrl) {
+          console.error('Error generating signed URL:', urlError);
           throw new Error('Could not generate document URL');
         }
+
+        console.log('Signed URL:', urlData.signedUrl);
+
         setDocumentUrl(urlData.signedUrl);
         setSigningElements(data.document.signing_elements);
-        setRecipient(data.document.recipients[0]); // Recipient from Edge Function result
+        setRecipient(data.document.recipients[0]); // Edge Function returns correct recipient
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load document';
+        console.error('Fetch document failed:', err);
         setError(message);
         toast.error(message);
       } finally {
@@ -78,15 +88,12 @@ export default function SignDocument() {
     fetchDocument();
   }, [documentId, token]);
 
-  /**
-   * Handles when the user completes signing the document.
-   * Updates recipient status and document status if all recipients have signed.
-   */
   const handleSignatureComplete = async (signatureData: string, date: Date, agreed: boolean) => {
     try {
       if (!documentId) throw new Error('Document ID is required');
 
-      // Save signature to Supabase
+      console.log('Saving signature for document:', documentId);
+
       const { error: signError } = await supabase.from('signatures').insert({
         document_id: documentId,
         signature: signatureData,
@@ -96,7 +103,6 @@ export default function SignDocument() {
 
       if (signError) throw signError;
 
-      // Update recipient status
       if (recipient) {
         const { error: recipientError } = await supabase
           .from('recipients')
@@ -105,7 +111,6 @@ export default function SignDocument() {
 
         if (recipientError) throw recipientError;
 
-        // Check if all recipients have signed
         const { data: recipients, error: recipientsError } = await supabase
           .from('recipients')
           .select('status')
@@ -115,7 +120,6 @@ export default function SignDocument() {
 
         const allSigned = recipients?.every(r => r.status === 'completed');
 
-        // Update document status if all signed
         if (allSigned) {
           const { error: documentError } = await supabase
             .from('documents')
@@ -130,6 +134,7 @@ export default function SignDocument() {
       navigate('/thank-you');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save signature';
+      console.error('Signature save error:', err);
       setError(message);
       toast.error(message);
     }
