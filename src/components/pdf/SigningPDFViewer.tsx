@@ -91,6 +91,7 @@ export function SigningPDFViewer({ url, signingElements, recipients }: SigningPD
       {console.log('PDFViewer loading URL:', url)}
       <Document
         file={{ url }}
+        crossOrigin="anonymous"
         onLoadSuccess={onDocumentLoadSuccess}
         onLoadError={(err) => {
           console.error('Error loading PDF:', err); // <--- Log exact PDF.js error
@@ -98,6 +99,11 @@ export function SigningPDFViewer({ url, signingElements, recipients }: SigningPD
           setLoading(false);
         }}
         className="flex flex-col items-center"
+        options={{
+          cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+          cMapPacked: true,
+          withCredentials: true // Important for Supabase signed URLs
+        }}
       >
         {Array.from(new Array(numPages), (el, index) => (
           <div key={`page_${index + 1}`} style={styles.page}>
