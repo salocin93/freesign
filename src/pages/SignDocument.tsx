@@ -36,29 +36,28 @@ export default function SignDocument() {
         }
 
         // Call the Edge Function to get document details
-        const response = await fetch('/functions/v1/get-document-for-recipient', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ documentId, token }),
+        const { data, error } = await supabase.functions.invoke('get-document-for-recipient', {
+          body: { documentId, token },
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to load document');
+        if (error) {
+          throw new Error(error.message || 'Failed to load document');
         }
 
-        const { document } = await response.json();
+        if (!data?.document) {
+          throw new Error('Document not found');
+        }
 
         // Get document URL
         const { data: signUrl } = await supabase.storage
           .from('documents')
-          .createSignedUrl(document.storage_path, 3600);
+          .createSignedUrl(data.document.storage_path, 3600);
 
         if (!signUrl?.signedUrl) throw new Error('Could not generate document URL');
         
         setDocumentUrl(signUrl.signedUrl);
-        setSigningElements(document.signing_elements);
-        setRecipient(document.recipients[0]); // The Edge Function returns only the authorized recipient
+        setSigningElements(data.document.signing_elements);
+        setRecipient(data.document.recipients[0]); // The Edge Function returns only the authorized recipient
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load document');
         toast.error(err instanceof Error ? err.message : 'Failed to load document');

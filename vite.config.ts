@@ -13,14 +13,7 @@ export default defineConfig({
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp'
-    },
-    proxy: {
-      '/api/send-signature-request': {
-        target: process.env.SUPABASE_URL,
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/api\/send-signature-request/, '/functions/v1/send-signature-request'),
-      },
-    },
+    }
   },
   plugins: [
     react(),
