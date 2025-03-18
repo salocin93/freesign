@@ -115,7 +115,7 @@ export default function SignDocument() {
         type: 'uploaded'
       };
 
-      const { error: signError } = await supabase.from('signatures').insert({
+      console.log('Inserting signature with data:', {
         document_id: documentId,
         recipient_id: recipient.id,
         value: signature.dataUrl,
@@ -132,12 +132,34 @@ export default function SignDocument() {
         user_agent: clientInfo.userAgent,
       });
 
-      if (signError) throw signError;
-
-      // Log the signature event
-      await supabase.from('signature_audit_logs').insert({
+      const { data: insertedSignature, error: signError } = await supabase.from('signatures').insert({
         document_id: documentId,
         recipient_id: recipient.id,
+        value: signature.dataUrl,
+        type: signature.type,
+        created_at: date.toISOString(),
+        agreed_to_terms: agreed,
+        verification_hash: verificationHash,
+        metadata: {
+          userAgent: clientInfo.userAgent,
+          timestamp: clientInfo.timestamp,
+          geolocation: clientInfo.geolocation,
+        },
+        ip_address: clientInfo.ip,
+        user_agent: clientInfo.userAgent,
+      }).select().single();
+
+      if (signError) {
+        console.error('Error inserting signature:', signError);
+        throw signError;
+      }
+
+      console.log('Signature inserted successfully:', insertedSignature);
+
+      // Log the signature event
+      console.log('Creating audit log with data:', {
+        signature_id: insertedSignature.id,
+        document_id: documentId,
         event_type: 'signature_created',
         event_data: {
           type: signature.type,
@@ -151,6 +173,28 @@ export default function SignDocument() {
         user_agent: clientInfo.userAgent,
         geolocation: clientInfo.geolocation,
       });
+
+      const { error: auditError } = await supabase.from('signature_audit_logs').insert({
+        signature_id: insertedSignature.id,
+        document_id: documentId,
+        event_type: 'signature_created',
+        event_data: {
+          type: signature.type,
+          metadata: {
+            userAgent: clientInfo.userAgent,
+            timestamp: clientInfo.timestamp,
+            geolocation: clientInfo.geolocation,
+          },
+        },
+        ip_address: clientInfo.ip,
+        user_agent: clientInfo.userAgent,
+        geolocation: clientInfo.geolocation,
+      });
+
+      if (auditError) {
+        console.error('Error creating audit log:', auditError);
+        throw auditError;
+      }
 
       if (recipient) {
         const { error: recipientError } = await supabase
