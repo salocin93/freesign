@@ -2,9 +2,8 @@
 UPDATE storage.buckets
 SET public = true,
     allowed_mime_types = array['application/pdf'],
-    file_size_limit = 52428800, -- 50MB
-    allowed_operations = array['select', 'insert', 'update', 'delete']
-WHERE id = 'documents';
+    file_size_limit = 52428800 -- 50MB
+WHERE name = 'documents';
 
 -- Create a function to handle CORS headers
 CREATE OR REPLACE FUNCTION storage.handle_cors()
