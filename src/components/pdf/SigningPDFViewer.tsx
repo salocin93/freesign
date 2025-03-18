@@ -89,7 +89,7 @@ export function SigningPDFViewer({ url, signingElements, recipients }: SigningPD
   return (
     <div className="w-full">
       <Document
-        file={url}
+        file={{ url }}
         onLoadSuccess={onDocumentLoadSuccess}
         onLoadError={(err) => {
           console.error('Error loading PDF:', err); // <--- Log exact PDF.js error
