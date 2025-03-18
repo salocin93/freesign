@@ -92,6 +92,7 @@ export default function SignDocument() {
   const handleSignatureComplete = async (signatureData: string, date: Date, agreed: boolean) => {
     try {
       if (!documentId) throw new Error('Document ID is required');
+      if (!recipient) throw new Error('Recipient information is required');
 
       console.log('Saving signature for document:', documentId);
 
@@ -103,6 +104,7 @@ export default function SignDocument() {
 
       const { error: signError } = await supabase.from('signatures').insert({
         document_id: documentId,
+        recipient_id: recipient.id,
         value: signature.dataUrl, // The base64-encoded signature image
         type: signature.type, // The type of signature
         created_at: date.toISOString(), // When the signature was created
