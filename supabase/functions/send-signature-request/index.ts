@@ -7,7 +7,8 @@
  * Features:
  * - Authenticates the request via Supabase Auth
  * - Generates unique access tokens for each recipient
- * - Validates and updates document and recipient data in Supabase database
+ * - Checks for existing recipients (avoids duplicates)
+ * - Updates existing recipient rows with access tokens
  * - Sends transactional emails using SendGrid dynamic templates (token included)
  * - Provides robust error handling and detailed status responses
  * 
@@ -57,7 +58,6 @@ const APP_URL = Deno.env.get('APP_URL') || ''
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') || 'nicolasvonrosen@gmail.com'
 const SENDER_NAME = Deno.env.get('SENDER_NAME') || 'FreeSign'
 
-// Start Function
 console.log("Send Signature Request Function Initialized")
 
 serve(async (req) => {
@@ -115,20 +115,45 @@ serve(async (req) => {
           // Generate secure token
           const accessToken = crypto.randomUUID()
 
-          // Insert recipient into DB with token
-          const { data: recipientData, error: recipientError } = await supabase
+          // Check if recipient already exists
+          const { data: existingRecipient, error: recipientFetchError } = await supabase
             .from('recipients')
-            .insert({
-              document_id: documentId,
-              name: recipient.name,
-              email: recipient.email,
-              status: 'pending',
-              access_token: accessToken
-            })
-            .select()
-            .single()
+            .select('id')
+            .eq('document_id', documentId)
+            .eq('email', recipient.email)
+            .maybeSingle();
 
-          if (recipientError) throw new Error(`Failed to create recipient: ${recipientError.message}`)
+          if (recipientFetchError) throw new Error(`Error checking recipient: ${recipientFetchError.message}`)
+
+          if (existingRecipient) {
+            // Update existing recipient with token
+            const { error: updateError } = await supabase
+              .from('recipients')
+              .update({
+                access_token: accessToken,
+                status: 'pending',
+                token_expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // optional expiry
+              })
+              .eq('id', existingRecipient.id);
+
+            if (updateError) throw new Error(`Failed to update recipient: ${updateError.message}`);
+            console.log(`Updated recipient ${recipient.email}`);
+          } else {
+            // Insert new recipient (fallback)
+            const { error: insertError } = await supabase
+              .from('recipients')
+              .insert({
+                document_id: documentId,
+                name: recipient.name,
+                email: recipient.email,
+                status: 'pending',
+                access_token: accessToken,
+                token_expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+              });
+
+            if (insertError) throw new Error(`Failed to insert recipient: ${insertError.message}`);
+            console.log(`Inserted new recipient ${recipient.email}`);
+          }
 
           const signingUrl = `${APP_URL}/sign/${documentId}?token=${accessToken}`
           const logoUrl = `${APP_URL}/logo.png`

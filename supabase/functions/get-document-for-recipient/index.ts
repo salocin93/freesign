@@ -13,7 +13,12 @@ serve(async (req) => {
   try {
     const { documentId, token } = await req.json();
 
+    console.log("Incoming request:");
+    console.log("Document ID:", documentId);
+    console.log("Token:", token);
+
     if (!documentId || !token) {
+      console.error("Missing documentId or token");
       return new Response(JSON.stringify({ error: "Missing documentId or token" }), {
         headers: corsHeaders,
         status: 400,
@@ -22,17 +27,34 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch document + check if recipient token is valid
+    // DEBUG: Query the recipient table to see if token exists
+    const { data: tokenRecipient, error: tokenError } = await supabase
+      .from('recipients')
+      .select('id, name, email, document_id, access_token')
+      .eq('access_token', token)
+      .maybeSingle();
+
+    console.log("Token recipient check:", tokenRecipient, tokenError);
+
+    if (!tokenRecipient) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        headers: corsHeaders,
+        status: 404,
+      });
+    }
+
+    // Fetch document + check recipient token match
     const { data, error } = await supabase
       .from("documents")
       .select(`
-        id, name, status,
+        id, name, status, storage_path,
         recipients!inner ( id, name, email, status, access_token, token_expiry ),
         signing_elements ( id, type, position, size, value, required, recipient_id, label )
       `)
-      .eq("id", documentId)
-      .eq("recipients.access_token", token)
+      .match({ id: documentId, "recipients.access_token": token })
       .maybeSingle();
+
+    console.log("Document fetch result:", data, error);
 
     if (error || !data) {
       return new Response(JSON.stringify({ error: "Invalid token or document not found" }), {
@@ -44,19 +66,21 @@ serve(async (req) => {
     // Optional: Check expiry
     const recipient = data.recipients.find(r => r.access_token === token);
     if (recipient.token_expiry && new Date(recipient.token_expiry) < new Date()) {
+      console.error("Token expired");
       return new Response(JSON.stringify({ error: "Token expired" }), {
         headers: corsHeaders,
         status: 403,
       });
     }
 
+    console.log("Returning document...");
     return new Response(JSON.stringify({ document: data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("Unhandled error:", err);
     return new Response(JSON.stringify({ error: err.message || "Unknown error" }), {
       headers: corsHeaders,
       status: 500,
