@@ -1,9 +1,7 @@
 import { useState, useRef } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
-import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 
@@ -15,7 +13,6 @@ interface SignatureModalProps {
 
 export function SignatureModal({ isOpen, onClose, onComplete }: SignatureModalProps) {
   const signatureRef = useRef<SignatureCanvas | null>(null);
-  const [date, setDate] = useState<Date>(new Date());
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +39,7 @@ export function SignatureModal({ isOpen, onClose, onComplete }: SignatureModalPr
     }
 
     const signatureData = signatureRef.current.toDataURL();
-    onComplete(signatureData, date, agreed);
+    onComplete(signatureData, new Date(), agreed);
     onClose();
   };
 
@@ -79,16 +76,6 @@ export function SignatureModal({ isOpen, onClose, onComplete }: SignatureModalPr
             >
               Clear
             </Button>
-          </div>
-
-          <div>
-            <Label>Date</Label>
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={(newDate) => newDate && setDate(newDate)}
-              className="rounded-md border"
-            />
           </div>
 
           <div className="flex items-center space-x-2">
