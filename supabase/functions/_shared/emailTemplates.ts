@@ -1,6 +1,12 @@
 import { Handlebars } from "https://deno.land/x/handlebars@v0.10.0/mod.ts";
 import { signatureRequestTemplate } from './templates/signature-request.ts';
 
+// Initialize Handlebars instance once
+const handlebars = new Handlebars();
+
+// Compile the template ONCE at load time
+const compiledTemplate = handlebars.compile(signatureRequestTemplate);
+
 export async function generateSignatureRequestEmail(
   recipientName: string,
   senderName: string,
@@ -21,9 +27,7 @@ export async function generateSignatureRequestEmail(
   });
 
   try {
-    console.log('Using external HTML template (preprocessed)');
-
-    const handlebars = new Handlebars();
+    console.log('Using external HTML template (preprocessed & compiled)');
 
     const templateData = {
       recipient_name: recipientName,
@@ -35,8 +39,8 @@ export async function generateSignatureRequestEmail(
     };
     console.log('Template data:', templateData);
 
-    // Render template with data
-    const html = await handlebars.renderTemplate(signatureRequestTemplate, templateData);
+    // Render pre-compiled template
+    const html = await compiledTemplate(templateData);
     console.log('Template rendered successfully, HTML length:', html.length);
 
     return {
