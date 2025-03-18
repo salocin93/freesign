@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Document, Recipient, SigningElement } from '@/utils/types';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
+import { handleError, handleApiError, AppError } from '@/utils/errorHandling';
 
 const STORAGE_BUCKET = 'documents';
 
@@ -42,42 +43,33 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
 
   const loadDocument = useCallback(async (force = false) => {
     if (!documentId) {
-      console.log('Missing required params:', { documentId });
+      setError('Missing document ID');
       setIsLoading(false);
       return;
     }
 
-    // Check if we're already loading this document
-    if (loadingRef.current) {
-      console.log('Already loading document:', { documentId });
-      return;
-    }
-
-    // Check if we've already loaded this document and don't need to force reload
-    if (!force && initialLoadRef.current && documentId === lastLoadedDocumentId.current) {
-      console.log('Document already loaded:', { documentId });
-      return;
-    }
+    if (loadingRef.current) return;
+    if (!force && initialLoadRef.current && documentId === lastLoadedDocumentId.current) return;
 
     loadingRef.current = true;
     setIsLoading(true);
     setError(null);
-    console.log('Starting document load:', { documentId });
 
     try {
-      // Fetch document
-      const { data: documentData, error: documentError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('id', documentId)
-        .single();
+      const documentData = await handleApiError(
+        async () => {
+          const { data, error: documentError } = await supabase
+            .from('documents')
+            .select('*')
+            .eq('id', documentId)
+            .single();
 
-      if (documentError) {
-        console.error('Error fetching document:', documentError);
-        throw documentError;
-      }
+          if (documentError) throw documentError;
+          return data;
+        },
+        'loadDocument'
+      ) as Document;
 
-      // Get the document URL from storage
       if (documentData.storage_path) {
         const { data: { publicUrl } } = supabase
           .storage
@@ -89,29 +81,41 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
 
       setDocument(documentData);
 
-      // Fetch recipients
-      const { data: recipientsData, error: recipientsError } = await supabase
-        .from('recipients')
-        .select('*')
-        .eq('document_id', documentId);
+      const recipientsData = await handleApiError(
+        async () => {
+          const { data, error: recipientsError } = await supabase
+            .from('recipients')
+            .select('*')
+            .eq('document_id', documentId);
 
-      if (recipientsError) throw recipientsError;
+          if (recipientsError) throw recipientsError;
+          return data;
+        },
+        'loadRecipients'
+      ) as Recipient[];
+
       setRecipients(recipientsData || []);
 
-      // Fetch signing elements
-      const { data: elementsData, error: elementsError } = await supabase
-        .from('signing_elements')
-        .select('*')
-        .eq('document_id', documentId);
+      const elementsData = await handleApiError(
+        async () => {
+          const { data, error: elementsError } = await supabase
+            .from('signing_elements')
+            .select('*')
+            .eq('document_id', documentId);
 
-      if (elementsError) throw elementsError;
+          if (elementsError) throw elementsError;
+          return data;
+        },
+        'loadSigningElements'
+      ) as SigningElement[];
+
       setSigningElements(elementsData || []);
 
       initialLoadRef.current = true;
       lastLoadedDocumentId.current = documentId;
     } catch (err) {
-      console.error('Error fetching document:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load document');
+      const appError = handleError(err, 'loadDocument');
+      setError(appError.message);
       navigate('/documents');
     } finally {
       loadingRef.current = false;
@@ -180,7 +184,9 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     type: SigningElement['type'],
     position: { x: number; y: number; pageIndex: number }
   ) => {
-    if (!documentId || !selectedRecipientId) return;
+    if (!documentId || !selectedRecipientId) {
+      throw new AppError('Missing required parameters', 'INVALID_PARAMS');
+    }
 
     const newElement: SigningElement = {
       id: uuidv4(),
@@ -193,46 +199,56 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     };
 
     try {
-      const { error } = await supabase
-        .from('signing_elements')
-        .insert([{
-          id: newElement.id,
-          document_id: documentId,
-          recipient_id: selectedRecipientId,
-          type: newElement.type,
-          position: newElement.position,
-          size: newElement.size,
-          value: newElement.value,
-        }]);
+      await handleApiError(
+        async () => {
+          const { error } = await supabase
+            .from('signing_elements')
+            .insert([{
+              id: newElement.id,
+              document_id: documentId,
+              recipient_id: selectedRecipientId,
+              type: newElement.type,
+              position: newElement.position,
+              size: newElement.size,
+              value: newElement.value,
+            }]);
 
-      if (error) throw error;
+          if (error) throw error;
+        },
+        'addSigningElement'
+      );
 
       setSigningElements(prev => [...prev, newElement]);
       toast.success('Signing element added successfully');
-      setActiveElementType(null); // Reset active element type after adding
-    } catch (error) {
-      console.error('Error adding signing element:', error);
-      toast.error('Failed to add signing element');
+      setActiveElementType(null);
+    } catch (err) {
+      handleError(err, 'addSigningElement');
     }
   }, [documentId, selectedRecipientId]);
 
   const removeSigningElement = useCallback(async (id: string) => {
-    if (!documentId) return;
+    if (!documentId) {
+      throw new AppError('Missing document ID', 'INVALID_PARAMS');
+    }
 
     try {
-      const { error } = await supabase
-        .from('signing_elements')
-        .delete()
-        .eq('id', id)
-        .eq('document_id', documentId);
+      await handleApiError(
+        async () => {
+          const { error } = await supabase
+            .from('signing_elements')
+            .delete()
+            .eq('id', id)
+            .eq('document_id', documentId);
 
-      if (error) throw error;
+          if (error) throw error;
+        },
+        'removeSigningElement'
+      );
 
       setSigningElements(prev => prev.filter(el => el.id !== id));
       toast.success('Field removed successfully');
-    } catch (error) {
-      console.error('Error removing signing element:', error);
-      toast.error('Failed to remove field');
+    } catch (err) {
+      handleError(err, 'removeSigningElement');
     }
   }, [documentId]);
 

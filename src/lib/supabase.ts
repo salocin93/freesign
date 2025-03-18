@@ -8,6 +8,9 @@ in the Software without restriction...
 
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/supabase'
+import { AppError } from '@/utils/errorHandling'
+import { trackError } from '@/utils/errorTracking'
+import { DatabaseError, ConfigurationError } from '@/utils/errorTypes'
 
 // Add Vite env type definition
 interface ImportMetaEnv {
@@ -117,18 +120,52 @@ async function verifyBucketAccess() {
       .list('');
 
     if (error) {
+      let appError: AppError;
+      
       if (error.message.includes('does not exist')) {
-        throw new Error(`Storage bucket '${STORAGE_BUCKET}' not found. Please create it in the Supabase dashboard.`);
+        appError = new ConfigurationError(
+          `Storage bucket '${STORAGE_BUCKET}' not found. Please create it in the Supabase dashboard.`,
+          'STORAGE_BUCKET'
+        );
       } else if (error.message.includes('permission denied')) {
-        throw new Error(`Permission denied to access storage bucket '${STORAGE_BUCKET}'. Please check your RLS policies.`);
+        appError = new DatabaseError(
+          `Permission denied to access storage bucket '${STORAGE_BUCKET}'. Please check your RLS policies.`,
+          'VERIFY_ACCESS'
+        );
+      } else {
+        appError = new DatabaseError(
+          error.message,
+          'VERIFY_ACCESS'
+        );
       }
-      throw error;
+
+      // Track the error
+      await trackError(appError, 'verifyBucketAccess', {
+        bucket: STORAGE_BUCKET,
+        error: error.message,
+      });
+
+      throw appError;
     }
 
     return true;
   } catch (error) {
-    console.error('Error verifying bucket access:', error);
-    throw error;
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    const appError = new DatabaseError(
+      error instanceof Error ? error.message : 'Failed to verify bucket access',
+      'VERIFY_ACCESS'
+    );
+
+    // Track the error
+    await trackError(appError, 'verifyBucketAccess', {
+      bucket: STORAGE_BUCKET,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    throw appError;
   }
 }
 

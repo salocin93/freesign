@@ -6,6 +6,9 @@
 
 import * as pdfjs from 'pdfjs-dist';
 import { PDF_CONFIG } from '@/config/pdf';
+import { AppError } from './errorHandling';
+import { trackError } from './errorTracking';
+import { DocumentError, NetworkError } from './errorTypes';
 
 export async function loadPdfDocument(url: string) {
   try {
@@ -28,18 +31,29 @@ export async function loadPdfDocument(url: string) {
     const pdf = await loadingTask.promise;
     return pdf;
   } catch (error) {
+    let appError: AppError;
+
     // Enhanced error handling
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-      throw new Error('Network error: Unable to load PDF file. Please check your internet connection.');
+      appError = new NetworkError('Unable to load PDF file. Please check your internet connection.');
     } else if (error instanceof Error && error.message.includes('Invalid PDF')) {
-      throw new Error('Invalid PDF file: The file appears to be corrupted or is not a valid PDF.');
+      appError = new DocumentError('The file appears to be corrupted or is not a valid PDF.', 'VALIDATION');
     } else if (error instanceof Error && error.message.includes('Worker')) {
-      console.error('PDF.js Worker initialization failed:', error);
-      throw new Error('Failed to initialize PDF viewer. Please try refreshing the page.');
+      appError = new DocumentError('Failed to initialize PDF viewer. Please try refreshing the page.', 'INITIALIZATION');
     } else {
-      console.error('Error loading PDF:', error);
-      throw new Error('Failed to load PDF: An unexpected error occurred.');
+      appError = new DocumentError(
+        error instanceof Error ? error.message : 'Failed to load PDF: An unexpected error occurred.',
+        'LOADING'
+      );
     }
+
+    // Track the error
+    await trackError(appError, 'loadPdfDocument', {
+      url,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    throw appError;
   }
 }
 
