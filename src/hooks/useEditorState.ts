@@ -75,6 +75,17 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
         console.error('Error fetching document:', documentError);
         throw documentError;
       }
+
+      // Get the document URL from storage
+      if (documentData.storage_path) {
+        const { data: { publicUrl } } = supabase
+          .storage
+          .from(STORAGE_BUCKET)
+          .getPublicUrl(documentData.storage_path);
+        
+        documentData.url = publicUrl;
+      }
+
       setDocument(documentData);
 
       // Fetch recipients
