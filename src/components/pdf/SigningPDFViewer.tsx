@@ -88,6 +88,7 @@ export function SigningPDFViewer({ url, signingElements, recipients }: SigningPD
 
   return (
     <div className="w-full">
+      {console.log('PDFViewer loading URL:', url)}
       <Document
         file={{ url }}
         onLoadSuccess={onDocumentLoadSuccess}
