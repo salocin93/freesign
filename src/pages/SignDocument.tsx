@@ -91,17 +91,50 @@ export default function SignDocument() {
     fetchDocument();
   }, [documentId, token]);
 
+  /**
+   * Handles the completion of a signature process
+   * 
+   * This function performs several important steps:
+   * 1. Collects client information (IP, geolocation, user agent)
+   * 2. Creates a verification hash for the signature
+   * 3. Saves the signature to the database
+   * 4. Creates an audit log entry
+   * 5. Updates recipient and document status
+   * 
+   * The process ensures:
+   * - Signature integrity through cryptographic hashing
+   * - Complete audit trail of the signing process
+   * - Proper status updates for document workflow
+   * - Comprehensive client information for legal compliance
+   * 
+   * @param signatureData - The base64 encoded signature data
+   * @param date - The timestamp when the signature was created
+   * @param agreed - Whether the user agreed to the terms
+   */
   const handleSignatureComplete = async (signatureData: string, date: Date, agreed: boolean) => {
     try {
       if (!documentId) throw new Error('Document ID is required');
       if (!recipient) throw new Error('Recipient information is required');
 
-      console.log('Saving signature for document:', documentId);
+      console.log('Starting signature process:', {
+        documentId,
+        recipientId: recipient.id,
+        timestamp: date.toISOString(),
+        agreedToTerms: agreed,
+      });
 
       // Get comprehensive client information
+      console.log('Fetching client information...');
       const clientInfo = await getClientInfo();
+      console.log('Client information collected:', {
+        ip: clientInfo.ip,
+        userAgent: clientInfo.userAgent,
+        timestamp: clientInfo.timestamp,
+        geolocation: clientInfo.geolocation,
+      });
       
       // Create verification hash
+      console.log('Creating signature verification hash...');
       const verificationHash = await SignatureVerificationUtil.createSignatureHash(
         signatureData,
         recipient.id,
@@ -115,11 +148,10 @@ export default function SignDocument() {
         type: 'uploaded'
       };
 
-      console.log('Inserting signature with data:', {
+      console.log('Preparing signature data for insertion:', {
         document_id: documentId,
         recipient_id: recipient.id,
-        value: signature.dataUrl,
-        type: signature.type,
+        signatureType: signature.type,
         created_at: date.toISOString(),
         agreed_to_terms: agreed,
         verification_hash: verificationHash,
@@ -128,6 +160,8 @@ export default function SignDocument() {
         geolocation: clientInfo.geolocation,
       });
 
+      // Insert signature record
+      console.log('Inserting signature record...');
       const { data: insertedSignature, error: signError } = await supabase.from('signatures').insert({
         document_id: documentId,
         recipient_id: recipient.id,
@@ -146,21 +180,14 @@ export default function SignDocument() {
         throw signError;
       }
 
-      console.log('Signature inserted successfully:', insertedSignature);
-
-      // Log the signature event
-      console.log('Creating audit log with data:', {
-        signature_id: insertedSignature.id,
-        document_id: documentId,
-        event_type: 'signature_created',
-        event_data: {
-          type: signature.type,
-        },
-        ip_address: clientInfo.ip,
-        user_agent: clientInfo.userAgent,
-        geolocation: clientInfo.geolocation,
+      console.log('Signature record created successfully:', {
+        signatureId: insertedSignature.id,
+        documentId: insertedSignature.document_id,
+        recipientId: insertedSignature.recipient_id,
       });
 
+      // Create audit log entry
+      console.log('Creating audit log entry...');
       const { error: auditError } = await supabase.from('signature_audit_logs').insert({
         signature_id: insertedSignature.id,
         document_id: documentId,
@@ -178,7 +205,11 @@ export default function SignDocument() {
         throw auditError;
       }
 
+      console.log('Audit log entry created successfully');
+
+      // Update recipient status
       if (recipient) {
+        console.log('Updating recipient status...');
         const { error: recipientError } = await supabase
           .from('recipients')
           .update({ status: 'completed' })
@@ -186,6 +217,8 @@ export default function SignDocument() {
 
         if (recipientError) throw recipientError;
 
+        // Check if all recipients have signed
+        console.log('Checking if all recipients have signed...');
         const { data: recipients, error: recipientsError } = await supabase
           .from('recipients')
           .select('status')
@@ -196,12 +229,14 @@ export default function SignDocument() {
         const allSigned = recipients?.every(r => r.status === 'completed');
 
         if (allSigned) {
+          console.log('All recipients have signed, updating document status...');
           const { error: documentError } = await supabase
             .from('documents')
             .update({ status: 'completed' })
             .eq('id', documentId);
 
           if (documentError) throw documentError;
+          console.log('Document status updated to completed');
         }
       }
 
@@ -209,7 +244,7 @@ export default function SignDocument() {
       navigate('/thank-you');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save signature';
-      console.error('Signature save error:', err);
+      console.error('Signature process failed:', err);
       setError(message);
       toast.error(message);
     }

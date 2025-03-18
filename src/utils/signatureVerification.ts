@@ -18,27 +18,42 @@ import { supabase } from '@/lib/supabase';
 import { SignatureVerification as SignatureVerificationType } from './types';
 
 /**
- * Utility class for handling signature verification operations.
- * Provides methods for creating and verifying digital signatures.
+ * Signature Verification Utility
+ * 
+ * This utility class provides methods for creating and verifying signature hashes
+ * to ensure the integrity and authenticity of digital signatures.
+ * 
+ * The verification process uses a combination of:
+ * - Signature data (base64 encoded image or text)
+ * - User/Recipient ID
+ * - Timestamp
+ * - Document ID
+ * 
+ * This creates a unique hash that can be used to verify:
+ * 1. The signature was created by the correct user
+ * 2. The signature was created at a specific time
+ * 3. The signature was created for a specific document
+ * 4. The signature data hasn't been tampered with
+ * 
+ * @class SignatureVerificationUtil
  */
 export class SignatureVerificationUtil {
   /**
-   * Creates a cryptographic hash of the signature data and associated metadata.
-   * This hash is used to verify the integrity of the signature later.
+   * Creates a verification hash for a signature
    * 
-   * @param signatureData - The actual signature data (usually a base64 encoded string)
-   * @param userId - The ID of the user who created the signature
-   * @param timestamp - The timestamp when the signature was created
+   * @param signatureData - The base64 encoded signature data (image or text)
+   * @param userId - The ID of the user/recipient creating the signature
+   * @param timestamp - The ISO timestamp when the signature was created
    * @param documentId - The ID of the document being signed
-   * @returns A Promise resolving to a hex-encoded SHA-256 hash string
+   * @returns A promise that resolves to the verification hash
    * 
    * @example
    * ```typescript
    * const hash = await SignatureVerificationUtil.createSignatureHash(
    *   signatureData,
-   *   'user123',
-   *   '2024-03-15T12:34:56Z',
-   *   'doc456'
+   *   userId,
+   *   timestamp,
+   *   documentId
    * );
    * ```
    */
@@ -48,20 +63,70 @@ export class SignatureVerificationUtil {
     timestamp: string,
     documentId: string
   ): Promise<string> {
-    const data = `${signatureData}${userId}${timestamp}${documentId}`;
+    // Combine all data in a specific order for consistent hashing
+    const dataToHash = `${signatureData}|${userId}|${timestamp}|${documentId}`;
     
-    // Convert the string to bytes
+    console.log('Creating signature hash with data:', {
+      signatureDataLength: signatureData.length,
+      userId,
+      timestamp,
+      documentId,
+      combinedDataLength: dataToHash.length,
+    });
+
+    // Create SHA-256 hash
     const encoder = new TextEncoder();
-    const dataBuffer = encoder.encode(data);
-    
-    // Create SHA-256 hash using Web Crypto API
-    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-    
-    // Convert hash to hex string
+    const data = encoder.encode(dataToHash);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     
+    console.log('Generated verification hash:', hashHex);
     return hashHex;
+  }
+
+  /**
+   * Verifies a signature hash
+   * 
+   * @param signatureData - The base64 encoded signature data
+   * @param userId - The ID of the user/recipient
+   * @param timestamp - The ISO timestamp
+   * @param documentId - The ID of the document
+   * @param expectedHash - The hash to verify against
+   * @returns A promise that resolves to true if the hash matches
+   * 
+   * @example
+   * ```typescript
+   * const isValid = await SignatureVerificationUtil.verifySignatureHash(
+   *   signatureData,
+   *   userId,
+   *   timestamp,
+   *   documentId,
+   *   expectedHash
+   * );
+   * ```
+   */
+  static async verifySignatureHash(
+    signatureData: string,
+    userId: string,
+    timestamp: string,
+    documentId: string,
+    expectedHash: string
+  ): Promise<boolean> {
+    const calculatedHash = await this.createSignatureHash(
+      signatureData,
+      userId,
+      timestamp,
+      documentId
+    );
+
+    console.log('Verifying signature hash:', {
+      calculatedHash,
+      expectedHash,
+      matches: calculatedHash === expectedHash,
+    });
+
+    return calculatedHash === expectedHash;
   }
 
   /**
