@@ -63,7 +63,7 @@ serve(async (req) => {
       .select(`
         id, name, status, storage_path,
         recipients!inner ( id, name, email, status, access_token, token_expiry ),
-        signing_elements ( id, type, position, size, value, recipient_id,  )
+        signing_elements ( id, type, position, size, value, recipient_id )
       `)
       .match({ id: documentId, "recipients.access_token": token })
       .maybeSingle();
