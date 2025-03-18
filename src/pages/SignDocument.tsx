@@ -1,9 +1,6 @@
 /*
 MIT License
 Copyright (c) 2025 Nicolas Freiherr von Rosen
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction...
 */
 
 import { useEffect, useState } from 'react';
@@ -15,12 +12,23 @@ import { SigningPDFViewer } from '@/components/pdf/SigningPDFViewer';
 import { toast } from 'sonner';
 import { SigningElement, Recipient } from '@/utils/types';
 
+/**
+ * SignDocument Component
+ * 
+ * This page allows a recipient to securely access and sign a document using a unique token-based link.
+ * 
+ * Features:
+ * - Secure document access using token-based links (validated via Supabase Edge Function)
+ * - Displays PDF document along with interactive signing elements
+ * - Handles signature submission and updates recipient/document status in Supabase
+ * - Error handling, loading indicators, and user feedback
+ */
 export default function SignDocument() {
   const { documentId } = useParams();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const navigate = useNavigate();
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [documentUrl, setDocumentUrl] = useState('');
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -28,6 +36,7 @@ export default function SignDocument() {
   const [recipient, setRecipient] = useState<Recipient | null>(null);
   const [signingElements, setSigningElements] = useState<SigningElement[]>([]);
 
+  // Fetch document and recipient details securely via Edge Function
   useEffect(() => {
     async function fetchDocument() {
       try {
@@ -35,32 +44,33 @@ export default function SignDocument() {
           throw new Error('Document ID and token are required');
         }
 
-        // Call the Edge Function to get document details
+        // Call Edge Function to securely fetch document & recipient
         const { data, error } = await supabase.functions.invoke('get-document-for-recipient', {
           body: { documentId, token },
         });
 
-        if (error) {
-          throw new Error(error.message || 'Failed to load document');
+        if (error || !data?.document) {
+          throw new Error(error?.message || 'Failed to load document');
         }
 
-        if (!data?.document) {
-          throw new Error('Document not found');
-        }
+        const storagePath = data.document.storage_path;
 
-        // Get document URL
-        const { data: signUrl } = await supabase.storage
+        // Get signed URL for the document file
+        const { data: urlData, error: urlError } = await supabase.storage
           .from('documents')
-          .createSignedUrl(data.document.storage_path, 3600);
+          .createSignedUrl(storagePath, 3600);
 
-        if (!signUrl?.signedUrl) throw new Error('Could not generate document URL');
-        
-        setDocumentUrl(signUrl.signedUrl);
+        if (urlError || !urlData?.signedUrl) {
+          throw new Error('Could not generate document URL');
+        }
+
+        setDocumentUrl(urlData.signedUrl);
         setSigningElements(data.document.signing_elements);
-        setRecipient(data.document.recipients[0]); // The Edge Function returns only the authorized recipient
+        setRecipient(data.document.recipients[0]); // Recipient from Edge Function result
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load document');
-        toast.error(err instanceof Error ? err.message : 'Failed to load document');
+        const message = err instanceof Error ? err.message : 'Failed to load document';
+        setError(message);
+        toast.error(message);
       } finally {
         setIsLoading(false);
       }
@@ -69,11 +79,15 @@ export default function SignDocument() {
     fetchDocument();
   }, [documentId, token]);
 
+  /**
+   * Handles when the user completes signing the document.
+   * Updates recipient status and document status if all recipients have signed.
+   */
   const handleSignatureComplete = async (signatureData: string, date: Date, agreed: boolean) => {
     try {
       if (!documentId) throw new Error('Document ID is required');
-      
-      // Save signature
+
+      // Save signature to Supabase
       const { error: signError } = await supabase.from('signatures').insert({
         document_id: documentId,
         signature: signatureData,
@@ -83,7 +97,7 @@ export default function SignDocument() {
 
       if (signError) throw signError;
 
-      // If this is a recipient signing, update their status
+      // Update recipient status
       if (recipient) {
         const { error: recipientError } = await supabase
           .from('recipients')
@@ -102,7 +116,7 @@ export default function SignDocument() {
 
         const allSigned = recipients?.every(r => r.status === 'completed');
 
-        // If all recipients have signed, update document status
+        // Update document status if all signed
         if (allSigned) {
           const { error: documentError } = await supabase
             .from('documents')
@@ -116,8 +130,9 @@ export default function SignDocument() {
       toast.success('Document signed successfully');
       navigate('/thank-you');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save signature');
-      toast.error(err instanceof Error ? err.message : 'Failed to save signature');
+      const message = err instanceof Error ? err.message : 'Failed to save signature';
+      setError(message);
+      toast.error(message);
     }
   };
 
@@ -153,17 +168,17 @@ export default function SignDocument() {
             )}
           </div>
         </div>
-        
+
         <div className="mb-6">
-          <SigningPDFViewer 
-            url={documentUrl} 
+          <SigningPDFViewer
+            url={documentUrl}
             signingElements={signingElements}
             recipients={recipient ? [recipient] : []}
           />
         </div>
 
         <div className="flex justify-center">
-          <Button 
+          <Button
             onClick={() => setIsSignatureModalOpen(true)}
             size="lg"
           >
@@ -179,4 +194,4 @@ export default function SignDocument() {
       </div>
     </div>
   );
-} 
+}
