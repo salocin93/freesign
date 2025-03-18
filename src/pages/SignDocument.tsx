@@ -123,13 +123,9 @@ export default function SignDocument() {
         created_at: date.toISOString(),
         agreed_to_terms: agreed,
         verification_hash: verificationHash,
-        metadata: {
-          userAgent: clientInfo.userAgent,
-          timestamp: clientInfo.timestamp,
-          geolocation: clientInfo.geolocation,
-        },
         ip_address: clientInfo.ip,
         user_agent: clientInfo.userAgent,
+        geolocation: clientInfo.geolocation,
       });
 
       const { data: insertedSignature, error: signError } = await supabase.from('signatures').insert({
@@ -140,13 +136,9 @@ export default function SignDocument() {
         created_at: date.toISOString(),
         agreed_to_terms: agreed,
         verification_hash: verificationHash,
-        metadata: {
-          userAgent: clientInfo.userAgent,
-          timestamp: clientInfo.timestamp,
-          geolocation: clientInfo.geolocation,
-        },
         ip_address: clientInfo.ip,
         user_agent: clientInfo.userAgent,
+        geolocation: clientInfo.geolocation,
       }).select().single();
 
       if (signError) {
@@ -163,11 +155,6 @@ export default function SignDocument() {
         event_type: 'signature_created',
         event_data: {
           type: signature.type,
-          metadata: {
-            userAgent: clientInfo.userAgent,
-            timestamp: clientInfo.timestamp,
-            geolocation: clientInfo.geolocation,
-          },
         },
         ip_address: clientInfo.ip,
         user_agent: clientInfo.userAgent,
@@ -180,11 +167,6 @@ export default function SignDocument() {
         event_type: 'signature_created',
         event_data: {
           type: signature.type,
-          metadata: {
-            userAgent: clientInfo.userAgent,
-            timestamp: clientInfo.timestamp,
-            geolocation: clientInfo.geolocation,
-          },
         },
         ip_address: clientInfo.ip,
         user_agent: clientInfo.userAgent,
