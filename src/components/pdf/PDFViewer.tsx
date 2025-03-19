@@ -10,16 +10,46 @@
  * - Interactive signing elements overlay
  * - Error handling and loading states
  * - Support for different types of signing elements (signature, date, text, checkbox)
+ * - Zoom controls
+ * - Page navigation
+ * - Recipient-based element coloring
+ * - Element deletion
  * 
- * @component
- * @example
+ * Props:
+ * @param {string} url - URL of the PDF document to display
+ * @param {SigningElement[]} signingElements - Array of signing elements to overlay on the PDF
+ * @param {Recipient[]} recipients - Array of recipients associated with the signing elements
+ * @param {(elementId: string) => void} [onElementClick] - Callback when a signing element is clicked
+ * @param {(type: SigningElement['type'], position: { x: number; y: number; pageIndex: number }) => void} [onAddElement] - Callback when clicking to add a new element
+ * @param {SigningElement['type'] | null} [activeElementType] - Currently active element type to add
+ * @param {(elementId: string) => void} [onRemoveElement] - Callback when a signing element is removed
+ * @param {string | null} [selectedRecipientId] - Currently selected recipient ID
+ * @param {() => void} [onOpenAddRecipient] - Callback to open the add recipient modal
+ * 
+ * Dependencies:
+ * - react-pdf: For PDF rendering
+ * - lucide-react: For icons
+ * - @/utils/types: For type definitions
+ * - @/config/pdf: For PDF configuration
+ * 
+ * Usage:
  * ```tsx
  * <PDFViewer
  *   url="path/to/document.pdf"
- *   signingElements={[]}
- *   onElementClick={(elementId) => console.log(elementId)}
+ *   signingElements={signingElements}
+ *   recipients={recipients}
+ *   onElementClick={(elementId) => handleElementClick(elementId)}
+ *   onAddElement={(type, position) => handleAddElement(type, position)}
+ *   activeElementType="signature"
+ *   onRemoveElement={(elementId) => handleRemoveElement(elementId)}
+ *   selectedRecipientId={currentRecipientId}
+ *   onOpenAddRecipient={() => setShowAddRecipient(true)}
  * />
  * ```
+ * 
+ * Used in:
+ * - Editor page
+ * - SignDocument page
  */
 
 import { useState, useEffect, useRef } from 'react';

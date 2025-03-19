@@ -1,3 +1,71 @@
+/**
+ * Dialog Component
+ * 
+ * A modal dialog component built on top of Radix UI's Dialog primitive.
+ * This component provides a fully accessible modal dialog with various
+ * subcomponents for different parts of the dialog.
+ * 
+ * Components:
+ * - Dialog: Root component for the dialog
+ * - DialogTrigger: Button that opens the dialog
+ * - DialogPortal: Renders the dialog in a portal
+ * - DialogOverlay: Semi-transparent overlay behind the dialog
+ * - DialogClose: Button that closes the dialog
+ * - DialogContent: Main content container
+ * - DialogHeader: Header section of the dialog
+ * - DialogFooter: Footer section of the dialog
+ * - DialogTitle: Title of the dialog
+ * - DialogDescription: Description text for the dialog
+ * 
+ * Features:
+ * - Fully accessible with keyboard navigation
+ * - Focus management
+ * - Click outside to close
+ * - ESC key to close
+ * - Animated transitions
+ * - Responsive design
+ * - Customizable styling
+ * 
+ * Props:
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ReactNode} children - Content to render
+ * @param {React.HTMLAttributes<HTMLDivElement>} props - Standard HTML attributes
+ * 
+ * Dependencies:
+ * - @radix-ui/react-dialog: For dialog functionality
+ * - lucide-react: For icons
+ * - @/lib/utils: For class name merging
+ * 
+ * Usage:
+ * ```tsx
+ * <Dialog>
+ *   <DialogTrigger>Open Dialog</DialogTrigger>
+ *   <DialogContent>
+ *     <DialogHeader>
+ *       <DialogTitle>Dialog Title</DialogTitle>
+ *       <DialogDescription>
+ *         This is a description of the dialog.
+ *       </DialogDescription>
+ *     </DialogHeader>
+ *     <div className="py-4">
+ *       Main content goes here
+ *     </div>
+ *     <DialogFooter>
+ *       <Button variant="outline">Cancel</Button>
+ *       <Button>Continue</Button>
+ *     </DialogFooter>
+ *   </DialogContent>
+ * </Dialog>
+ * ```
+ * 
+ * Styling:
+ * - Overlay: Semi-transparent black background
+ * - Content: White background with shadow
+ * - Animations: Fade and slide transitions
+ * - Responsive: Rounded corners on desktop
+ * - Close button: Top-right corner
+ */
+
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"

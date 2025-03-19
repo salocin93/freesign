@@ -1,3 +1,67 @@
+/**
+ * Button Component
+ * 
+ * A versatile button component built on top of Radix UI's Slot primitive.
+ * This component provides various styles and sizes for different use cases
+ * throughout the application.
+ * 
+ * Features:
+ * - Multiple variants (default, destructive, outline, secondary, ghost, link)
+ * - Different sizes (default, sm, lg, icon)
+ * - Support for icons with automatic sizing
+ * - Focus and hover states
+ * - Disabled state styling
+ * - Polymorphic rendering (can render as different elements)
+ * 
+ * Props:
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {ButtonVariant} [variant] - Visual style variant of the button
+ * @param {ButtonSize} [size] - Size variant of the button
+ * @param {boolean} [asChild] - Whether to render as a child component
+ * @param {React.ButtonHTMLAttributes<HTMLButtonElement>} props - Standard button HTML attributes
+ * 
+ * Variants:
+ * - default: Primary action button with solid background
+ * - destructive: For dangerous actions (e.g., delete)
+ * - outline: Bordered button with transparent background
+ * - secondary: Alternative style for secondary actions
+ * - ghost: Transparent button with hover effect
+ * - link: Text-only button styled as a link
+ * 
+ * Sizes:
+ * - default: Standard size (h-10)
+ * - sm: Small size (h-9)
+ * - lg: Large size (h-11)
+ * - icon: Square button for icons (h-10 w-10)
+ * 
+ * Dependencies:
+ * - @radix-ui/react-slot: For polymorphic rendering
+ * - class-variance-authority: For variant management
+ * - @/lib/utils: For class name merging
+ * 
+ * Usage:
+ * ```tsx
+ * // Basic usage
+ * <Button>Click me</Button>
+ * 
+ * // With variant and size
+ * <Button variant="destructive" size="lg">
+ *   Delete
+ * </Button>
+ * 
+ * // With icon
+ * <Button>
+ *   <IconComponent />
+ *   With Icon
+ * </Button>
+ * 
+ * // As a link
+ * <Button variant="link" asChild>
+ *   <Link href="/somewhere">Go to Link</Link>
+ * </Button>
+ * ```
+ */
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"

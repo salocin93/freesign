@@ -1,3 +1,39 @@
+/**
+ * AppLayout Component
+ * 
+ * Main application layout wrapper that provides the basic structure for authenticated pages.
+ * This component includes a responsive sidebar with navigation, user profile section, and main content area.
+ * 
+ * Features:
+ * - Responsive sidebar with navigation links
+ * - User profile display with avatar
+ * - Logout functionality
+ * - Dynamic page titles
+ * - Toast notifications for user feedback
+ * 
+ * Props:
+ * @param {React.ReactNode} children - The content to be rendered in the main area
+ * 
+ * Dependencies:
+ * - react-router-dom: For navigation and location
+ * - @/contexts/AuthContext: For user authentication
+ * - @/components/ui/*: Various UI components
+ * - lucide-react: For icons
+ * 
+ * Usage:
+ * ```tsx
+ * <AppLayout>
+ *   <YourPageContent />
+ * </AppLayout>
+ * ```
+ * 
+ * Used in:
+ * - Dashboard page
+ * - Upload page
+ * - Documents page
+ * - Editor page
+ */
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from "@/lib/utils";

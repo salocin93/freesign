@@ -1,3 +1,67 @@
+/**
+ * Toast Components
+ * 
+ * A collection of toast notification components built on top of Radix UI's Toast primitive.
+ * These components provide a customizable toast notification system with support for
+ * different variants, actions, and animations.
+ * 
+ * Components:
+ * - ToastProvider: Context provider for toast functionality
+ * - ToastViewport: Container for toast notifications
+ * - Toast: Root toast component
+ * - ToastTitle: Title of the toast
+ * - ToastDescription: Description text for the toast
+ * - ToastAction: Action button for the toast
+ * - ToastClose: Close button for the toast
+ * 
+ * Features:
+ * - Multiple variants (default, destructive)
+ * - Swipe to dismiss
+ * - Action buttons
+ * - Close button
+ * - Smooth animations
+ * - Responsive positioning
+ * - Accessibility features
+ * - Custom styling support
+ * 
+ * Props:
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {string} [variant] - Visual style variant (default/destructive)
+ * @param {React.ReactNode} children - Content to render
+ * @param {React.HTMLAttributes<HTMLDivElement>} props - Standard HTML attributes
+ * 
+ * Dependencies:
+ * - @radix-ui/react-toast: For toast functionality
+ * - class-variance-authority: For variant management
+ * - lucide-react: For icons
+ * - @/lib/utils: For class name merging
+ * 
+ * Usage:
+ * ```tsx
+ * <ToastProvider>
+ *   <Toast>
+ *     <div className="grid gap-1">
+ *       <ToastTitle>Scheduled: Catch up</ToastTitle>
+ *       <ToastDescription>
+ *         Friday, February 10, 2023 at 5:57 PM
+ *       </ToastDescription>
+ *     </div>
+ *     <ToastAction altText="Try again">Try again</ToastAction>
+ *     <ToastClose />
+ *   </Toast>
+ * </ToastProvider>
+ * ```
+ * 
+ * Styling:
+ * - Toast: Background color with border and shadow
+ * - Title: Semibold text
+ * - Description: Slightly transparent text
+ * - Action: Transparent background with hover state
+ * - Close: Icon button with hover state
+ * - Destructive variant: Red color scheme
+ * - Customizable through className
+ */
+
 import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"

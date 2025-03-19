@@ -1,3 +1,63 @@
+/**
+ * Tabs Components
+ * 
+ * A collection of tab components built on top of Radix UI's Tabs primitive.
+ * These components provide a customizable tab interface with proper accessibility
+ * and keyboard navigation support.
+ * 
+ * Components:
+ * - Tabs: Root component for the tabs interface
+ * - TabsList: Container for tab triggers
+ * - TabsTrigger: Individual tab button
+ * - TabsContent: Content panel for each tab
+ * 
+ * Features:
+ * - Accessible tab interface
+ * - Keyboard navigation
+ * - Focus and hover states
+ * - Disabled state styling
+ * - Smooth transitions
+ * - Custom styling support
+ * - ARIA attributes
+ * 
+ * Props:
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {string} [value] - Controlled active tab value
+ * @param {string} [defaultValue] - Default active tab value
+ * @param {(value: string) => void} [onValueChange] - Callback when tab changes
+ * @param {React.HTMLAttributes<HTMLDivElement>} props - Standard HTML attributes
+ * 
+ * Dependencies:
+ * - @radix-ui/react-tabs: For tabs functionality
+ * - @/lib/utils: For class name merging
+ * 
+ * Usage:
+ * ```tsx
+ * <Tabs defaultValue="account">
+ *   <TabsList>
+ *     <TabsTrigger value="account">Account</TabsTrigger>
+ *     <TabsTrigger value="password">Password</TabsTrigger>
+ *   </TabsList>
+ *   <TabsContent value="account">
+ *     Account settings and preferences
+ *   </TabsContent>
+ *   <TabsContent value="password">
+ *     Change your password
+ *   </TabsContent>
+ * </Tabs>
+ * ```
+ * 
+ * Styling:
+ * - List: Muted background with rounded corners
+ * - Trigger: 
+ *   - Active: Background color with shadow
+ *   - Inactive: Muted text color
+ *   - Focus: Ring with offset
+ *   - Disabled: 50% opacity
+ * - Content: Top margin with focus ring
+ * - Customizable through className
+ */
+
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 

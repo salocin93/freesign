@@ -1,3 +1,61 @@
+/**
+ * Slider Component
+ * 
+ * A range slider component built on top of Radix UI's Slider primitive.
+ * This component provides a customizable slider input with a track, range,
+ * and thumb elements, supporting both single and range values.
+ * 
+ * Features:
+ * - Accessible slider input
+ * - Customizable track and thumb styling
+ * - Support for single and range values
+ * - Touch-friendly interaction
+ * - Keyboard navigation
+ * - Focus and hover states
+ * - Disabled state styling
+ * 
+ * Props:
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {number[]} [defaultValue] - Default value(s) for the slider
+ * @param {number[]} [value] - Controlled value(s) for the slider
+ * @param {number} [min] - Minimum value of the slider
+ * @param {number} [max] - Maximum value of the slider
+ * @param {number} [step] - Step value for increments
+ * @param {(value: number[]) => void} [onValueChange] - Callback when value changes
+ * @param {React.HTMLAttributes<HTMLDivElement>} props - Standard HTML attributes
+ * 
+ * Dependencies:
+ * - @radix-ui/react-slider: For slider functionality
+ * - @/lib/utils: For class name merging
+ * 
+ * Usage:
+ * ```tsx
+ * // Basic usage
+ * <Slider defaultValue={[50]} max={100} step={1} />
+ * 
+ * // Range slider
+ * <Slider defaultValue={[25, 75]} max={100} step={1} />
+ * 
+ * // Controlled slider
+ * <Slider
+ *   value={[value]}
+ *   onValueChange={([newValue]) => setValue(newValue)}
+ *   max={100}
+ * />
+ * 
+ * // Custom styling
+ * <Slider className="w-[200px]" />
+ * ```
+ * 
+ * Styling:
+ * - Track: Secondary background color
+ * - Range: Primary background color
+ * - Thumb: Background color with primary border
+ * - Focus ring: Primary color
+ * - Disabled state: 50% opacity
+ * - Customizable through className
+ */
+
 import * as React from "react"
 import * as SliderPrimitive from "@radix-ui/react-slider"
 

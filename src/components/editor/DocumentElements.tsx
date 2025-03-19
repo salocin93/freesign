@@ -12,13 +12,47 @@ interface DocumentElementsProps {
 }
 
 /**
- * Component for rendering signing elements in the document.
+ * DocumentElements Component
  * 
- * @param signingElements - Array of signing elements to display.
- * @param recipients - Array of recipients associated with the signing elements.
- * @param handleDragStart - Callback function to handle the start of dragging an element.
- * @param handleRemoveElement - Callback function to handle removing a signing element.
- * @param handleSignatureFieldClick - Callback function to handle clicking on a signature field.
+ * A component that renders and manages signing elements (signature fields, text inputs, etc.)
+ * on a document. It provides functionality for displaying, dragging, and removing signing elements,
+ * with color-coding based on recipient assignments.
+ * 
+ * Features:
+ * - Dynamic rendering of signing elements
+ * - Drag and drop functionality
+ * - Element removal
+ * - Signature field interaction
+ * - Recipient-based color coding
+ * - Responsive element sizing
+ * - Visual feedback for empty signature fields
+ * 
+ * Props:
+ * @param {SigningElement[]} signingElements - Array of signing elements to display
+ * @param {Recipient[]} recipients - Array of recipients associated with the signing elements
+ * @param {(e: React.DragEvent, element: SigningElement) => void} handleDragStart - Callback for drag start events
+ * @param {(id: string) => void} handleRemoveElement - Callback for element removal
+ * @param {(fieldId: string) => void} handleSignatureFieldClick - Callback for signature field clicks
+ * 
+ * Dependencies:
+ * - lucide-react: For icons (Pen, X)
+ * - @/components/editor/EditorTypes: For SigningElement type
+ * - @/utils/types: For Recipient type
+ * 
+ * Usage:
+ * ```tsx
+ * <DocumentElements
+ *   signingElements={elements}
+ *   recipients={recipients}
+ *   handleDragStart={(e, element) => handleDragStart(e, element)}
+ *   handleRemoveElement={(id) => removeElement(id)}
+ *   handleSignatureFieldClick={(fieldId) => openSignatureModal(fieldId)}
+ * />
+ * ```
+ * 
+ * Used in:
+ * - PDFViewer component
+ * - Document editor
  */
 const DocumentElements: React.FC<DocumentElementsProps> = ({
   signingElements,

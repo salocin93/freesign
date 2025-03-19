@@ -1,3 +1,43 @@
+/**
+ * SignatureModal Component
+ * 
+ * A modal component that allows users to draw their signature electronically and agree to terms.
+ * This component provides a canvas for drawing signatures and includes validation to ensure
+ * the signature is provided and terms are accepted.
+ * 
+ * Features:
+ * - Electronic signature drawing canvas
+ * - Clear signature functionality
+ * - Terms agreement checkbox
+ * - Error handling and validation
+ * - Responsive design
+ * 
+ * Props:
+ * @param {boolean} isOpen - Controls the visibility of the modal
+ * @param {() => void} onClose - Callback function when the modal is closed
+ * @param {(signature: string, date: Date, agreed: boolean) => void} onComplete - Callback function when signature is completed
+ * 
+ * Dependencies:
+ * - react-signature-canvas: For signature drawing functionality
+ * - @/components/ui/*: Various UI components (Dialog, Button, Checkbox, Label)
+ * 
+ * Usage:
+ * ```tsx
+ * <SignatureModal
+ *   isOpen={showSignatureModal}
+ *   onClose={() => setShowSignatureModal(false)}
+ *   onComplete={(signature, date, agreed) => {
+ *     // Handle the completed signature
+ *     console.log('Signature completed:', { signature, date, agreed });
+ *   }}
+ * />
+ * ```
+ * 
+ * Used in:
+ * - SignDocument page
+ * - Document signing flow
+ */
+
 import { useState, useRef } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';

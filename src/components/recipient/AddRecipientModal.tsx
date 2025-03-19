@@ -1,3 +1,55 @@
+/**
+ * AddRecipientModal Component
+ * 
+ * A modal component for adding new recipients to a document for signing.
+ * This component provides a form to collect recipient information and handles
+ * the creation of new recipients in the database.
+ * 
+ * Features:
+ * - Form for collecting recipient details (name and email)
+ * - Input validation
+ * - Database integration with Supabase
+ * - Loading state handling
+ * - Error handling with toast notifications
+ * - Automatic recipient selection after creation
+ * 
+ * Props:
+ * @param {boolean} isOpen - Controls the visibility of the modal
+ * @param {() => void} onClose - Callback function when the modal is closed
+ * @param {string} documentId - ID of the document to add the recipient to
+ * @param {(recipient: Recipient) => void} onAddRecipient - Callback function when a recipient is added
+ * @param {Recipient[]} recipients - Array of existing recipients
+ * @param {(id: string) => void} setSelectedRecipientId - Callback function to set the selected recipient
+ * 
+ * Dependencies:
+ * - @/components/ui/dialog: For modal functionality
+ * - @/components/ui/button: For action buttons
+ * - @/components/ui/label: For form labels
+ * - @/components/ui/input: For form inputs
+ * - sonner: For toast notifications
+ * - @/lib/supabase: For database operations
+ * - uuid: For generating unique IDs
+ * 
+ * Usage:
+ * ```tsx
+ * <AddRecipientModal
+ *   isOpen={showAddRecipient}
+ *   onClose={() => setShowAddRecipient(false)}
+ *   documentId="doc123"
+ *   onAddRecipient={(recipient) => {
+ *     // Handle the new recipient
+ *     console.log('Recipient added:', recipient);
+ *   }}
+ *   recipients={recipients}
+ *   setSelectedRecipientId={(id) => setSelectedRecipient(id)}
+ * />
+ * ```
+ * 
+ * Used in:
+ * - PDFViewer component
+ * - Document editor
+ */
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';

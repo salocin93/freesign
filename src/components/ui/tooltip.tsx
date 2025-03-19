@@ -1,3 +1,56 @@
+/**
+ * Tooltip Components
+ * 
+ * A collection of tooltip components built on top of Radix UI's Tooltip primitive.
+ * These components provide accessible tooltips with customizable positioning and animations.
+ * 
+ * Components:
+ * - TooltipProvider: Context provider for tooltip functionality
+ * - Tooltip: Root component for the tooltip
+ * - TooltipTrigger: Element that triggers the tooltip
+ * - TooltipContent: The actual tooltip content
+ * 
+ * Features:
+ * - Accessible tooltips with ARIA attributes
+ * - Customizable positioning (top, right, bottom, left)
+ * - Smooth animations for show/hide
+ * - Automatic positioning based on available space
+ * - Keyboard navigation support
+ * - Custom styling support
+ * 
+ * Props:
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {number} [sideOffset=4] - Distance between the trigger and content
+ * @param {React.ReactNode} children - Content to render
+ * @param {React.HTMLAttributes<HTMLDivElement>} props - Standard HTML attributes
+ * 
+ * Dependencies:
+ * - @radix-ui/react-tooltip: For tooltip functionality
+ * - @/lib/utils: For class name merging
+ * 
+ * Usage:
+ * ```tsx
+ * <TooltipProvider>
+ *   <Tooltip>
+ *     <TooltipTrigger>
+ *       <Button>Hover me</Button>
+ *     </TooltipTrigger>
+ *     <TooltipContent>
+ *       <p>This is a tooltip</p>
+ *     </TooltipContent>
+ *   </Tooltip>
+ * </TooltipProvider>
+ * ```
+ * 
+ * Styling:
+ * - Background: Popover background color
+ * - Text: Popover foreground color
+ * - Border: Light border
+ * - Shadow: Medium shadow
+ * - Animation: Fade and zoom effects
+ * - Positioning: Automatic based on available space
+ */
+
 import * as React from "react"
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 

@@ -1,3 +1,75 @@
+/**
+ * Table Components
+ * 
+ * A collection of table components that provide a consistent and accessible
+ * way to display tabular data. These components are built on top of native
+ * HTML table elements with enhanced styling and functionality.
+ * 
+ * Components:
+ * - Table: Root table container with overflow handling
+ * - TableHeader: Header section of the table
+ * - TableBody: Main content section of the table
+ * - TableFooter: Footer section of the table
+ * - TableRow: Individual row component
+ * - TableHead: Header cell component
+ * - TableCell: Data cell component
+ * - TableCaption: Table caption component
+ * 
+ * Features:
+ * - Responsive design with horizontal scrolling
+ * - Hover and selected states for rows
+ * - Consistent spacing and alignment
+ * - Support for checkboxes and other interactive elements
+ * - Accessible table structure
+ * - Custom styling support
+ * 
+ * Props:
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.HTMLAttributes<HTMLTableElement>} props - Standard HTML attributes
+ * 
+ * Dependencies:
+ * - @/lib/utils: For class name merging
+ * 
+ * Usage:
+ * ```tsx
+ * <Table>
+ *   <TableCaption>A list of your recent invoices.</TableCaption>
+ *   <TableHeader>
+ *     <TableRow>
+ *       <TableHead>Invoice</TableHead>
+ *       <TableHead>Status</TableHead>
+ *       <TableHead>Method</TableHead>
+ *       <TableHead>Amount</TableHead>
+ *     </TableRow>
+ *   </TableHeader>
+ *   <TableBody>
+ *     <TableRow>
+ *       <TableCell>INV001</TableCell>
+ *       <TableCell>Paid</TableCell>
+ *       <TableCell>Credit Card</TableCell>
+ *       <TableCell>$250.00</TableCell>
+ *     </TableRow>
+ *   </TableBody>
+ *   <TableFooter>
+ *     <TableRow>
+ *       <TableCell colSpan={3}>Total</TableCell>
+ *       <TableCell>$250.00</TableCell>
+ *     </TableRow>
+ *   </TableFooter>
+ * </Table>
+ * ```
+ * 
+ * Styling:
+ * - Table: Full width with overflow handling
+ * - Header: Bottom border for rows
+ * - Body: No border for last row
+ * - Footer: Top border with muted background
+ * - Row: Bottom border with hover state
+ * - Head cell: Left-aligned with medium font weight
+ * - Cell: Consistent padding
+ * - Caption: Muted text color
+ * - Customizable through className
+ */
 
 import * as React from "react"
 

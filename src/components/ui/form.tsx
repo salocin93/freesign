@@ -1,3 +1,81 @@
+/**
+ * Form Components
+ * 
+ * A collection of form components built on top of React Hook Form and Radix UI.
+ * These components provide a complete form solution with validation, accessibility,
+ * and consistent styling.
+ * 
+ * Components:
+ * - Form: Root form provider component
+ * - FormField: Field wrapper with form control integration
+ * - FormItem: Container for form field elements
+ * - FormLabel: Label component for form fields
+ * - FormControl: Control wrapper for form inputs
+ * - FormDescription: Helper text for form fields
+ * - FormMessage: Error message display
+ * 
+ * Features:
+ * - Form validation with React Hook Form
+ * - Accessible form controls
+ * - Error state handling
+ * - Custom styling support
+ * - Type-safe form fields
+ * - Automatic ID generation
+ * - ARIA attributes management
+ * 
+ * Props:
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ReactNode} children - Content to render
+ * @param {React.HTMLAttributes<HTMLDivElement>} props - Standard HTML attributes
+ * 
+ * Dependencies:
+ * - @radix-ui/react-label: For accessible labels
+ * - @radix-ui/react-slot: For polymorphic rendering
+ * - react-hook-form: For form handling and validation
+ * - @/lib/utils: For class name merging
+ * - @/components/ui/label: For label styling
+ * 
+ * Usage:
+ * ```tsx
+ * import { useForm } from "react-hook-form"
+ * 
+ * const form = useForm({
+ *   defaultValues: {
+ *     username: "",
+ *   },
+ * })
+ * 
+ * <Form {...form}>
+ *   <form onSubmit={form.handleSubmit(onSubmit)}>
+ *     <FormField
+ *       control={form.control}
+ *       name="username"
+ *       render={({ field }) => (
+ *         <FormItem>
+ *           <FormLabel>Username</FormLabel>
+ *           <FormControl>
+ *             <Input placeholder="Enter username" {...field} />
+ *           </FormControl>
+ *           <FormDescription>
+ *             This is your public display name.
+ *           </FormDescription>
+ *           <FormMessage />
+ *         </FormItem>
+ *       )}
+ *     />
+ *     <Button type="submit">Submit</Button>
+ *   </form>
+ * </Form>
+ * ```
+ * 
+ * Styling:
+ * - Form items: Vertical spacing between elements
+ * - Labels: Destructive color on error
+ * - Messages: Destructive color for errors
+ * - Descriptions: Muted text color
+ * - Controls: Inherits input styling
+ */
+
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
