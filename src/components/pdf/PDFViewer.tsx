@@ -182,8 +182,19 @@ export function PDFViewer({
     }
 
     const rect = pageElement.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Default sizes for different element types
+    const defaultSizes = {
+      signature: { width: 200, height: 80 },
+      date: { width: 150, height: 40 },
+      text: { width: 200, height: 40 },
+      checkbox: { width: 40, height: 40 }
+    };
+
+    const size = defaultSizes[activeElementType] || { width: 200, height: 40 };
+    
+    // Calculate position to center the element on the click
+    const x = e.clientX - rect.left - (size.width / 2);
+    const y = e.clientY - rect.top - (size.height / 2);
 
     console.log('Click position:', {
       clientX: e.clientX,
@@ -193,7 +204,8 @@ export function PDFViewer({
       x,
       y,
       pageIndex: pageNumber - 1,
-      activeElementType
+      activeElementType,
+      size
     });
 
     onAddElement(activeElementType, {
