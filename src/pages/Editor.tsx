@@ -29,6 +29,7 @@ export default function Editor() {
     addSigningElement,
     removeSigningElement,
     handleSelectElement,
+    handleSelectRecipient,
     setIsRecipientModalOpen,
     setIsEmailModalOpen,
     isRecipientModalOpen,
@@ -126,7 +127,7 @@ export default function Editor() {
               <RecipientSelector
                 recipients={recipients}
                 selectedRecipientId={selectedRecipientId}
-                onSelectRecipient={handleSelectElement}
+                onSelectRecipient={handleSelectRecipient}
                 onAddRecipient={() => setIsRecipientModalOpen(true)}
               />
               <SigningFieldList
@@ -145,7 +146,7 @@ export default function Editor() {
         documentId={params.id}
         onAddRecipient={() => setIsRecipientModalOpen(false)}
         recipients={recipients}
-        setSelectedRecipientId={handleSelectElement}
+        setSelectedRecipientId={handleSelectRecipient}
       />
 
       <SendEmailModal

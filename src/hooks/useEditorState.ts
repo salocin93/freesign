@@ -21,6 +21,7 @@ interface UseEditorStateReturn {
   addSigningElement: (type: SigningElement['type'], position: { x: number; y: number; pageIndex: number }) => void;
   removeSigningElement: (elementId: string) => void;
   handleSelectElement: (elementId: string) => void;
+  handleSelectRecipient: (recipientId: string) => void;
   setIsRecipientModalOpen: (isOpen: boolean) => void;
   setIsEmailModalOpen: (isOpen: boolean) => void;
   setActiveElementType: (type: SigningElement['type'] | null) => void;
@@ -260,6 +261,10 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     }
   }, [signingElements]);
 
+  const handleSelectRecipient = useCallback((recipientId: string) => {
+    setSelectedRecipientId(recipientId);
+  }, []);
+
   // Add a new function to set the active element type
   const setActiveElementTypeHandler = useCallback((type: SigningElement['type'] | null) => {
     setActiveElementType(type);
@@ -278,6 +283,7 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     addSigningElement,
     removeSigningElement,
     handleSelectElement,
+    handleSelectRecipient,
     setIsRecipientModalOpen,
     setIsEmailModalOpen,
     setActiveElementType: setActiveElementTypeHandler,
