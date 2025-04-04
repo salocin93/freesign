@@ -93,9 +93,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <div className="hidden md:flex w-64 flex-col border-r bg-muted/30">
         <div className="flex h-14 items-center border-b px-4">
           <Link to="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-              FreeSign
-            </span>
+            <img 
+              src="/logo.svg" 
+              alt="FreeSign Logo" 
+              className="h-8 w-auto" 
+            />
           </Link>
         </div>
         

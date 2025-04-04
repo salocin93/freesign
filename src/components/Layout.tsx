@@ -46,9 +46,11 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
       <header className="sticky top-0 z-10 backdrop-blur-md bg-background/80 border-b border-border shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2 transition-all duration-300 hover:opacity-80">
-            <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
-              FreeSign
-            </span>
+            <img 
+              src="/logo.svg" 
+              alt="FreeSign Logo" 
+              className="h-8 w-auto" 
+            />
           </Link>
           <div className="flex items-center">
             {currentUser ? (
@@ -108,7 +110,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
             <Link to="/code-of-conduct" className="hover:text-foreground transition-colors">
               Code of Conduct
             </Link>
-            <span>© 2025 FreeSign - Open Source under MIT License</span>
+            <span> 2025 FreeSign - Open Source under MIT License</span>
             <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer" className="h-5">
               <img 
                 src="https://www.netlify.com/v3/img/components/netlify-color-bg.svg" 
