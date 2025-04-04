@@ -49,7 +49,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
             <img 
               src="/logo.svg" 
               alt="FreeSign Logo" 
-              className="h-8 w-auto" 
+              className="h-12 w-auto" 
             />
           </Link>
           <div className="flex items-center">
