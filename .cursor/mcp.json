@@ -1,0 +1,19 @@
+{
+    "mcpServers":
+    {
+        "freesign":
+        {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@supabase/mcp-server-postgrest@latest",
+                "--apiUrl",
+                "https://ytvlorxpfcbvmfvdbkvbf.supabase.co/rest/v1",
+                "--apiKey",
+                "sbp_40c72a7e00fa08f5e1a1ea197904a1b8269cd40e",
+                "--schema",
+                "public"
+            ]
+        }
+    }
+}
