@@ -64,6 +64,14 @@ export default function Editor() {
     }
   };
 
+  // Place pending field after recipient selection
+  useEffect(() => {
+    if (pendingField.current && selectedRecipientId) {
+      addSigningElement(pendingField.current.type, pendingField.current.position);
+      pendingField.current = null;
+    }
+  }, [selectedRecipientId]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
