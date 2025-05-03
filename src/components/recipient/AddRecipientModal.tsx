@@ -50,7 +50,7 @@
  * - Document editor
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -58,6 +58,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AddRecipientModalProps {
   isOpen: boolean;
@@ -72,16 +73,28 @@ export function AddRecipientModal({ isOpen, onClose, documentId, onAddRecipient,
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mode, setMode] = useState<'select' | 'add'>('select');
+
+  // Reset mode when modal opens
+  useEffect(() => {
+    if (isOpen) setMode(recipients.length > 0 ? 'select' : 'add');
+  }, [isOpen, recipients.length]);
+
+  const handleSelectRecipient = (recipientId: string) => {
+    setSelectedRecipientId(recipientId);
+    onClose();
+  };
+
+  const handleShowAdd = () => setMode('add');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     if (!name.trim() || !email.trim()) {
       toast.error('Please fill in all fields');
+      setIsSubmitting(false);
       return;
     }
-
     try {
       const { data, error } = await supabase
         .from('recipients')
@@ -95,9 +108,7 @@ export function AddRecipientModal({ isOpen, onClose, documentId, onAddRecipient,
         ])
         .select()
         .single();
-
       if (error) throw error;
-
       onAddRecipient(data);
       onClose();
       setSelectedRecipientId(data.id);
@@ -115,38 +126,63 @@ export function AddRecipientModal({ isOpen, onClose, documentId, onAddRecipient,
         <DialogHeader>
           <DialogTitle>Add Recipient</DialogTitle>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter recipient's name"
-            />
+        {mode === 'select' && recipients.length > 0 ? (
+          <div className="space-y-4">
+            <Label>Select an existing recipient</Label>
+            <Select onValueChange={handleSelectRecipient}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select recipient" />
+              </SelectTrigger>
+              <SelectContent>
+                {recipients.map((r: any) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name} ({r.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex justify-end">
+              <Button onClick={handleShowAdd} type="button">Add New Recipient</Button>
+            </div>
           </div>
-
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter recipient's email"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose} type="button">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Recipient'}
-            </Button>
-          </div>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter recipient's name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter recipient's email"
+              />
+            </div>
+            <div className="flex justify-between gap-2">
+              {recipients.length > 0 && (
+                <Button variant="outline" onClick={() => setMode('select')} type="button">
+                  Back to Select
+                </Button>
+              )}
+              <div className="flex gap-2 ml-auto">
+                <Button variant="outline" onClick={onClose} type="button">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Adding...' : 'Add Recipient'}
+                </Button>
+              </div>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

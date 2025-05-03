@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEditorState } from '@/hooks/useEditorState';
@@ -36,6 +36,33 @@ export default function Editor() {
     isEmailModalOpen,
     setActiveElementType,
   } = useEditorState(params.id);
+
+  // Pending field state
+  const pendingField = useRef<{
+    type: SigningElement['type'];
+    position: { x: number; y: number; pageIndex: number };
+  } | null>(null);
+
+  // Custom handler for PDFViewer
+  const handleAddElement = (type: SigningElement['type'], position: { x: number; y: number; pageIndex: number }) => {
+    if (!selectedRecipientId) {
+      pendingField.current = { type, position };
+      setIsRecipientModalOpen(true);
+      return;
+    }
+    addSigningElement(type, position);
+  };
+
+  // Custom onAddRecipient handler
+  const handleAddRecipient = (recipient: any) => {
+    setIsRecipientModalOpen(false);
+    handleSelectRecipient(recipient.id);
+    // If there is a pending field, add it now
+    if (pendingField.current) {
+      addSigningElement(pendingField.current.type, pendingField.current.position);
+      pendingField.current = null;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -102,7 +129,7 @@ export default function Editor() {
                   signingElements={signingElements}
                   recipients={recipients}
                   onElementClick={handleSelectElement}
-                  onAddElement={addSigningElement}
+                  onAddElement={handleAddElement}
                   activeElementType={activeElementType}
                   onRemoveElement={removeSigningElement}
                   selectedRecipientId={selectedRecipientId}
@@ -144,7 +171,7 @@ export default function Editor() {
         isOpen={isRecipientModalOpen}
         onClose={() => setIsRecipientModalOpen(false)}
         documentId={params.id}
-        onAddRecipient={() => setIsRecipientModalOpen(false)}
+        onAddRecipient={handleAddRecipient}
         recipients={recipients}
         setSelectedRecipientId={handleSelectRecipient}
       />
