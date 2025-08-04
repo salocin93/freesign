@@ -30,17 +30,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-// Check if we're in development environment
-const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-// Mock session for development
-const mockSession = {
-  user: {
-    id: '00000000-0000-0000-0000-000000000000',
-    email: 'dev@example.com',
-    role: 'authenticated',
-  }
-};
+// Check if we're in development environment using Vite's NODE_ENV
+const isDevelopment = import.meta.env.DEV;
 
 // Create Supabase client
 export const supabase = createClient<Database>(
@@ -54,58 +45,13 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Development authentication setup
-let authInitialized = false;
-export const initializeAuth = async () => {
-  if (!isDevelopment || authInitialized) return;
-  
-  try {
-    // Sign in with the development user credentials
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: 'dev@example.com',
-      password: 'development-password'
-    });
-
-    if (error) {
-      console.error('Error signing in with development user:', error);
-      console.log('Please ensure the development user exists in Supabase with correct credentials');
-      return;
-    }
-
-    if (data.user?.id !== '00000000-0000-0000-0000-000000000000') {
-      console.warn('Development user ID does not match expected ID');
-    }
-
-    authInitialized = true;
-    console.log('Development authentication initialized');
-  } catch (error) {
-    console.error('Error initializing development auth:', error);
-  }
-};
-
-// Initialize auth in development mode
-if (isDevelopment) {
-  initializeAuth();
-}
+// Removed development authentication setup for security
+// Remove automatic authentication initialization - this was a security vulnerability
 
 // Storage bucket helpers
 export const STORAGE_BUCKET = 'documents'
 
 async function checkAuth() {
-  if (isDevelopment) {
-    console.log('Using mock session in development mode');
-    // Initialize auth if not already done
-    await initializeAuth();
-    
-    // Get the current session
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    if (!session?.user) {
-      throw new Error('Development mode: Not authenticated. Please check mock auth setup.');
-    }
-    return session;
-  }
-
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error) throw error;
   if (!session?.user) throw new Error('Not authenticated');

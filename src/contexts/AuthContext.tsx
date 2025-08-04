@@ -28,8 +28,8 @@ const mockUser: User = {
   updated_at: new Date().toISOString(),
 } as User;
 
-// Check if we're in development environment
-const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+// Check if we're in development environment using Vite's NODE_ENV
+const isDevelopment = import.meta.env.DEV;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -44,8 +44,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In development mode, automatically set mock user
-    if (isDevelopment) {
+    // Only use mock user if explicitly enabled via environment variable
+    if (isDevelopment && import.meta.env.VITE_USE_MOCK_AUTH === 'true') {
+      console.warn('Using mock authentication - for development only!');
       setCurrentUser(mockUser);
       setLoading(false);
       return;
@@ -75,8 +76,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signInWithGoogle = async (): Promise<void> => {
-    // In development mode, just set mock user
-    if (isDevelopment) {
+    // Only use mock user if explicitly enabled via environment variable
+    if (isDevelopment && import.meta.env.VITE_USE_MOCK_AUTH === 'true') {
+      console.warn('Using mock authentication - for development only!');
       setCurrentUser(mockUser);
       return;
     }
@@ -106,8 +108,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async (): Promise<void> => {
-    // In development mode, just clear mock user
-    if (isDevelopment) {
+    // Only use mock user if explicitly enabled via environment variable
+    if (isDevelopment && import.meta.env.VITE_USE_MOCK_AUTH === 'true') {
+      console.warn('Logging out mock user - for development only!');
       setCurrentUser(null);
       return;
     }
