@@ -160,9 +160,11 @@ export default function SignDocument() {
         geolocation: clientInfo.geolocation,
       });
 
-      // Insert signature record
+      // Insert signature record using helper function
       console.log('Inserting signature record...');
-      const { data: insertedSignature, error: signError } = await supabase.from('signatures').insert({
+      const { createSignature, createAuditLog } = await import('@/lib/supabase');
+      
+      const insertedSignature = await createSignature({
         document_id: documentId,
         recipient_id: recipient.id,
         value: signature.dataUrl,
@@ -173,12 +175,7 @@ export default function SignDocument() {
         ip_address: clientInfo.ip,
         user_agent: clientInfo.userAgent,
         geolocation: clientInfo.geolocation,
-      }).select().single();
-
-      if (signError) {
-        console.error('Error inserting signature:', signError);
-        throw signError;
-      }
+      });
 
       console.log('Signature record created successfully:', {
         signatureId: insertedSignature.id,
@@ -186,9 +183,9 @@ export default function SignDocument() {
         recipientId: insertedSignature.recipient_id,
       });
 
-      // Create audit log entry
+      // Create audit log entry using helper function
       console.log('Creating audit log entry...');
-      const { error: auditError } = await supabase.from('signature_audit_logs').insert({
+      await createAuditLog({
         signature_id: insertedSignature.id,
         document_id: documentId,
         event_type: 'signature_created',
@@ -200,42 +197,26 @@ export default function SignDocument() {
         geolocation: clientInfo.geolocation,
       });
 
-      if (auditError) {
-        console.error('Error creating audit log:', auditError);
-        throw auditError;
-      }
-
       console.log('Audit log entry created successfully');
 
       // Update recipient status
       if (recipient) {
         console.log('Updating recipient status...');
-        const { error: recipientError } = await supabase
-          .from('recipients')
-          .update({ status: 'completed' })
-          .eq('id', recipient.id);
-
-        if (recipientError) throw recipientError;
+        const { updateRecipientStatus, getDocumentRecipients } = await import('@/lib/supabase');
+        
+        await updateRecipientStatus(recipient.id, 'completed');
 
         // Check if all recipients have signed
         console.log('Checking if all recipients have signed...');
-        const { data: recipients, error: recipientsError } = await supabase
-          .from('recipients')
-          .select('status')
-          .eq('document_id', documentId);
-
-        if (recipientsError) throw recipientsError;
+        const recipients = await getDocumentRecipients(documentId);
 
         const allSigned = recipients?.every(r => r.status === 'completed');
 
         if (allSigned) {
           console.log('All recipients have signed, updating document status...');
-          const { error: documentError } = await supabase
-            .from('documents')
-            .update({ status: 'completed' })
-            .eq('id', documentId);
-
-          if (documentError) throw documentError;
+          const { updateDocument } = await import('@/lib/supabase');
+          
+          await updateDocument(documentId, { status: 'completed' });
           console.log('Document status updated to completed');
         }
       }

@@ -4,7 +4,7 @@ import AppLayout from '@/components/AppLayout';
 import DocumentUploader from '@/components/DocumentUploader';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import { supabase, uploadDocument } from '@/lib/supabase';
+import { supabase, uploadDocument, createDocument } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Function to sanitize filename
@@ -64,26 +64,12 @@ const Upload = () => {
         throw new Error('Failed to upload document to storage');
       }
 
-      // Insert document record in database
-      const { error: dbError } = await supabase
-        .from('documents')
-        .insert({
-          id: documentId,
-          name: file.name, // Keep original filename for display
-          storage_path: storagePath,
-          status: 'draft',
-          created_by: currentUser.id,
-          metadata: {}
-        });
-
-      if (dbError) {
-        // If database insert fails, try to clean up the uploaded file
-        await supabase.storage
-          .from('documents')
-          .remove([storagePath])
-          .catch(console.error);
-          
-        throw dbError;
+      // Insert document record in database using the helper function
+      // which will handle mock data in development mode
+      const documentRecord = await createDocument(file.name, storagePath);
+      
+      if (!documentRecord) {
+        throw new Error('Failed to create document record');
       }
       
       // Dismiss loading toast and show success
@@ -91,7 +77,7 @@ const Upload = () => {
       toast.success('Document uploaded successfully');
       
       // Navigate to the editor with the document ID in the URL
-      navigate(`/editor/${documentId}`);
+      navigate(`/editor/${documentRecord.id}`);
     } catch (error: any) {
       // Dismiss loading toast if it exists
       if (loadingToast) toast.dismiss(loadingToast);

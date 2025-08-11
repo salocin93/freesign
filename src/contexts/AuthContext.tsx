@@ -44,8 +44,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Only use mock user if explicitly enabled via environment variable
-    if (isDevelopment && import.meta.env.VITE_USE_MOCK_AUTH === 'true') {
+    // Use mock user in development (temporary bypass)
+    if (isDevelopment) {
       console.warn('Using mock authentication - for development only!');
       setCurrentUser(mockUser);
       setLoading(false);
@@ -76,8 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signInWithGoogle = async (): Promise<void> => {
-    // Only use mock user if explicitly enabled via environment variable
-    if (isDevelopment && import.meta.env.VITE_USE_MOCK_AUTH === 'true') {
+    // Use mock user in development (temporary bypass)
+    if (isDevelopment) {
       console.warn('Using mock authentication - for development only!');
       setCurrentUser(mockUser);
       return;

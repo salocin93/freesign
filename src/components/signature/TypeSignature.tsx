@@ -1,122 +1,223 @@
 /**
  * TypeSignature Component
  * 
- * A component that allows users to create their signature by typing their name.
- * The component converts the typed name into a stylized signature using HTML Canvas
- * and the Dancing Script font for a handwritten appearance.
+ * A component that allows users to create typed signatures using various fonts and styles.
+ * This provides an alternative to drawing signatures for users who prefer typed text.
  * 
  * Features:
- * - Text input for signature creation
- * - Canvas-based signature rendering
- * - Stylized font rendering using Dancing Script
- * - Input validation
- * - Toast notifications for error feedback
+ * - Multiple signature fonts
+ * - Font size and color customization
+ * - Real-time preview
+ * - Export to data URL
  * 
  * Props:
- * @param {(signatureData: SignatureData) => void} onSave - Callback function when signature is saved
- * @param {() => void} onCancel - Callback function when signature creation is cancelled
- * 
- * Dependencies:
- * - @/components/ui/input: For text input
- * - @/components/ui/button: For action buttons
- * - @/components/ui/use-toast: For toast notifications
- * - @/utils/types: For SignatureData type definition
- * 
- * Usage:
- * ```tsx
- * <TypeSignature
- *   onSave={(signatureData) => {
- *     // Handle the saved signature
- *     console.log('Signature saved:', signatureData);
- *   }}
- *   onCancel={() => {
- *     // Handle cancellation
- *     console.log('Signature creation cancelled');
- *   }}
- * />
- * ```
- * 
- * Used in:
- * - SignatureModal component
- * - Document signing flow
+ * @param {string} initialText - Initial text for the signature
+ * @param {(dataUrl: string) => void} onSave - Callback when signature is saved
+ * @param {() => void} onCancel - Callback when signature creation is cancelled
  */
 
-import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { SignatureData } from '@/utils/types';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface TypeSignatureProps {
-  onSave: (signatureData: SignatureData) => void;
+  initialText?: string;
+  onSave: (dataUrl: string) => void;
   onCancel: () => void;
 }
 
-export const TypeSignature: React.FC<TypeSignatureProps> = ({
-  onSave,
-  onCancel,
-}) => {
-  const [typedName, setTypedName] = useState('');
-  const { toast } = useToast();
+const SIGNATURE_FONTS = [
+  { name: 'Dancing Script', value: 'Dancing Script, cursive' },
+  { name: 'Great Vibes', value: 'Great Vibes, cursive' },
+  { name: 'Pacifico', value: 'Pacifico, cursive' },
+  { name: 'Satisfy', value: 'Satisfy, cursive' },
+  { name: 'Alex Brush', value: 'Alex Brush, cursive' },
+  { name: 'Allura', value: 'Allura, cursive' },
+  { name: 'Kaushan Script', value: 'Kaushan Script, cursive' },
+  { name: 'Montez', value: 'Montez, cursive' },
+  { name: 'Tangerine', value: 'Tangerine, cursive' },
+  { name: 'Yellowtail', value: 'Yellowtail, cursive' }
+];
 
-  const handleTypedSignature = () => {
-    if (!typedName.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter your name',
-        variant: 'destructive',
-      });
-      return;
-    }
+const COLORS = [
+  { name: 'Black', value: '#000000' },
+  { name: 'Blue', value: '#2563eb' },
+  { name: 'Green', value: '#16a34a' },
+  { name: 'Red', value: '#dc2626' },
+  { name: 'Purple', value: '#7c3aed' },
+  { name: 'Gray', value: '#6b7280' }
+];
 
-    // Create a canvas to render the typed signature
-    const canvas = document.createElement('canvas');
+export function TypeSignature({ initialText = '', onSave, onCancel }: TypeSignatureProps) {
+  const [text, setText] = useState(initialText);
+  const [selectedFont, setSelectedFont] = useState(SIGNATURE_FONTS[0].value);
+  const [fontSize, setFontSize] = useState(48);
+  const [color, setColor] = useState(COLORS[0].value);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Load Google Fonts
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Pacifico&family=Satisfy&family=Alex+Brush&family=Allura&family=Kaushan+Script:wght@400&family=Montez&family=Tangerine:wght@400;700&family=Yellowtail&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, []);
+
+  // Update canvas when signature properties change
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !text.trim()) return;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
-    canvas.width = 400;
-    canvas.height = 100;
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Set font and style
-    ctx.fillStyle = 'rgba(255, 255, 255, 0)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'black';
-    ctx.font = '48px "Dancing Script", cursive';
-    ctx.textAlign = 'center';
+    // Set font properties
+    ctx.font = `${fontSize}px ${selectedFont}`;
+    ctx.fillStyle = color;
     ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
 
-    // Draw the text
-    ctx.fillText(typedName, canvas.width / 2, canvas.height / 2);
+    // Calculate text dimensions
+    const metrics = ctx.measureText(text);
+    const textWidth = metrics.width;
+    const textHeight = fontSize;
 
-    // Convert to base64
-    const timestamp = new Date().toISOString();
-    const signatureData: SignatureData = {
-      dataUrl: canvas.toDataURL('image/png'),
-      type: 'typed',
-      timestamp,
-      metadata: {
-        userAgent: navigator.userAgent
-      }
-    };
-    onSave(signatureData);
+    // Resize canvas to fit text
+    canvas.width = textWidth + 40;
+    canvas.height = textHeight + 40;
+
+    // Redraw with new dimensions
+    ctx.font = `${fontSize}px ${selectedFont}`;
+    ctx.fillStyle = color;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+
+    // Draw text
+    ctx.fillText(text, 20, canvas.height / 2);
+  }, [text, selectedFont, fontSize, color]);
+
+  const handleSave = () => {
+    if (!text.trim()) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const dataUrl = canvas.toDataURL('image/png');
+    onSave(dataUrl);
+  };
+
+  const handleClear = () => {
+    setText('');
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <Input
-        placeholder="Type your name"
-        value={typedName}
-        onChange={(e) => setTypedName(e.target.value)}
-      />
-      <div className="flex justify-end gap-2">
+    <div className="space-y-6">
+      <div>
+        <Label htmlFor="signature-text">Signature Text</Label>
+        <Input
+          id="signature-text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Enter your signature"
+          className="mt-1"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Font Style</Label>
+          <Select value={selectedFont} onValueChange={setSelectedFont}>
+            <SelectTrigger className="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SIGNATURE_FONTS.map((font) => (
+                <SelectItem key={font.value} value={font.value}>
+                  <span style={{ fontFamily: font.value }}>{font.name}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label>Color</Label>
+          <Select value={color} onValueChange={setColor}>
+            <SelectTrigger className="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COLORS.map((colorOption) => (
+                <SelectItem key={colorOption.value} value={colorOption.value}>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-4 h-4 rounded border"
+                      style={{ backgroundColor: colorOption.value }}
+                    />
+                    <span>{colorOption.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <Label>Font Size: {fontSize}px</Label>
+        <Slider
+          value={[fontSize]}
+          onValueChange={(value) => setFontSize(value[0])}
+          min={24}
+          max={72}
+          step={2}
+          className="mt-2"
+        />
+      </div>
+
+      <Card>
+        <CardContent className="p-4">
+          <Label>Preview</Label>
+          <div className="mt-2 border rounded-md p-4 bg-white min-h-[100px] flex items-center justify-center">
+            {text.trim() ? (
+              <canvas
+                ref={canvasRef}
+                className="max-w-full h-auto"
+                style={{ 
+                  fontFamily: selectedFont,
+                  fontSize: `${fontSize}px`,
+                  color: color
+                }}
+              />
+            ) : (
+              <p className="text-gray-400">Enter text to see preview</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end space-x-2">
+        <Button variant="outline" onClick={handleClear}>
+          Clear
+        </Button>
         <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button onClick={handleTypedSignature}>
+        <Button onClick={handleSave} disabled={!text.trim()}>
           Save Signature
         </Button>
       </div>
     </div>
   );
-};
+}

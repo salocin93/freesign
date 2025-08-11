@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, getDocument, getDocumentUrl, createSigningElement, deleteSigningElement } from '@/lib/supabase';
 import { Document, Recipient, SigningElement } from '@/utils/types';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
@@ -57,60 +57,33 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     setError(null);
 
     try {
+      // Use the helper function which handles mock data in development
       const documentData = await handleApiError(
         async () => {
-          const { data, error: documentError } = await supabase
-            .from('documents')
-            .select('*')
-            .eq('id', documentId)
-            .single();
-
-          if (documentError) throw documentError;
-          return data;
+          return await getDocument(documentId);
         },
         'loadDocument'
-      ) as Document;
+      ) as Document & { recipients?: Recipient[]; signing_elements?: SigningElement[] };
 
+      // Get document URL if storage path exists
       if (documentData.storage_path) {
-        const { data: { publicUrl } } = supabase
-          .storage
-          .from(STORAGE_BUCKET)
-          .getPublicUrl(documentData.storage_path);
-        
-        documentData.url = publicUrl;
+        try {
+          const documentUrl = await getDocumentUrl(documentData.storage_path);
+          if (documentUrl) {
+            documentData.url = documentUrl;
+          }
+        } catch (urlError) {
+          console.warn('Failed to get document URL:', urlError);
+          // Continue without the URL in development mode
+        }
       }
 
       setDocument(documentData);
 
-      const recipientsData = await handleApiError(
-        async () => {
-          const { data, error: recipientsError } = await supabase
-            .from('recipients')
-            .select('*')
-            .eq('document_id', documentId);
-
-          if (recipientsError) throw recipientsError;
-          return data;
-        },
-        'loadRecipients'
-      ) as Recipient[];
-
-      setRecipients(recipientsData || []);
-
-      const elementsData = await handleApiError(
-        async () => {
-          const { data, error: elementsError } = await supabase
-            .from('signing_elements')
-            .select('*')
-            .eq('document_id', documentId);
-
-          if (elementsError) throw elementsError;
-          return data;
-        },
-        'loadSigningElements'
-      ) as SigningElement[];
-
-      setSigningElements(elementsData || []);
+      // The getDocument helper now returns recipients and signing_elements
+      // so we can use them directly instead of making separate calls
+      setRecipients(documentData.recipients || []);
+      setSigningElements(documentData.signing_elements || []);
 
       initialLoadRef.current = true;
       lastLoadedDocumentId.current = documentId;
@@ -138,9 +111,16 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     loadDocument(true);
   }, [loadDocument, documentId]);
 
-  // Subscribe to changes in the recipients table
+  // Subscribe to changes in the recipients table (skip in development)
   useEffect(() => {
     if (!documentId) return;
+    
+    // Skip real-time subscriptions in development mode
+    const isDevelopment = import.meta.env.DEV;
+    if (isDevelopment) {
+      console.log('Skipping real-time subscription in development mode');
+      return;
+    }
 
     let isSubscribed = true;
 
@@ -202,19 +182,15 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     try {
       await handleApiError(
         async () => {
-          const { error } = await supabase
-            .from('signing_elements')
-            .insert([{
-              id: newElement.id,
-              document_id: documentId,
-              recipient_id: selectedRecipientId,
-              type: newElement.type,
-              position: newElement.position,
-              size: newElement.size,
-              value: newElement.value,
-            }]);
-
-          if (error) throw error;
+          return await createSigningElement({
+            id: newElement.id,
+            document_id: documentId,
+            recipient_id: selectedRecipientId,
+            type: newElement.type,
+            position: newElement.position,
+            size: newElement.size,
+            value: newElement.value,
+          });
         },
         'addSigningElement'
       );
@@ -235,13 +211,7 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     try {
       await handleApiError(
         async () => {
-          const { error } = await supabase
-            .from('signing_elements')
-            .delete()
-            .eq('id', id)
-            .eq('document_id', documentId);
-
-          if (error) throw error;
+          return await deleteSigningElement(id, documentId);
         },
         'removeSigningElement'
       );

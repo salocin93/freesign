@@ -52,6 +52,17 @@ export const supabase = createClient<Database>(
 export const STORAGE_BUCKET = 'documents'
 
 async function checkAuth() {
+  // In development mode, bypass authentication checks
+  if (isDevelopment) {
+    console.log('Bypassing auth check in development mode');
+    return {
+      user: {
+        id: '00000000-0000-0000-0000-000000000000',
+        email: 'dev@example.com'
+      }
+    };
+  }
+
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error) throw error;
   if (!session?.user) throw new Error('Not authenticated');
@@ -59,6 +70,12 @@ async function checkAuth() {
 }
 
 async function verifyBucketAccess() {
+  // In development mode, bypass bucket access checks
+  if (isDevelopment) {
+    console.log('Bypassing bucket access check in development mode');
+    return true;
+  }
+
   try {
     // Try to list files in the bucket root to verify access
     const { data, error } = await supabase.storage
@@ -121,6 +138,16 @@ export async function uploadDocument(file: File, path: string) {
     const session = await checkAuth();
     await verifyBucketAccess();
 
+    // In development mode, return mock data
+    if (isDevelopment) {
+      console.log('Mock uploading document:', file.name, 'to path:', path);
+      return {
+        path: path,
+        id: `mock-${Date.now()}`,
+        fullPath: `${STORAGE_BUCKET}/${path}`
+      };
+    }
+
     // Upload the file directly with upsert
     const { data, error } = await supabase.storage
       .from(STORAGE_BUCKET)
@@ -148,6 +175,12 @@ export async function getDocumentUrl(path: string) {
     // Ensure user is authenticated and has bucket access
     const session = await checkAuth();
     await verifyBucketAccess();
+
+    // In development mode, return a mock URL
+    if (isDevelopment) {
+      console.log('Mock getting document URL for path:', path);
+      return `blob:mock-document-${path}`;
+    }
 
     const { data, error } = await supabase.storage
       .from(STORAGE_BUCKET)
@@ -190,6 +223,21 @@ export async function createDocument(name: string, storagePath: string | null = 
   try {
     const session = await checkAuth();
     
+    // In development mode, return mock document
+    if (isDevelopment) {
+      console.log('Mock creating document:', name, 'with storage path:', storagePath);
+      return {
+        id: `mock-doc-${Date.now()}`,
+        name,
+        storage_path: storagePath,
+        status: 'draft',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: session.user.id,
+        metadata: null
+      };
+    }
+    
     const { data, error } = await supabase
       .from('documents')
       .insert({
@@ -218,6 +266,16 @@ export async function updateDocument(id: string, updates: {
   try {
     await checkAuth();
     
+    // In development mode, return mock updated document
+    if (isDevelopment) {
+      console.log('Mock updating document:', id, 'with updates:', updates);
+      return {
+        id,
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+    }
+    
     const { data, error } = await supabase
       .from('documents')
       .update({
@@ -238,7 +296,44 @@ export async function updateDocument(id: string, updates: {
 
 export async function getDocument(id: string) {
   try {
-    await checkAuth();
+    const session = await checkAuth();
+    
+    // In development mode, return mock document
+    if (isDevelopment) {
+      console.log('Mock getting document with ID:', id);
+      return {
+        id: id,
+        name: 'Sample Document.pdf',
+        storage_path: `${session.user.id}/${id}/sample-document.pdf`,
+        status: 'draft',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: session.user.id,
+        metadata: {},
+        recipients: [
+          {
+            id: 'mock-recipient-1',
+            name: 'John Doe',
+            email: 'john@example.com',
+            status: 'pending',
+            document_id: id
+          }
+        ],
+        signing_elements: [
+          {
+            id: 'mock-element-1',
+            document_id: id,
+            type: 'signature',
+            x: 100,
+            y: 200,
+            width: 200,
+            height: 50,
+            page_number: 1,
+            recipient_id: 'mock-recipient-1'
+          }
+        ]
+      };
+    }
     
     const { data, error } = await supabase
       .from('documents')
@@ -261,6 +356,40 @@ export async function getDocument(id: string) {
 export async function listDocuments(status?: 'draft' | 'sent' | 'completed') {
   try {
     const session = await checkAuth();
+    
+    // In development mode, return mock documents
+    if (isDevelopment) {
+      console.log('Mock listing documents with status:', status);
+      const mockDocuments = [
+        {
+          id: 'mock-doc-1',
+          name: 'Sample Contract.pdf',
+          storage_path: 'sample-contract.pdf',
+          status: 'draft',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          created_by: session.user.id,
+          recipients: []
+        },
+        {
+          id: 'mock-doc-2', 
+          name: 'Test Agreement.pdf',
+          storage_path: 'test-agreement.pdf',
+          status: 'sent',
+          created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+          updated_at: new Date(Date.now() - 86400000).toISOString(),
+          created_by: session.user.id,
+          recipients: [{
+            id: 'mock-recipient-1',
+            name: 'John Doe',
+            email: 'john@example.com',
+            status: 'pending'
+          }]
+        }
+      ];
+      
+      return status ? mockDocuments.filter(doc => doc.status === status) : mockDocuments;
+    }
     
     let query = supabase
       .from('documents')
@@ -303,6 +432,185 @@ export async function getRecentActivity() {
     return data;
   } catch (error) {
     console.error('Error getting recent activity:', error);
+    throw error;
+  }
+}
+
+// Signature management functions
+export async function createSignature(data: {
+  document_id: string;
+  recipient_id: string;
+  value: string;
+  type: string;
+  created_at: string;
+  agreed_to_terms: boolean;
+  verification_hash: string;
+  ip_address?: string;
+  user_agent?: string;
+  geolocation?: any;
+}) {
+  try {
+    await checkAuth();
+    
+    // In development mode, return mock signature
+    if (isDevelopment) {
+      console.log('Mock creating signature for document:', data.document_id);
+      return {
+        id: `mock-signature-${Date.now()}`,
+        ...data,
+        created_at: new Date().toISOString()
+      };
+    }
+    
+    const { data: signature, error } = await supabase
+      .from('signatures')
+      .insert(data)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return signature;
+  } catch (error) {
+    console.error('Error creating signature:', error);
+    throw error;
+  }
+}
+
+export async function createAuditLog(data: {
+  signature_id: string;
+  document_id: string;
+  event_type: string;
+  event_data: any;
+  ip_address?: string;
+  user_agent?: string;
+  geolocation?: any;
+}) {
+  try {
+    await checkAuth();
+    
+    // In development mode, return mock audit log
+    if (isDevelopment) {
+      console.log('Mock creating audit log for signature:', data.signature_id);
+      return {
+        id: `mock-audit-${Date.now()}`,
+        ...data,
+        created_at: new Date().toISOString()
+      };
+    }
+    
+    const { error } = await supabase
+      .from('signature_audit_logs')
+      .insert(data);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error creating audit log:', error);
+    throw error;
+  }
+}
+
+// Recipient management functions
+export async function updateRecipientStatus(recipientId: string, status: string) {
+  try {
+    await checkAuth();
+    
+    // In development mode, return mock success
+    if (isDevelopment) {
+      console.log('Mock updating recipient status:', recipientId, 'to', status);
+      return { success: true };
+    }
+    
+    const { error } = await supabase
+      .from('recipients')
+      .update({ status })
+      .eq('id', recipientId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating recipient status:', error);
+    throw error;
+  }
+}
+
+export async function getDocumentRecipients(documentId: string) {
+  try {
+    await checkAuth();
+    
+    // In development mode, return mock recipients
+    if (isDevelopment) {
+      console.log('Mock getting recipients for document:', documentId);
+      return [
+        { id: 'mock-recipient-1', status: 'completed', name: 'John Doe', email: 'john@example.com' },
+        { id: 'mock-recipient-2', status: 'pending', name: 'Jane Smith', email: 'jane@example.com' }
+      ];
+    }
+    
+    const { data, error } = await supabase
+      .from('recipients')
+      .select('status')
+      .eq('document_id', documentId);
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error getting document recipients:', error);
+    throw error;
+  }
+}
+
+// Signing Elements management functions
+export async function createSigningElement(data: {
+  id: string;
+  document_id: string;
+  recipient_id: string;
+  type: string;
+  position: any;
+  size: any;
+  value: any;
+}) {
+  try {
+    await checkAuth();
+    
+    // In development mode, return mock success
+    if (isDevelopment) {
+      console.log('Mock creating signing element:', data.type, 'for document:', data.document_id);
+      return { success: true };
+    }
+    
+    const { error } = await supabase
+      .from('signing_elements')
+      .insert([data]);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error creating signing element:', error);
+    throw error;
+  }
+}
+
+export async function deleteSigningElement(id: string, documentId: string) {
+  try {
+    await checkAuth();
+    
+    // In development mode, return mock success
+    if (isDevelopment) {
+      console.log('Mock deleting signing element:', id, 'from document:', documentId);
+      return { success: true };
+    }
+    
+    const { error } = await supabase
+      .from('signing_elements')
+      .delete()
+      .eq('id', id)
+      .eq('document_id', documentId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting signing element:', error);
     throw error;
   }
 }
