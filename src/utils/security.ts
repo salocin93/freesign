@@ -404,13 +404,13 @@ export class RequestSecurity {
   /**
    * Sanitize request body
    */
-  static sanitizeRequestBody(body: any): any {
+  static sanitizeRequestBody(body: Record<string, unknown>): Record<string, unknown> {
     if (typeof body === 'string') {
       return InputSanitizer.sanitizeText(body);
     }
     
     if (typeof body === 'object' && body !== null) {
-      const sanitized: any = {};
+      const sanitized: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(body)) {
         if (typeof value === 'string') {
           sanitized[key] = InputSanitizer.sanitizeText(value);

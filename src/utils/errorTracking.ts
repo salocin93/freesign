@@ -1,5 +1,18 @@
 import { AppError } from './errorHandling';
 
+// Type declarations for third-party error tracking services
+declare global {
+  interface Window {
+    Sentry?: {
+      captureException: (error: Error, options?: { tags?: Record<string, string> }) => void;
+      setUser: (user: { id: string } | null) => void;
+    };
+    LogRocket?: {
+      captureException: (error: Error) => void;
+    };
+  }
+}
+
 interface ErrorTrackingConfig {
   enabled: boolean;
   service?: 'sentry' | 'logrocket' | 'custom';
@@ -43,8 +56,8 @@ class ErrorTracker {
 
   private async sendToSentry(event: ErrorEvent): Promise<void> {
     // Implement Sentry integration
-    if (typeof window !== 'undefined' && (window as any).Sentry) {
-      (window as any).Sentry.captureException(event.error, {
+    if (typeof window !== 'undefined' && window.Sentry) {
+      window.Sentry.captureException(event.error, {
         extra: {
           context: event.context,
           metadata: event.metadata,
@@ -55,8 +68,8 @@ class ErrorTracker {
 
   private async sendToLogRocket(event: ErrorEvent): Promise<void> {
     // Implement LogRocket integration
-    if (typeof window !== 'undefined' && (window as any).LogRocket) {
-      (window as any).LogRocket.captureException(event.error);
+    if (typeof window !== 'undefined' && window.LogRocket) {
+      window.LogRocket.captureException(event.error);
     }
   }
 
@@ -124,14 +137,14 @@ class ErrorTracker {
   }
 
   setUserId(userId: string): void {
-    if (this.config.service === 'sentry' && typeof window !== 'undefined' && (window as any).Sentry) {
-      (window as any).Sentry.setUser({ id: userId });
+    if (this.config.service === 'sentry' && typeof window !== 'undefined' && window.Sentry) {
+      window.Sentry.setUser({ id: userId });
     }
   }
 
   clearUserId(): void {
-    if (this.config.service === 'sentry' && typeof window !== 'undefined' && (window as any).Sentry) {
-      (window as any).Sentry.setUser(null);
+    if (this.config.service === 'sentry' && typeof window !== 'undefined' && window.Sentry) {
+      window.Sentry.setUser(null);
     }
   }
 }

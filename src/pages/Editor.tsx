@@ -8,6 +8,7 @@ import { PDFViewer } from '@/components/pdf/PDFViewer';
 import { SigningPDFViewer } from '@/components/pdf/SigningPDFViewer';
 import { PDFErrorBoundary } from '@/components/pdf/PDFErrorBoundary';
 import { AddRecipientModal } from '@/components/recipient/AddRecipientModal';
+import { Recipient } from '@/utils/types';
 import SigningFieldList from '@/components/SigningFieldList';
 import RecipientSelector from '@/components/RecipientSelector';
 import { Loader2 } from 'lucide-react';
@@ -54,7 +55,7 @@ export default function Editor() {
   };
 
   // Custom onAddRecipient handler
-  const handleAddRecipient = (recipient: any) => {
+  const handleAddRecipient = (recipient: Recipient) => {
     setIsRecipientModalOpen(false);
     handleSelectRecipient(recipient.id);
     // If there is a pending field, add it now

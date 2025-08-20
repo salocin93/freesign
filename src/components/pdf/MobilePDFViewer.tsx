@@ -25,7 +25,7 @@
  * @param {() => void} [onOpenAddRecipient] - Callback to open add recipient modal
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Document, Page } from 'react-pdf';
 import { SigningElement, Recipient } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -72,6 +72,12 @@ export function MobilePDFViewer({
   const pageRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // Memoize PDF options to prevent unnecessary reloads
+  const pdfOptions = useMemo(() => ({
+    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+    cMapPacked: true,
+  }), []);
+
   // Auto-hide controls after 3 seconds
   useEffect(() => {
     if (showControls) {
@@ -88,6 +94,11 @@ export function MobilePDFViewer({
 
   const handleDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
+  };
+
+  const handleDocumentLoadError = (error: Error) => {
+    console.warn('PDF load error:', error);
+    // Don't throw error to prevent transport destroyed warnings
   };
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -273,6 +284,7 @@ export function MobilePDFViewer({
         <Document
           file={url}
           onLoadSuccess={handleDocumentLoadSuccess}
+          onLoadError={handleDocumentLoadError}
           loading={
             <div className="flex items-center justify-center p-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -287,10 +299,7 @@ export function MobilePDFViewer({
             </Card>
           }
           className="pdf-document"
-          options={{
-            cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-            cMapPacked: true,
-          }}
+          options={pdfOptions}
         >
           <div 
             ref={pageRef}
@@ -315,7 +324,7 @@ export function MobilePDFViewer({
             {/* Signing Elements Overlay */}
             <div className="absolute inset-0 pointer-events-none">
               {signingElements
-                .filter(element => element.position.pageIndex === pageNumber - 1)
+                .filter(element => element?.position?.pageIndex === pageNumber - 1)
                 .map((element) => {
                   const recipient = recipients.find(r => r.id === element.recipient_id);
                   const recipientColor = recipient ? 

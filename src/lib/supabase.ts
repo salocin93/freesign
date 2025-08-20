@@ -11,27 +11,97 @@ import { Database } from '@/types/supabase'
 import { AppError } from '@/utils/errorHandling'
 import { trackError } from '@/utils/errorTracking'
 import { DatabaseError, ConfigurationError } from '@/utils/errorTypes'
+import { getEnvVar } from '@/utils/env'
 
-// Add Vite env type definition
-interface ImportMetaEnv {
-  VITE_SUPABASE_URL: string
-  VITE_SUPABASE_ANON_KEY: string
+// Get these values from our centralized environment configuration
+const supabaseUrl = getEnvVar.supabase.url
+const supabaseAnonKey = getEnvVar.supabase.anonKey
+
+// Check if we're in development environment
+const isDevelopment = getEnvVar.development.isDev
+
+/**
+ * Create a mock PDF blob for development
+ */
+async function createMockPDFBlob(path: string): Promise<string> {
+  // Create a simple PDF with basic content
+  const pdfContent = createSimplePDF(path);
+  const blob = new Blob([pdfContent], { type: 'application/pdf' });
+  return URL.createObjectURL(blob);
 }
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv
+/**
+ * Create a simple PDF document in binary format
+ */
+function createSimplePDF(filename: string): Uint8Array {
+  // Basic PDF structure with minimal content
+  const content = `%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+/Resources <<
+/Font <<
+/F1 5 0 R
+>>
+>>
+>>
+endobj
+4 0 obj
+<<
+/Length 73
+>>
+stream
+BT
+/F1 24 Tf
+100 700 Td
+(Sample PDF Document) Tj
+0 -30 Td
+(Filename: ${filename.split('/').pop() || 'unknown'}) Tj
+ET
+endstream
+endobj
+5 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Times-Roman
+>>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000053 00000 n 
+0000000125 00000 n 
+0000000348 00000 n 
+0000000565 00000 n 
+trailer
+<<
+/Size 6
+/Root 1 0 R
+>>
+startxref
+625
+%%EOF`;
+
+  return new TextEncoder().encode(content);
 }
-
-// Get these values from your Supabase project settings -> API
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
-}
-
-// Check if we're in development environment using Vite's NODE_ENV
-const isDevelopment = import.meta.env.DEV;
 
 // Create Supabase client
 export const supabase = createClient<Database>(
@@ -176,10 +246,10 @@ export async function getDocumentUrl(path: string) {
     const session = await checkAuth();
     await verifyBucketAccess();
 
-    // In development mode, return a mock URL
+    // In development mode, create a mock PDF blob
     if (isDevelopment) {
       console.log('Mock getting document URL for path:', path);
-      return `blob:mock-document-${path}`;
+      return await createMockPDFBlob(path);
     }
 
     const { data, error } = await supabase.storage
@@ -261,7 +331,7 @@ export async function updateDocument(id: string, updates: {
   name?: string;
   status?: 'draft' | 'sent' | 'completed';
   storage_path?: string | null;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }) {
   try {
     await checkAuth();
@@ -436,8 +506,15 @@ export async function getRecentActivity() {
   }
 }
 
-// Signature management functions
-export async function createSignature(data: {
+// Types for signature and audit data
+interface GeolocationData {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  timestamp?: number;
+}
+
+interface SignatureData {
   document_id: string;
   recipient_id: string;
   value: string;
@@ -447,8 +524,11 @@ export async function createSignature(data: {
   verification_hash: string;
   ip_address?: string;
   user_agent?: string;
-  geolocation?: any;
-}) {
+  geolocation?: GeolocationData;
+}
+
+// Signature management functions
+export async function createSignature(data: SignatureData) {
   try {
     await checkAuth();
     
@@ -476,15 +556,17 @@ export async function createSignature(data: {
   }
 }
 
-export async function createAuditLog(data: {
+interface AuditLogData {
   signature_id: string;
   document_id: string;
   event_type: string;
-  event_data: any;
+  event_data: Record<string, unknown>;
   ip_address?: string;
   user_agent?: string;
-  geolocation?: any;
-}) {
+  geolocation?: GeolocationData;
+}
+
+export async function createAuditLog(data: AuditLogData) {
   try {
     await checkAuth();
     

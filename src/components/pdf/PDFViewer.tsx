@@ -52,7 +52,7 @@
  * - SignDocument page
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Document, Page } from 'react-pdf';
 import { SigningElement, Recipient } from '@/utils/types';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -160,8 +160,19 @@ export function PDFViewer({
   const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
 
+  // Memoize PDF options to prevent unnecessary reloads
+  const pdfOptions = useMemo(() => ({
+    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+    cMapPacked: true,
+  }), []);
+
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
+  }
+
+  function onDocumentLoadError(error: Error) {
+    console.warn('PDF load error:', error);
+    // Don't throw error to prevent transport destroyed warnings
   }
 
   const handlePageClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -258,6 +269,7 @@ export function PDFViewer({
         <Document
           file={url}
           onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={onDocumentLoadError}
           loading={
             <div className="flex items-center justify-center p-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -269,10 +281,7 @@ export function PDFViewer({
             </div>
           }
           className="pdf-document"
-          options={{
-            cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-            cMapPacked: true,
-          }}
+          options={pdfOptions}
         >
           <div style={styles.pageContainer} ref={pageRef}>
             <Page
@@ -285,7 +294,7 @@ export function PDFViewer({
               onClick={handlePageClick}
             >
               {signingElements
-                .filter(element => element.position.pageIndex === pageNumber - 1)
+                .filter(element => element?.position?.pageIndex === pageNumber - 1)
                 .map((element) => {
                   const recipient = recipients.find(r => r.id === element.recipient_id);
                   const recipientColor = recipient ? 

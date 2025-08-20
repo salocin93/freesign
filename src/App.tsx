@@ -12,6 +12,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AnalyticsProvider } from "@/contexts/AnalyticsContext";
+import DevAnalyticsPanel from "@/components/DevAnalyticsPanel";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Suspense, lazy, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -132,6 +134,7 @@ const AppContent = () => {
           </Suspense>
         } />
       </Routes>
+      <DevAnalyticsPanel />
     </div>
   );
 };
@@ -144,7 +147,9 @@ const App = () => {
           <Toaster />
           <Sonner />
           <Router>
-            <AppContent />
+            <AnalyticsProvider>
+              <AppContent />
+            </AnalyticsProvider>
           </Router>
         </TooltipProvider>
       </AuthProvider>

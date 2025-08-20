@@ -59,13 +59,14 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Recipient } from '@/utils/types';
 
 interface AddRecipientModalProps {
   isOpen: boolean;
   onClose: () => void;
   documentId: string;
-  onAddRecipient: (recipient: any) => void;
-  recipients: any[];
+  onAddRecipient: (recipient: Recipient) => void;
+  recipients: Recipient[];
   setSelectedRecipientId: (id: string) => void;
 }
 
@@ -134,7 +135,7 @@ export function AddRecipientModal({ isOpen, onClose, documentId, onAddRecipient,
                 <SelectValue placeholder="Select recipient" />
               </SelectTrigger>
               <SelectContent>
-                {recipients.map((r: any) => (
+                {recipients.map((r) => (
                   <SelectItem key={r.id} value={r.id}>
                     {r.name} ({r.email})
                   </SelectItem>

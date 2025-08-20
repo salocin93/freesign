@@ -18,7 +18,7 @@
  * ```
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Document, Page } from 'react-pdf';
 import { SigningElement, Recipient } from '@/utils/types';
 import { Loader2 } from 'lucide-react';
@@ -61,6 +61,14 @@ export function SigningPDFViewer({ url, signingElements, recipients, isCompleted
   const [error, setError] = useState<Error | null>(null);
   const [pageWidth, setPageWidth] = useState<number>(800); // Default width
 
+  // Memoize PDF options to prevent unnecessary reloads
+  const pdfOptions = useMemo(() => ({
+    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+    cMapPacked: true,
+    disableStream: true,
+    disableAutoFetch: true
+  }), []);
+
   useEffect(() => {
     console.log('Received PDF URL:', url);
     setError(null);
@@ -70,6 +78,12 @@ export function SigningPDFViewer({ url, signingElements, recipients, isCompleted
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     console.log('PDF loaded successfully, total pages:', numPages);
     setNumPages(numPages);
+  }
+
+  function onDocumentLoadError(error: Error) {
+    console.warn('PDF load error:', error);
+    setError(error);
+    // Don't throw error to prevent transport destroyed warnings
   }
 
   function onPageLoadSuccess({ width }: { width: number }) {
@@ -89,22 +103,14 @@ export function SigningPDFViewer({ url, signingElements, recipients, isCompleted
       <Document
         file={url}
         onLoadSuccess={onDocumentLoadSuccess}
-        onLoadError={(err) => {
-          console.error('Error loading PDF:', err);
-          setError(err);
-        }}
+        onLoadError={onDocumentLoadError}
         loading={
           <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         }
         className="flex flex-col items-center"
-        options={{
-          cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-          cMapPacked: true,
-          disableStream: true,
-          disableAutoFetch: true
-        }}
+        options={pdfOptions}
       >
         {Array.from(new Array(numPages), (el, index) => (
           <div key={`page_${index + 1}`} style={styles.page}>
@@ -117,7 +123,7 @@ export function SigningPDFViewer({ url, signingElements, recipients, isCompleted
             />
             {/* Render signing elements for this page */}
             {signingElements
-              .filter(element => element.position.pageIndex === index)
+              .filter(element => element?.position?.pageIndex === index)
               .map((element) => {
                 const recipient = recipients.find(r => r.id === element.recipient_id);
                 const recipientColor = recipient ? 

@@ -16,7 +16,7 @@ export interface Document {
   created_at: string;
   updated_at: string;
   created_by: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   url?: string;
 }
 

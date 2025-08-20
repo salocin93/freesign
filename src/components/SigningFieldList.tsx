@@ -50,11 +50,11 @@ const SigningFieldList: React.FC<SigningFieldListProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{getFieldTypeName(element.type)}</span>
                     <span className="text-muted-foreground">
-                      Page {element.position.pageIndex + 1}
+                      Page {(element?.position?.pageIndex ?? 0) + 1}
                     </span>
                   </div>
                   <div>
-                    Position: x: {Math.round(element.position.x)}, y: {Math.round(element.position.y)}
+                    Position: x: {Math.round(element?.position?.x ?? 0)}, y: {Math.round(element?.position?.y ?? 0)}
                   </div>
                   <div>
                     Assigned to: {getRecipientName(element.recipient_id)}

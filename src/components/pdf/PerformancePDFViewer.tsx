@@ -80,6 +80,12 @@ export function PerformancePDFViewer({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
+  // Memoize PDF options to prevent unnecessary reloads
+  const pdfOptions = useMemo(() => ({
+    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+    cMapPacked: true,
+  }), []);
+
   // Initialize pages data
   useEffect(() => {
     if (numPages > 0) {
@@ -222,7 +228,7 @@ export function PerformancePDFViewer({
   // Memoized page rendering
   const renderPage = useCallback((pageData: PageData) => {
     const pageSigningElements = signingElements.filter(
-      element => element.position.pageIndex === pageData.pageNumber - 1
+      element => element?.position?.pageIndex === pageData.pageNumber - 1
     );
 
     return (
@@ -425,10 +431,7 @@ export function PerformancePDFViewer({
               </div>
             }
             className="pdf-document"
-            options={{
-              cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-              cMapPacked: true,
-            }}
+            options={pdfOptions}
           >
             {pages.map(renderPage)}
           </Document>

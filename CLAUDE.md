@@ -11,6 +11,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint` - Run ESLint with TypeScript support
 - `npm run preview` - Preview production build locally
 
+### Testing Commands
+- `npm test` - Run tests in watch mode
+- `npm run test:run` - Run tests once
+- `npm run test:coverage` - Run tests with coverage report
+- `npm run test:ui` - Run tests with UI interface
+
 ### Additional Commands
 - `npm run clean` - Remove dist and node_modules
 - `npm run clean:start` - Clean install and start development

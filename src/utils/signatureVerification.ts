@@ -170,7 +170,8 @@ export class SignatureVerificationUtil {
         .single();
 
       if (error || !signature) {
-        throw new Error('Signature not found');
+        console.error('Signature verification failed:', error || 'Signature not found');
+        return false;
       }
 
       // Recreate the hash with the stored data

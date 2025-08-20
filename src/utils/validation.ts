@@ -284,7 +284,7 @@ export class ValidationHelpers {
   /**
    * Sanitize object data recursively
    */
-  static sanitizeObject<T extends Record<string, any>>(obj: T): T {
+  static sanitizeObject<T extends Record<string, unknown>>(obj: T): T {
     const sanitized = { ...obj };
     
     for (const [key, value] of Object.entries(sanitized)) {

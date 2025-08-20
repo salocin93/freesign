@@ -78,7 +78,7 @@ const Upload = () => {
       
       // Navigate to the editor with the document ID in the URL
       navigate(`/editor/${documentRecord.id}`);
-    } catch (error: any) {
+    } catch (error) {
       // Dismiss loading toast if it exists
       if (loadingToast) toast.dismiss(loadingToast);
 

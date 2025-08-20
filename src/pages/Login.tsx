@@ -19,7 +19,8 @@ const Login = () => {
   // Redirect if user is already logged in
   useEffect(() => {
     if (currentUser) {
-      const from = (location.state as any)?.from?.pathname || '/dashboard';
+      const locationState = location.state as { from?: { pathname: string } } | null;
+      const from = locationState?.from?.pathname || '/dashboard';
       navigate(from);
     }
   }, [currentUser, navigate, location]);
