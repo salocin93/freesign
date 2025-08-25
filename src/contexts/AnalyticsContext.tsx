@@ -53,8 +53,8 @@ interface AnalyticsContextType {
   
   // Performance tracking
   trackPerformance: (metric: string, value: number, properties?: PerformanceProperties) => void;
-  measureExecutionTime: <T extends unknown>(fn: () => T, label: string) => T;
-  measureAsyncExecutionTime: <T extends unknown>(fn: () => Promise<T>, label: string) => Promise<T>;
+  measureExecutionTime: <T>(fn: () => T, label: string) => T;
+  measureAsyncExecutionTime: <T>(fn: () => Promise<T>, label: string) => Promise<T>;
   
   // Specialized tracking
   trackDocumentWorkflow: (step: 'upload' | 'edit' | 'send' | 'sign' | 'complete', documentId: string) => void;
@@ -143,12 +143,12 @@ export function AnalyticsProvider({
       globalAnalytics.trackPerformance(metric, value, properties);
     },
 
-    measureExecutionTime: <T extends unknown>(fn: () => T, label: string): T => {
+    measureExecutionTime: function<T>(fn: () => T, label: string): T {
       if (!enabled) return fn();
       return MonitoringUtils.measureExecutionTime(fn, label);
     },
 
-    measureAsyncExecutionTime: async <T extends unknown>(fn: () => Promise<T>, label: string): Promise<T> => {
+    measureAsyncExecutionTime: async function<T>(fn: () => Promise<T>, label: string): Promise<T> {
       if (!enabled) return fn();
       return MonitoringUtils.measureAsyncExecutionTime(fn, label);
     },
@@ -215,19 +215,19 @@ export function usePageViewTracking(pageName?: string) {
 export function useInteractionTracking() {
   const { trackInteraction } = useAnalytics();
 
-  const trackClick = (element: string, properties?: Record<string, any>) => {
+  const trackClick = (element: string, properties?: Record<string, string | number | boolean>) => {
     trackInteraction(element, 'click', properties);
   };
 
-  const trackHover = (element: string, properties?: Record<string, any>) => {
+  const trackHover = (element: string, properties?: Record<string, string | number | boolean>) => {
     trackInteraction(element, 'hover', properties);
   };
 
-  const trackFocus = (element: string, properties?: Record<string, any>) => {
+  const trackFocus = (element: string, properties?: Record<string, string | number | boolean>) => {
     trackInteraction(element, 'focus', properties);
   };
 
-  const trackInput = (element: string, properties?: Record<string, any>) => {
+  const trackInput = (element: string, properties?: Record<string, string | number | boolean>) => {
     trackInteraction(element, 'input', properties);
   };
 
@@ -313,7 +313,7 @@ export function useErrorTracking() {
     });
   };
 
-  const trackUserError = (message: string, context?: Record<string, any>) => {
+  const trackUserError = (message: string, context?: Record<string, string | number | boolean>) => {
     trackError(new Error(message), {
       error_type: 'user',
       ...context

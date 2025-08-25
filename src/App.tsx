@@ -13,11 +13,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AnalyticsProvider } from "@/contexts/AnalyticsContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import DevAnalyticsPanel from "@/components/DevAnalyticsPanel";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { validateProductionEnvironment, formatValidationResults } from '@/utils/productionValidation';
+import { env } from '@/utils/env';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Login from './pages/Login';
 import Documents from './pages/Documents';
 import Upload from './pages/Upload';
@@ -41,9 +46,102 @@ const PageLoader = () => (
   </div>
 );
 
+interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  checks: Record<string, boolean>;
+}
+
+// Production validation component
+const ProductionValidationScreen = ({ onContinue, onRetry, validationResult }: {
+  onContinue: () => void;
+  onRetry: () => void;
+  validationResult: ValidationResult;
+}) => (
+  <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <Card className="w-full max-w-2xl">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-destructive">
+          <AlertTriangle className="h-6 w-6" />
+          Production Environment Issues
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="bg-muted p-4 rounded-md font-mono text-sm whitespace-pre-line">
+          {formatValidationResults(validationResult)}
+        </div>
+        
+        <div className="flex gap-2">
+          <Button onClick={onRetry} variant="default">
+            Retry Validation
+          </Button>
+          {!validationResult.isValid ? (
+            <Button onClick={onContinue} variant="outline">
+              Continue Anyway (Not Recommended)
+            </Button>
+          ) : (
+            <Button onClick={onContinue} variant="default">
+              Continue
+            </Button>
+          )}
+        </div>
+        
+        <div className="text-xs text-muted-foreground">
+          {validationResult.isValid 
+            ? "All checks passed! You can continue safely."
+            : "Some checks failed. Please review the issues above before continuing."
+          }
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
+
 const AppContent = () => {
   const navigate = useNavigate();
+  const [validationState, setValidationState] = useState<{
+    isValidating: boolean;
+    isValid: boolean | null;
+    result: ValidationResult | null;
+    forceSkip: boolean;
+  }>({
+    isValidating: env.isProduction,
+    isValid: null,
+    result: null,
+    forceSkip: false,
+  });
 
+  // Production validation effect
+  useEffect(() => {
+    if (env.isProduction && !validationState.forceSkip && validationState.isValid === null) {
+      validateProductionEnvironment()
+        .then(result => {
+          setValidationState(prev => ({
+            ...prev,
+            isValidating: false,
+            isValid: result.isValid,
+            result,
+          }));
+        })
+        .catch(error => {
+          console.error('Production validation failed:', error);
+          setValidationState(prev => ({
+            ...prev,
+            isValidating: false,
+            isValid: false,
+            result: {
+              isValid: false,
+              errors: [`Validation failed: ${error.message}`],
+              warnings: [],
+              checks: {},
+            },
+          }));
+        });
+    }
+  }, [validationState.forceSkip, validationState.isValid]);
+
+  // Auth effect
   useEffect(() => {
     // Handle the initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -77,6 +175,36 @@ const AppContent = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const handleValidationContinue = () => {
+    setValidationState(prev => ({ ...prev, forceSkip: true }));
+  };
+
+  const handleValidationRetry = () => {
+    setValidationState({
+      isValidating: true,
+      isValid: null,
+      result: null,
+      forceSkip: false,
+    });
+  };
+
+  // Show validation screen in production
+  if (env.isProduction && !validationState.forceSkip) {
+    if (validationState.isValidating) {
+      return <PageLoader />;
+    }
+    
+    if (validationState.result && (!validationState.isValid || validationState.result.warnings.length > 0)) {
+      return (
+        <ProductionValidationScreen
+          onContinue={handleValidationContinue}
+          onRetry={handleValidationRetry}
+          validationResult={validationState.result}
+        />
+      );
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -141,19 +269,29 @@ const AppContent = () => {
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Router>
-            <AnalyticsProvider>
-              <AppContent />
-            </AnalyticsProvider>
-          </Router>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary name="App" resetOnPropsChange>
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary name="QueryClient" resetOnPropsChange>
+          <AuthProvider>
+            <ErrorBoundary name="Auth" resetOnPropsChange>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <Router>
+                  <ErrorBoundary name="Router" resetOnPropsChange>
+                    <AnalyticsProvider>
+                      <ErrorBoundary name="Analytics" resetOnPropsChange>
+                        <AppContent />
+                      </ErrorBoundary>
+                    </AnalyticsProvider>
+                  </ErrorBoundary>
+                </Router>
+              </TooltipProvider>
+            </ErrorBoundary>
+          </AuthProvider>
+        </ErrorBoundary>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

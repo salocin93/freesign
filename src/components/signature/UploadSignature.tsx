@@ -154,6 +154,7 @@ export function UploadSignature({ onSave, onCancel }: UploadSignatureProps) {
               <input
                 ref={fileInputRef}
                 type="file"
+                data-testid="file-input"
                 accept=".png,.jpg,.jpeg,.svg"
                 onChange={handleFileInputChange}
                 className="hidden"

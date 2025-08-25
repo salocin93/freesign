@@ -98,3 +98,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - `VITE_SUPABASE_URL` - Your Supabase project URL
    - `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous key
 3. Never commit `.env` files to version control
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md

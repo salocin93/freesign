@@ -127,6 +127,7 @@ export function TypeSignature({ initialText = '', onSave, onCancel }: TypeSignat
         <Label htmlFor="signature-text">Signature Text</Label>
         <Input
           id="signature-text"
+          data-testid="type-input"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Enter your signature"

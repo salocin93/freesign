@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, getDocument, getDocumentUrl, createSigningElement, deleteSigningElement } from '@/lib/supabase';
 import { Document, Recipient, SigningElement } from '@/utils/types';
@@ -18,13 +18,14 @@ interface UseEditorStateReturn {
   error: string | null;
   isRecipientModalOpen: boolean;
   isEmailModalOpen: boolean;
-  addSigningElement: (type: SigningElement['type'], position: { x: number; y: number; pageIndex: number }) => void;
+  addSigningElement: (type: SigningElement['type'], position: { x: number; y: number; pageIndex: number }, clearActiveType?: boolean) => void;
   removeSigningElement: (elementId: string) => void;
   handleSelectElement: (elementId: string) => void;
   handleSelectRecipient: (recipientId: string) => void;
   setIsRecipientModalOpen: (isOpen: boolean) => void;
   setIsEmailModalOpen: (isOpen: boolean) => void;
   setActiveElementType: (type: SigningElement['type'] | null) => void;
+  setSigningElements: React.Dispatch<React.SetStateAction<SigningElement[]>>;
 }
 
 export function useEditorState(documentId: string): UseEditorStateReturn {
@@ -163,7 +164,8 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
 
   const addSigningElement = useCallback(async (
     type: SigningElement['type'],
-    position: { x: number; y: number; pageIndex: number }
+    position: { x: number; y: number; pageIndex: number },
+    clearActiveType: boolean = true
   ) => {
     if (!documentId || !selectedRecipientId) {
       throw new AppError('Missing required parameters', 'INVALID_PARAMS');
@@ -197,7 +199,11 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
 
       setSigningElements(prev => [...prev, newElement]);
       toast.success('Signing element added successfully');
-      setActiveElementType(null);
+      
+      // Only clear active element type if explicitly requested (direct user click)
+      if (clearActiveType) {
+        setActiveElementType(null);
+      }
     } catch (err) {
       handleError(err, 'addSigningElement');
     }
@@ -257,5 +263,6 @@ export function useEditorState(documentId: string): UseEditorStateReturn {
     setIsRecipientModalOpen,
     setIsEmailModalOpen,
     setActiveElementType: setActiveElementTypeHandler,
+    setSigningElements,
   };
 }

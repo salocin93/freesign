@@ -19,7 +19,7 @@ import { z } from 'zod';
  */
 const PATTERNS = {
   EMAIL: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-  PHONE: /^\+?[\d\s\-\(\)]{10,}$/,
+  PHONE: /^\+?[\d\s\-()]{10,}$/,
   URL: /^https?:\/\/.+/,
   PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
   NAME: /^[a-zA-Z\s\-']{2,50}$/,
@@ -54,8 +54,8 @@ const ERROR_MESSAGES = {
 export const baseSchemas = {
   email: z.string()
     .min(1, ERROR_MESSAGES.REQUIRED)
-    .email(ERROR_MESSAGES.INVALID_EMAIL)
-    .transform(val => val.toLowerCase().trim()),
+    .transform(val => val.toLowerCase().trim())
+    .refine(val => PATTERNS.EMAIL.test(val) && !val.includes('..'), ERROR_MESSAGES.INVALID_EMAIL),
 
   password: z.string()
     .min(1, ERROR_MESSAGES.REQUIRED)
@@ -335,6 +335,10 @@ export class ValidationHelpers {
    * Validate email format
    */
   static isValidEmail(email: string): boolean {
+    // Check for consecutive dots which are not allowed
+    if (email.includes('..')) {
+      return false;
+    }
     return PATTERNS.EMAIL.test(email);
   }
 

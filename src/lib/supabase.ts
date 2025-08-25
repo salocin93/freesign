@@ -389,19 +389,7 @@ export async function getDocument(id: string) {
             document_id: id
           }
         ],
-        signing_elements: [
-          {
-            id: 'mock-element-1',
-            document_id: id,
-            type: 'signature',
-            x: 100,
-            y: 200,
-            width: 200,
-            height: 50,
-            page_number: 1,
-            recipient_id: 'mock-recipient-1'
-          }
-        ]
+        signing_elements: []
       };
     }
     
@@ -648,9 +636,16 @@ export async function createSigningElement(data: {
   document_id: string;
   recipient_id: string;
   type: string;
-  position: any;
-  size: any;
-  value: any;
+  position: {
+    x: number;
+    y: number;
+    pageIndex: number;
+  };
+  size: {
+    width: number;
+    height: number;
+  };
+  value: string | boolean | null;
 }) {
   try {
     await checkAuth();

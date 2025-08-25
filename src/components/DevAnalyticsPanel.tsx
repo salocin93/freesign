@@ -87,11 +87,6 @@ export function DevAnalyticsPanel() {
   const analytics = useAnalytics();
   const eventIdCounter = useRef(0);
 
-  // Only show in development
-  if (import.meta.env.PROD) {
-    return null;
-  }
-
   // Listen to analytics events for display
   useEffect(() => {
     const unsubscribe = globalAnalytics.addEventListener((event) => {
@@ -292,6 +287,11 @@ export function DevAnalyticsPanel() {
     
     return colors[type] || 'bg-gray-500';
   };
+
+  // Only show in development
+  if (import.meta.env.PROD) {
+    return null;
+  }
 
   if (!isVisible) {
     return (

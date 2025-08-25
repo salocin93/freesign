@@ -8,13 +8,16 @@ import { PDFViewer } from '@/components/pdf/PDFViewer';
 import { SigningPDFViewer } from '@/components/pdf/SigningPDFViewer';
 import { PDFErrorBoundary } from '@/components/pdf/PDFErrorBoundary';
 import { AddRecipientModal } from '@/components/recipient/AddRecipientModal';
-import { Recipient } from '@/utils/types';
+import { Recipient, SigningElement } from '@/utils/types';
 import SigningFieldList from '@/components/SigningFieldList';
 import RecipientSelector from '@/components/RecipientSelector';
 import { Loader2 } from 'lucide-react';
 import SigningElementsToolbar from '@/components/SigningElementsToolbar';
-import { SigningElement } from '@/utils/types';
 import { cn } from '@/lib/utils';
+import { createSigningElement } from '@/lib/supabase';
+import { handleApiError, handleError } from '@/utils/errorHandling';
+import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 
 export default function Editor() {
   const params = useParams();
@@ -36,6 +39,7 @@ export default function Editor() {
     isRecipientModalOpen,
     isEmailModalOpen,
     setActiveElementType,
+    setSigningElements,
   } = useEditorState(params.id);
 
   // Pending field state
@@ -51,27 +55,77 @@ export default function Editor() {
       setIsRecipientModalOpen(true);
       return;
     }
-    addSigningElement(type, position);
+    // Direct user click - clear the active element type after placement
+    addSigningElement(type, position, true);
   };
 
   // Custom onAddRecipient handler
   const handleAddRecipient = (recipient: Recipient) => {
     setIsRecipientModalOpen(false);
     handleSelectRecipient(recipient.id);
-    // If there is a pending field, add it now
+    
+    // If there is a pending field, create and place the element immediately 
+    // using the stored click position and the new recipient ID
     if (pendingField.current) {
-      addSigningElement(pendingField.current.type, pendingField.current.position);
+      const pendingType = pendingField.current.type;
+      const pendingPosition = pendingField.current.position;
+      
+      
+      // Create the element directly without waiting for state updates
+      const newElement: SigningElement = {
+        id: uuidv4(),
+        document_id: params.id!,
+        recipient_id: recipient.id, // Use the new recipient directly
+        type: pendingType,
+        position: pendingPosition, // Use the stored click position
+        size: { width: 200, height: 100 },
+        value: null,
+      };
+
+      // Create element immediately
+      const createElementImmediately = async () => {
+        try {
+          await handleApiError(
+            async () => {
+              return await createSigningElement({
+                id: newElement.id,
+                document_id: params.id!,
+                recipient_id: recipient.id,
+                type: newElement.type,
+                position: newElement.position,
+                size: newElement.size,
+                value: newElement.value,
+              });
+            },
+            'addSigningElement'
+          );
+
+          // Update the local state immediately
+          setSigningElements(prev => [...prev, newElement]);
+          toast.success('Signing element added successfully');
+          setActiveElementType(null);
+          
+        } catch (err) {
+          console.error('Failed to create element:', err);
+          handleError(err, 'addSigningElement');
+        }
+      };
+
+      createElementImmediately();
       pendingField.current = null;
     }
   };
 
-  // Place pending field after recipient selection
+  // Place pending field after recipient selection (only if not handled by modal)
   useEffect(() => {
     if (pendingField.current && selectedRecipientId) {
-      addSigningElement(pendingField.current.type, pendingField.current.position);
-      pendingField.current = null;
+      // Only place if modal is not open (means recipient was selected via other means)
+      if (!isRecipientModalOpen) {
+        addSigningElement(pendingField.current.type, pendingField.current.position, true);
+        pendingField.current = null;
+      }
     }
-  }, [selectedRecipientId]);
+  }, [selectedRecipientId, isRecipientModalOpen, addSigningElement]);
 
   if (isLoading) {
     return (
@@ -178,7 +232,11 @@ export default function Editor() {
 
       <AddRecipientModal
         isOpen={isRecipientModalOpen}
-        onClose={() => setIsRecipientModalOpen(false)}
+        onClose={() => {
+          setIsRecipientModalOpen(false);
+          // Clear pending field if user cancels the modal
+          pendingField.current = null;
+        }}
         documentId={params.id}
         onAddRecipient={handleAddRecipient}
         recipients={recipients}

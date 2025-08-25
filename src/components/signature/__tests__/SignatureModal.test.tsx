@@ -4,24 +4,45 @@ import { SignatureModal } from '../SignatureModal'
 
 // Mock react-signature-canvas
 vi.mock('react-signature-canvas', () => ({
-  default: vi.fn(({ onEnd, ref }) => (
-    <canvas
-      data-testid="signature-canvas"
-      ref={ref}
-      onMouseUp={onEnd}
-      width="400"
-      height="200"
-    />
-  ))
+  default: vi.fn().mockImplementation(({ onEnd, ref }) => {
+    return (
+      <canvas
+        data-testid="signature-canvas"
+        ref={(canvasRef) => {
+          // Set up mock ref
+          const mockRef = {
+            isEmpty: () => false,
+            toDataURL: () => 'data:image/png;base64,mocksignaturedata',
+            clear: () => {}
+          }
+          
+          if (ref) {
+            ref.current = mockRef
+          }
+          
+          if (canvasRef) {
+            canvasRef.mockRef = mockRef
+          }
+        }}
+        onMouseUp={() => onEnd?.()}
+        width="400"
+        height="200"
+      />
+    )
+  })
 }))
 
 // Mock child components
 vi.mock('../TypeSignature', () => ({
-  TypeSignature: vi.fn(({ onSignatureChange }) => (
+  TypeSignature: vi.fn(({ onSave }) => (
     <div data-testid="type-signature">
       <input
         data-testid="type-input"
-        onChange={(e) => onSignatureChange?.(e.target.value)}
+        onChange={(e) => {
+          if (e.target.value) {
+            onSave?.(`data:image/png;base64,mock-typed-signature-${e.target.value}`)
+          }
+        }}
         placeholder="Type your signature"
       />
     </div>
@@ -29,7 +50,7 @@ vi.mock('../TypeSignature', () => ({
 }))
 
 vi.mock('../UploadSignature', () => ({
-  UploadSignature: vi.fn(({ onSignatureChange }) => (
+  UploadSignature: vi.fn(({ onSave }) => (
     <div data-testid="upload-signature">
       <input
         data-testid="file-input"
@@ -37,7 +58,7 @@ vi.mock('../UploadSignature', () => ({
         onChange={(e) => {
           const file = e.target.files?.[0]
           if (file) {
-            onSignatureChange?.('data:image/png;base64,mockuploadedimage')
+            onSave?.('data:image/png;base64,mockuploadedimage')
           }
         }}
       />
