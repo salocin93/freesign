@@ -39,7 +39,7 @@ export function useErrorHandling(options: UseErrorHandlingOptions): UseErrorHand
     await trackError(appError, context);
 
     // Attempt recovery if enabled
-    if (autoRecover && error instanceof (NetworkError || ApiError)) {
+    if (autoRecover && (error instanceof NetworkError || error instanceof ApiError)) {
       setIsRecovering(true);
       try {
         const recovered = await attemptErrorRecovery(appError, {

@@ -11,19 +11,19 @@ interface UseApiOptions {
   onError?: (error: AppError) => void;
 }
 
-interface UseApiReturn<T> {
+interface UseApiReturn<T, Args extends unknown[]> {
   data: T | null;
   error: AppError | null;
   isLoading: boolean;
-  execute: (...args: unknown[]) => Promise<void>;
+  execute: (...args: Args) => Promise<void>;
   reset: () => void;
 }
 
-export function useApi<T>(
-  operation: (...args: unknown[]) => Promise<T>,
+export function useApi<T, Args extends unknown[] = []>(
+  operation: (...args: Args) => Promise<T>,
   context: string,
   options: UseApiOptions = {}
-): UseApiReturn<T> {
+): UseApiReturn<T, Args> {
   const {
     maxRetries = 3,
     retryDelay = 1000,
@@ -42,7 +42,7 @@ export function useApi<T>(
     setRetryCount(0);
   }, []);
 
-  const execute = useCallback(async (...args: unknown[]) => {
+  const execute = useCallback(async (...args: Args) => {
     setIsLoading(true);
     setError(null);
 
