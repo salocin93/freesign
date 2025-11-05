@@ -118,13 +118,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **CORS headers**: Required for PDF.js worker (configured in vite.config.ts)
   - `Cross-Origin-Opener-Policy: same-origin`
   - `Cross-Origin-Embedder-Policy: require-corp`
-- **PDF Viewer Components**:
-  - Standard viewer with zoom and navigation
-  - Signing viewer with draggable/resizable signing elements overlay
-  - Mobile-optimized viewer for smaller screens
-  - Performance-optimized viewer for large documents
+
+#### PDF Viewer Components
+
+**Two viewers with distinct purposes:**
+
+1. **[PDFViewer.tsx](src/components/pdf/PDFViewer.tsx)** - Editor mode (366 lines)
+   - **Purpose**: Document editing and preparation
+   - **Features**: Add/remove signing elements, drag & drop, zoom, navigation
+   - **Used in**: [Editor page](src/pages/Editor.tsx) (status !== 'completed')
+   - **Interactive**: Full editing capabilities
+
+2. **[SigningPDFViewer.tsx](src/components/pdf/SigningPDFViewer.tsx)** - View mode (187 lines)
+   - **Purpose**: Document signing and viewing completed docs
+   - **Features**: Display signing elements, show signatures, read-only
+   - **Used in**: [Editor page](src/pages/Editor.tsx) (status === 'completed'), [SignDocument page](src/pages/SignDocument.tsx)
+   - **Interactive**: View-only (clicking may trigger signing)
+
+3. **[PDFErrorBoundary.tsx](src/components/pdf/PDFErrorBoundary.tsx)**
+   - Error boundary wrapper for PDF components
+   - Prevents entire app crash if PDF fails
+
+**Usage Pattern:**
+```typescript
+// In Editor.tsx
+{document.status === 'completed' ? (
+  <SigningPDFViewer url={url} signingElements={elements} recipients={recipients} />
+) : (
+  <PDFViewer
+    url={url}
+    signingElements={elements}
+    onAddElement={handleAdd}
+    onRemoveElement={handleRemove}
+    activeElementType={activeType}
+  />
+)}
+```
+
 - **Signature placement**: Coordinate tracking with page index, position (x, y), and size (width, height)
 - **Multi-page support**: Full support for multi-page PDFs with per-page element positioning
+- **Scaling**: Both viewers handle responsive scaling and maintain element positions
 
 ### Development Environment Setup
 - **Mock authentication** automatically enabled for local development
