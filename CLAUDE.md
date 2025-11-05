@@ -100,6 +100,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `signing_elements` - Positioning data for signature fields on PDFs
 - Storage bucket: `documents` for PDF files
 
+### Type Safety
+
+All core types in [src/utils/types.ts](src/utils/types.ts) use strict union types instead of strings:
+
+**Document Status:**
+```typescript
+status: 'draft' | 'sent' | 'completed'
+```
+
+**Recipient Status:**
+```typescript
+status: 'pending' | 'completed'
+```
+
+**Signing Element Types:**
+```typescript
+type: 'signature' | 'date' | 'text' | 'checkbox'
+```
+
+**Benefits:**
+- Compile-time type checking prevents typos (e.g., `'singned'` vs `'signed'`)
+- Better IDE autocomplete and IntelliSense
+- Exhaustive switch statement checking
+- Self-documenting code with explicit valid values
+
 ### Routing Structure
 - `/` - Public landing page
 - `/login` - Authentication page

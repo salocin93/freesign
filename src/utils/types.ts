@@ -43,7 +43,7 @@ export interface Recipient {
   id: string;
   name: string;
   email: string;
-  status: string;
+  status: 'pending' | 'completed';
   document_id: string;
   created_at: string;
   updated_at: string;
