@@ -222,6 +222,88 @@ debug.groupEnd();
 - `console.info()` - Use `debug.info()` instead
 - `console.error()` - Use `debug.error()` instead (or keep console.error for critical errors)
 
+### Error Handling Strategy
+
+**Consistent error handling across the application:**
+
+#### When to Use Each Pattern
+
+1. **Data Fetching & Mutations** → `useApi()` hook
+   - **Use for:** Any async operation that fetches or modifies data
+   - **Location:** [src/hooks/useApi.ts](src/hooks/useApi.ts)
+   - **Benefits:** Automatic retry, loading states, consistent error handling
+   - **Example:**
+   ```typescript
+   const { execute, isLoading, error } = useApi(
+     (file: File) => uploadDocument(file),
+     'uploadDocument',
+     {
+       onSuccess: () => toast.success('Uploaded!'),
+       maxRetries: 3,
+     }
+   );
+
+   const handleSubmit = () => execute(file);
+   ```
+
+2. **Event Handlers** → `handleError()` function
+   - **Use for:** One-off errors in onClick, onChange handlers
+   - **Location:** [src/utils/errorHandling.ts](src/utils/errorHandling.ts)
+   - **Benefits:** Immediate user feedback via toast
+   - **Example:**
+   ```typescript
+   import { handleError } from '@/utils/errorHandling';
+
+   try {
+     await someOperation();
+   } catch (error) {
+     handleError(error, 'operationName');
+   }
+   ```
+
+3. **Component Boundaries** → `<ErrorBoundary>`
+   - **Use for:** Wrapping risky components (PDF viewers, third-party)
+   - **Location:** [src/components/ErrorBoundary.tsx](src/components/ErrorBoundary.tsx)
+   - **Benefits:** Prevents entire app crash, graceful degradation
+   - **Example:**
+   ```typescript
+   <ErrorBoundary name="PDFViewer">
+     <PDFViewer url={documentUrl} />
+   </ErrorBoundary>
+   ```
+
+4. **Silent Logging** → `trackError()` directly
+   - **Use for:** Analytics errors, non-critical warnings, background operations
+   - **Location:** [src/utils/errorTracking.ts](src/utils/errorTracking.ts)
+   - **Benefits:** Log without user disruption
+   - **Example:**
+   ```typescript
+   import { trackError } from '@/utils/errorTracking';
+
+   await trackError(error, 'analyticsEvent', { context: 'data' });
+   ```
+
+#### Error Handling Hierarchy
+
+```
+User Action
+    ↓
+useApi() hook (preferred for async operations)
+    ↓
+handleError() (for one-off operations)
+    ↓
+ErrorBoundary (catches unhandled errors)
+    ↓
+trackError() (silent logging)
+```
+
+#### Deprecated Patterns
+
+**❌ Do NOT use:**
+- `handleApiError()` - Deprecated, use `useApi()` instead
+- Manual try/catch with toast - Use `handleError()` or `useApi()`
+- Direct console.error - Use `debug.error()` or `handleError()`
+
 ## Task Master AI Instructions
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
 @./.taskmaster/CLAUDE.md

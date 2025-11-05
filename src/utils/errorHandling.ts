@@ -31,10 +31,31 @@ export const handleError = (error: unknown, context: string): AppError => {
   return appError;
 };
 
+/**
+ * @deprecated Use useApi() hook instead for better type safety and retry logic
+ *
+ * This function will be removed in v2.0. Please migrate to:
+ *
+ * @example
+ * // Before:
+ * const result = await handleApiError(() => uploadDocument(file), 'upload');
+ *
+ * // After:
+ * const { execute } = useApi((file) => uploadDocument(file), 'upload');
+ * await execute(file);
+ *
+ * @see src/hooks/useApi.ts for the replacement hook
+ */
 export const handleApiError = async (
   operation: () => Promise<unknown>,
   context: string
 ): Promise<unknown> => {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(
+      `handleApiError is deprecated. Use useApi() hook instead. Context: ${context}`
+    );
+  }
+
   try {
     return await operation();
   } catch (error) {
